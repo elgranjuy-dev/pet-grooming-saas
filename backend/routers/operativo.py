@@ -19,6 +19,7 @@ from backend.schemas.operativo import (
     ProductoCreate,
     ServicioCreate,
     UsuarioCreate,
+    UsuarioUpdate,
 )
 from backend.services.disponibilidad import AvailabilityEngine
 
