@@ -529,20 +529,28 @@
       </section>
 
       <!-- =================================================================
-           VISTA 3: CLIENTES Y EXPEDIENTES CLÍNICOS (Buscador Privado + Expediente)
+           VISTA 3: CLIENTES Y EXPEDIENTES CLÍNICOS
       ================================================================== -->
       <section id="view-clientes" class="tab-view hidden space-y-4">
-        <div>
-          <h2 class="text-lg font-extrabold text-slate-900 leading-tight">Clientes, Expedientes Clínicos y Lealtad</h2>
-          <p class="text-[11px] text-slate-500">Por políticas de privacidad anti-robo de cartera, el padrón está oculto y solo se muestran los últimos 4 dígitos del celular.</p>
-        </div>
+        <!-- Barra de búsqueda fija siempre hasta arriba (sin leyendas, solo barra y botón) -->
+        <form id="form-buscar-clientes" class="sticky top-0 z-20 bg-slate-50/95 backdrop-blur-xs py-1.5 flex items-center gap-2">
+          <div class="relative flex-1">
+            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400 text-xs"></i>
+            <input id="clientes-buscar-input" type="text" autocomplete="off"
+              placeholder="Buscar..."
+              class="w-full pl-9 pr-4 py-2 rounded-xl bg-white border border-slate-300 text-xs shadow-2xs focus:outline-none focus:ring-2 focus:ring-blue-600" />
+          </div>
+          <button type="submit" class="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-2xs shrink-0 transition">
+            Buscar
+          </button>
+        </form>
 
         <div class="module-widgets-grid grid grid-cols-1 lg:grid-cols-12 gap-4 items-start" data-grid-id="clientes">
-          <!-- Bloque 1: Buscador Privado y Visor de Expediente de Cliente / Mascota -->
-          <div class="module-widget lg:col-span-8 bg-white rounded-2xl p-5 border border-slate-200 shadow-sm" data-widget-id="cli-buscador">
+          <!-- Bloque 1: Expediente del Cliente Seleccionado (se muestra al elegir cliente desde el pop-up o al crearlo) -->
+          <div id="widget-cliente-expediente" class="module-widget hidden lg:col-span-8 bg-white rounded-2xl p-5 border border-slate-200 shadow-sm" data-widget-id="cli-expediente">
             <div draggable="true" class="widget-header flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
               <h3 class="widget-title text-sm font-bold text-slate-800 flex items-center">
-                <span class="widget-drag-handle w-6 h-6 rounded-md bg-slate-100 hover:bg-blue-50 text-slate-400 hover:text-blue-600 mr-2 inline-flex items-center justify-center transition shrink-0" title="Arrastra desde aquí para mover y ordenar este bloque"><i class="fa-solid fa-grip-vertical text-xs"></i></span><i class="fa-solid fa-folder-open text-blue-600 mr-1.5"></i>Buscador Privado y Expedientes de Clientes
+                <span class="widget-drag-handle w-6 h-6 rounded-md bg-slate-100 hover:bg-blue-50 text-slate-400 hover:text-blue-600 mr-2 inline-flex items-center justify-center transition shrink-0" title="Arrastra desde aquí para mover y ordenar este bloque"><i class="fa-solid fa-grip-vertical text-xs"></i></span><i class="fa-solid fa-folder-open text-blue-600 mr-1.5"></i>Expediente del Cliente
               </h3>
               <div class="widget-actions flex items-center gap-1.5 shrink-0 ml-auto">
                 <div class="widget-window-controls flex items-center gap-1 pl-1">
@@ -556,34 +564,8 @@
               </div>
             </div>
 
-            <div class="widget-body pt-3.5 space-y-4">
-              <form id="form-buscar-clientes" class="flex flex-col sm:flex-row gap-2.5">
-                <div class="relative flex-1">
-                  <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400 text-xs"></i>
-                  <input id="clientes-buscar-input" type="text" autocomplete="off"
-                    placeholder="Buscar cuenta por teléfono, nombre del dueño, mascota o código PET-..."
-                    class="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-blue-600" />
-                </div>
-                <button type="submit" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shrink-0 transition">
-                  <i class="fa-solid fa-magnifying-glass mr-1"></i>Buscar Cuenta
-                </button>
-                <button id="btn-limpiar-busqueda-clientes" type="button" title="Limpiar búsqueda y ocultar datos"
-                  class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold text-xs shrink-0 transition">
-                  Limpiar
-                </button>
-              </form>
-
-              <!-- Contenedor de Coincidencias de Búsqueda -->
-              <div id="clientes-resultados-container" class="space-y-2.5">
-                <div class="p-6 text-center bg-slate-50 rounded-xl border border-dashed border-slate-300 text-slate-500 text-xs">
-                  <i class="fa-solid fa-user-shield text-slate-400 text-lg mb-1.5 block"></i>
-                  La información de los clientes permanece oculta hasta que busques una cuenta específica.<br />
-                  <span class="text-[11px] text-slate-400">Ingresa al menos 2 caracteres (nombre, celular, mascota o código <span class="font-mono font-bold">PET-</span>).</span>
-                </div>
-              </div>
-
-              <!-- Contenedor del Expediente Completo del Cliente (se abre al dar clic a una coincidencia) -->
-              <div id="cliente-expediente-view" class="hidden space-y-4"></div>
+            <div class="widget-body pt-3.5">
+              <div id="cliente-expediente-view" class="space-y-4"></div>
             </div>
           </div>
 
@@ -615,7 +597,6 @@
                   <label class="block text-xs font-bold text-slate-600 mb-1">Teléfono Celular (WhatsApp) *</label>
                   <input id="cliente-telefono" type="text" required placeholder="Ej. 5512345678"
                     class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs font-mono" />
-                  <p class="text-[10px] text-slate-400 mt-1">Por seguridad, una vez guardado solo se mostrarán los últimos 4 dígitos.</p>
                 </div>
                 <div>
                   <label class="block text-xs font-bold text-slate-600 mb-1">Correo Electrónico</label>
@@ -628,7 +609,7 @@
                     class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs" />
                 </div>
                 <button type="submit" class="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition">
-                  <i class="fa-solid fa-user-check mr-1"></i>Guardar Cliente y Abrir su Expediente
+                  <i class="fa-solid fa-user-check mr-1"></i>Guardar Cliente
                 </button>
               </form>
             </div>
@@ -1294,7 +1275,26 @@
     </div>
   </div>
 
+  <!-- =====================================================================
+       POP-UP MODAL: RESULTADOS DE BÚSQUEDA DE CLIENTES / EXPEDIENTES
+  ====================================================================== -->
+  <div id="modal-busqueda-clientes" class="hidden fixed inset-0 z-50 bg-slate-900/65 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
+      <div class="px-5 py-3.5 bg-slate-900 text-white flex items-center justify-between">
+        <h3 class="text-sm font-extrabold flex items-center gap-2">
+          <i class="fa-solid fa-magnifying-glass text-blue-400"></i>
+          <span>Resultado de Búsqueda</span>
+        </h3>
+        <button id="btn-cerrar-modal-busqueda-clientes" type="button"
+          class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div id="modal-busqueda-clientes-body" class="p-5 max-h-[70vh] overflow-y-auto space-y-2.5 text-xs"></div>
+    </div>
+  </div>
+
   <!-- Controlador Principal POO (ES Module) -->
-  <script type="module" src="./js/App.js?v=0.6.0"></script>
+  <script type="module" src="./js/App.js?v=0.8.0"></script>
 </body>
 </html>

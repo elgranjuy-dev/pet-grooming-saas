@@ -1,11 +1,12 @@
 /**
  * ClientesView.js
  * Vista POO para:
- * 1. Búsqueda privada de cuentas (sin mostrar información hasta buscar y mostrando solo últimos 4 dígitos del celular).
- * 2. Apertura del Expediente del Cliente al dar clic en una coincidencia (con actividad a nivel cliente).
- * 3. Registro de mascotas EXCLUSIVAMENTE dentro del perfil/expediente del dueño.
- * 4. Selector buscable de razas sugeridas (incluyendo "Mestiza").
- * 5. Vista de detalle clínico e historial individual al dar clic en cada mascota del cliente.
+ * 1. Barra de búsqueda fija en la parte superior (sin leyendas, solo barra y botón Buscar).
+ * 2. Al dar clic en Buscar, abre un Pop-up Modal con las coincidencias encontradas
+ *    (mostrando únicamente los últimos 4 dígitos del celular) o una ventana indicando "No hay coincidencias".
+ * 3. Al dar clic a un cliente en el pop-up, cierra el pop-up y abre su Perfil / Expediente
+ *    con el detalle de su actividad en la estética, botón "+ Agregar Mascota" (con buscador de razas incluyendo "Mestiza")
+ *    y clic en cada mascota para ver el detalle de la mascota.
  */
 export class ClientesView {
   static RAZAS_SUGERIDAS = [
@@ -65,16 +66,20 @@ export class ClientesView {
     if (formBuscar) {
       formBuscar.addEventListener('submit', (e) => {
         e.preventDefault();
-        this.buscarClientes();
+        this.buscarClientesEnPopup();
       });
     }
 
-    const btnLimpiar = document.getElementById('btn-limpiar-busqueda-clientes');
-    if (btnLimpiar) {
-      btnLimpiar.addEventListener('click', () => {
-        const input = document.getElementById('clientes-buscar-input');
-        if (input) input.value = '';
-        this.limpiarVistaPrivada();
+    const modalBusqueda = document.getElementById('modal-busqueda-clientes');
+    const btnCerrarModal = document.getElementById('btn-cerrar-modal-busqueda-clientes');
+    if (btnCerrarModal && modalBusqueda) {
+      btnCerrarModal.addEventListener('click', () => {
+        modalBusqueda.classList.add('hidden');
+      });
+      modalBusqueda.addEventListener('click', (e) => {
+        if (e.target === modalBusqueda) {
+          modalBusqueda.classList.add('hidden');
+        }
       });
     }
 
@@ -88,7 +93,7 @@ export class ClientesView {
   }
 
   async load() {
-    // Por política de privacidad, nunca se precarga el padrón al abrir el módulo
+    // Nunca se precarga información de clientes sin búsqueda previa
   }
 
   enmascararUltimos4(telefonoStr, ultimos4 = '') {
@@ -102,74 +107,71 @@ export class ClientesView {
     return String(telefonoStr || '••••');
   }
 
-  limpiarVistaPrivada() {
-    this.clientesEncontrados = [];
-    this.expedienteActual = null;
-    this.mascotaSeleccionadaId = null;
-
-    const container = document.getElementById('clientes-resultados-container');
-    const expView = document.getElementById('cliente-expediente-view');
-    if (expView) {
-      expView.classList.add('hidden');
-      expView.innerHTML = '';
-    }
-    if (container) {
-      container.classList.remove('hidden');
-      container.innerHTML = `
-        <div class="p-6 text-center bg-slate-50 rounded-xl border border-dashed border-slate-300 text-slate-500 text-xs">
-          <i class="fa-solid fa-user-shield text-slate-400 text-lg mb-1.5 block"></i>
-          La información de los clientes permanece oculta hasta que busques una cuenta específica.<br />
-          <span class="text-[11px] text-slate-400">Ingresa al menos 2 caracteres (nombre, celular, mascota o código <span class="font-mono font-bold">PET-</span>).</span>
-        </div>`;
-    }
+  cerrarPopupBusqueda() {
+    document.getElementById('modal-busqueda-clientes')?.classList.add('hidden');
   }
 
-  async buscarClientes(terminoExplicito = null) {
+  mostrarVentanaSinCoincidencias() {
+    const modal = document.getElementById('modal-busqueda-clientes');
+    const body = document.getElementById('modal-busqueda-clientes-body');
+    if (!modal || !body) return;
+
+    modal.classList.remove('hidden');
+    body.innerHTML = `
+      <div class="py-6 px-4 text-center space-y-3">
+        <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto text-xl">
+          <i class="fa-solid fa-magnifying-glass"></i>
+        </div>
+        <p class="text-sm font-extrabold text-slate-800">No hay coincidencias</p>
+        <div class="pt-2">
+          <button id="btn-popup-sin-coincidencias-cerrar" type="button"
+            class="px-5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition">
+            Cerrar
+          </button>
+        </div>
+      </div>
+    `;
+
+    document
+      .getElementById('btn-popup-sin-coincidencias-cerrar')
+      ?.addEventListener('click', () => this.cerrarPopupBusqueda());
+  }
+
+  async buscarClientesEnPopup(terminoExplicito = null) {
     const input = document.getElementById('clientes-buscar-input');
     const q = (terminoExplicito !== null ? terminoExplicito : input?.value || '').trim();
-    const container = document.getElementById('clientes-resultados-container');
-    const expView = document.getElementById('cliente-expediente-view');
-    if (!container) return;
+    const modal = document.getElementById('modal-busqueda-clientes');
+    const body = document.getElementById('modal-busqueda-clientes-body');
+    if (!modal || !body) return;
 
     if (q.length < 2) {
-      this.notify('Ingresa al menos 2 caracteres para buscar una cuenta.', 'warning');
-      this.limpiarVistaPrivada();
+      this.mostrarVentanaSinCoincidencias();
       return;
     }
 
     try {
-      if (expView) {
-        expView.classList.add('hidden');
-      }
-      container.classList.remove('hidden');
-      container.innerHTML = `<div class="p-4 text-center text-xs text-slate-400">Buscando coincidencias en el padrón...</div>`;
+      modal.classList.remove('hidden');
+      body.innerHTML = `<div class="p-6 text-center text-xs text-slate-400">Buscando...</div>`;
 
       const data = await this.api.get('/clientes/buscar', { q });
       this.clientesEncontrados = data.resultados || [];
-      this.renderCoincidencias(this.clientesEncontrados);
-    } catch (err) {
-      this.notify(`Error en búsqueda de clientes: ${err.message}`, 'error');
+
+      if (!this.clientesEncontrados.length) {
+        this.mostrarVentanaSinCoincidencias();
+        return;
+      }
+
+      this.renderPopupCoincidencias(this.clientesEncontrados);
+    } catch (_) {
+      this.mostrarVentanaSinCoincidencias();
     }
   }
 
-  renderCoincidencias(clientes) {
-    const container = document.getElementById('clientes-resultados-container');
-    if (!container) return;
+  renderPopupCoincidencias(clientes) {
+    const body = document.getElementById('modal-busqueda-clientes-body');
+    if (!body) return;
 
-    if (!clientes.length) {
-      container.innerHTML = `
-        <div class="p-6 text-center bg-slate-50 rounded-xl border border-dashed border-slate-300 text-slate-500 text-xs">
-          <i class="fa-solid fa-magnifying-glass text-slate-400 text-lg mb-1.5 block"></i>
-          No se encontraron coincidencias para tu búsqueda.
-        </div>`;
-      return;
-    }
-
-    container.innerHTML = `
-      <div class="flex items-center justify-between text-[11px] text-slate-500 px-1">
-        <span>Coincidencias encontradas: <strong class="text-slate-800">${clientes.length}</strong></span>
-        <span class="text-blue-600 font-semibold"><i class="fa-solid fa-hand-pointer mr-1"></i>Haz clic en un cliente para abrir su expediente</span>
-      </div>
+    body.innerHTML = `
       <div class="space-y-2">
         ${clientes
           .map((c) => {
@@ -188,14 +190,14 @@ export class ClientesView {
 
             return `
               <div data-open-cliente-id="${c.id}"
-                class="card-coincidencia-cliente cursor-pointer rounded-xl border border-slate-200 hover:border-blue-500 bg-white hover:bg-blue-50/30 p-3.5 shadow-2xs transition flex flex-col sm:flex-row sm:items-center justify-between gap-3 group">
+                class="card-coincidencia-cliente cursor-pointer rounded-xl border border-slate-200 hover:border-blue-500 bg-white hover:bg-blue-50/40 p-3.5 shadow-2xs transition flex items-center justify-between gap-3 group">
                 <div class="space-y-1.5 min-w-0">
                   <div class="flex flex-wrap items-center gap-2">
                     <span class="w-7 h-7 rounded-lg bg-slate-900 group-hover:bg-blue-600 text-white text-xs font-extrabold inline-flex items-center justify-center transition">
                       ${(c.nombre || 'C').charAt(0).toUpperCase()}
                     </span>
                     <h4 class="font-extrabold text-slate-900 group-hover:text-blue-700 text-sm transition">${c.nombre}</h4>
-                    <span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-mono text-xs font-bold" title="Solo se muestran los últimos 4 dígitos por privacidad">
+                    <span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-mono text-xs font-bold">
                       <i class="fa-solid fa-mobile-screen mr-1 text-slate-400"></i>${telMask}
                     </span>
                   </div>
@@ -203,9 +205,9 @@ export class ClientesView {
                     ${chipsMascotas}
                   </div>
                 </div>
-                <div class="shrink-0 flex items-center justify-end">
+                <div class="shrink-0">
                   <span class="px-3 py-1.5 rounded-xl bg-slate-100 group-hover:bg-blue-600 text-slate-700 group-hover:text-white text-xs font-bold transition inline-flex items-center gap-1.5">
-                    <span>Abrir Expediente</span>
+                    <span>Abrir Perfil</span>
                     <i class="fa-solid fa-arrow-right text-[10px]"></i>
                   </span>
                 </div>
@@ -216,25 +218,29 @@ export class ClientesView {
       </div>
     `;
 
-    container.querySelectorAll('.card-coincidencia-cliente').forEach((card) => {
+    body.querySelectorAll('.card-coincidencia-cliente').forEach((card) => {
       card.addEventListener('click', () => {
         const cid = card.getAttribute('data-open-cliente-id');
         if (cid) {
+          this.cerrarPopupBusqueda();
           this.abrirExpedienteCliente(cid);
         }
       });
     });
   }
 
-  async abrirExpedienteCliente(clienteId, abrirFormularioMascota = false, mascotaIdPreseleccionada = null) {
-    const containerResultados = document.getElementById('clientes-resultados-container');
+  async abrirExpedienteCliente(
+    clienteId,
+    abrirFormularioMascota = false,
+    mascotaIdPreseleccionada = null
+  ) {
+    const widgetExp = document.getElementById('widget-cliente-expediente');
     const expView = document.getElementById('cliente-expediente-view');
-    if (!expView) return;
+    if (!expView || !widgetExp) return;
 
     try {
-      if (containerResultados) containerResultados.classList.add('hidden');
-      expView.classList.remove('hidden');
-      expView.innerHTML = `<div class="p-6 text-center text-xs text-slate-400">Cargando expediente del cliente...</div>`;
+      widgetExp.classList.remove('hidden');
+      expView.innerHTML = `<div class="p-6 text-center text-xs text-slate-400">Cargando perfil y expediente del cliente...</div>`;
 
       const data = await this.api.get(`/clientes/${clienteId}/expediente`);
       this.expedienteActual = data;
@@ -253,9 +259,7 @@ export class ClientesView {
 
       this.renderExpedienteCliente(data, abrirFormularioMascota);
     } catch (err) {
-      this.notify(`No se pudo abrir el expediente: ${err.message}`, 'error');
-      if (containerResultados) containerResultados.classList.remove('hidden');
-      expView.classList.add('hidden');
+      this.notify(`No se pudo abrir el perfil del cliente: ${err.message}`, 'error');
     }
   }
 
@@ -291,38 +295,33 @@ export class ClientesView {
 
     expView.innerHTML = `
       <div class="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 space-y-4">
-        <!-- Barra superior del Expediente del Dueño -->
+        <!-- Barra superior del Perfil del Dueño -->
         <div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-200">
-          <div class="flex items-center gap-2.5">
-            ${
-              this.clientesEncontrados.length
-                ? `<button id="btn-volver-coincidencias" type="button"
-                    class="px-2.5 py-1.5 rounded-xl bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-bold transition inline-flex items-center gap-1">
-                    <i class="fa-solid fa-arrow-left text-[10px]"></i>
-                    <span>Coincidencias</span>
-                  </button>`
-                : ''
-            }
-            <div>
-              <div class="flex flex-wrap items-center gap-2">
-                <h4 class="text-base font-extrabold text-slate-900">${c.nombre}</h4>
-                <span class="px-2.5 py-0.5 rounded-lg bg-slate-900 text-emerald-400 font-mono text-xs font-bold" title="Solo últimos 4 dígitos visibles">
-                  <i class="fa-solid fa-phone mr-1 text-[10px]"></i>${telMask}
-                </span>
-              </div>
-              <p class="text-[11px] text-slate-500 mt-0.5">
-                ${c.email ? `<i class="fa-solid fa-envelope mr-1"></i>${c.email} · ` : ''}
-                <strong>Notas cliente:</strong> ${c.notas || 'Sin observaciones registradas'}
-              </p>
+          <div>
+            <div class="flex flex-wrap items-center gap-2">
+              <h4 class="text-base font-extrabold text-slate-900">${c.nombre}</h4>
+              <span class="px-2.5 py-0.5 rounded-lg bg-slate-900 text-emerald-400 font-mono text-xs font-bold">
+                <i class="fa-solid fa-phone mr-1 text-[10px]"></i>${telMask}
+              </span>
             </div>
+            <p class="text-[11px] text-slate-500 mt-0.5">
+              ${c.email ? `<i class="fa-solid fa-envelope mr-1"></i>${c.email} · ` : ''}
+              <strong>Notas:</strong> ${c.notas || 'Sin observaciones'}
+            </p>
           </div>
 
-          <!-- Botón Agregar Mascota que vive dentro del perfil del dueño -->
-          <button id="btn-toggle-form-mascota-dueno" type="button"
-            class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold shadow-xs transition inline-flex items-center gap-1.5">
-            <i class="fa-solid fa-paw"></i>
-            <span>+ Agregar Mascota</span>
-          </button>
+          <div class="flex items-center gap-2">
+            <!-- Botón Agregar Mascota dentro del perfil del dueño -->
+            <button id="btn-toggle-form-mascota-dueno" type="button"
+              class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold shadow-xs transition inline-flex items-center gap-1.5">
+              <i class="fa-solid fa-paw"></i>
+              <span>+ Agregar Mascota</span>
+            </button>
+            <button id="btn-cerrar-expediente-cliente" type="button" title="Cerrar perfil del cliente"
+              class="px-2.5 py-2 rounded-xl bg-white hover:bg-slate-100 border border-slate-200 text-slate-600 text-xs font-bold transition">
+              Cerrar Perfil
+            </button>
+          </div>
         </div>
 
         <!-- Resumen de Actividad con la Estética a Nivel Cliente -->
@@ -345,7 +344,7 @@ export class ClientesView {
           <div class="bg-white rounded-xl p-3 border border-slate-200/90">
             <span class="text-[10px] uppercase font-bold text-slate-400 block">Mascotas del Dueño</span>
             <p class="text-base font-extrabold text-blue-600 mt-0.5">${mascotas.length}</p>
-            <p class="text-[10px] text-slate-500">Haz clic en una para su detalle</p>
+            <p class="text-[10px] text-slate-500">Da clic en una para ver detalle</p>
           </div>
         </div>
 
@@ -356,7 +355,7 @@ export class ClientesView {
           <div class="flex items-center justify-between border-b border-slate-100 pb-2">
             <h5 class="text-xs font-extrabold text-slate-800 flex items-center gap-1.5">
               <i class="fa-solid fa-paw text-emerald-600"></i>
-              <span>Registrar Nueva Mascota en el Perfil de <span class="text-emerald-700">${c.nombre}</span></span>
+              <span>Agregar Mascota al Perfil de <span class="text-emerald-700">${c.nombre}</span></span>
             </h5>
             <button id="btn-cerrar-form-mascota-dueno" type="button" class="text-slate-400 hover:text-slate-600 text-xs font-bold">
               Ocultar
@@ -375,7 +374,7 @@ export class ClientesView {
 
               <!-- Caja de Raza con Buscador y Lista Sugerida Desplegable (incluye Mestiza) -->
               <div class="relative" id="raza-combobox-wrapper">
-                <label class="block text-xs font-bold text-slate-600 mb-1">Raza (Buscar o elegir) *</label>
+                <label class="block text-xs font-bold text-slate-600 mb-1">Raza *</label>
                 <div class="relative">
                   <input id="mascota-raza" type="text" required autocomplete="off"
                     placeholder="Buscar raza (Ej. Mestiza, Schnauzer...)"
@@ -437,7 +436,7 @@ export class ClientesView {
             </div>
 
             <button type="submit" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition">
-              <i class="fa-solid fa-barcode mr-1"></i>Guardar Mascota en el Perfil de ${c.nombre} y Generar Código PET-
+              <i class="fa-solid fa-barcode mr-1"></i>Guardar Mascota y Generar Código PET-
             </button>
           </form>
         </div>
@@ -446,9 +445,8 @@ export class ClientesView {
         <div class="space-y-2.5">
           <div class="flex items-center justify-between">
             <h5 class="text-xs font-extrabold text-slate-800 uppercase tracking-wider">
-              <i class="fa-solid fa-shield-dog text-blue-600 mr-1"></i>Mascotas de ${c.nombre} (${mascotas.length})
+              <i class="fa-solid fa-shield-dog text-blue-600 mr-1"></i>Mascotas (${mascotas.length})
             </h5>
-            <span class="text-[11px] text-slate-500">Haz clic en cualquier mascota para ver su ficha clínica y actividad</span>
           </div>
 
           ${
@@ -489,7 +487,7 @@ export class ClientesView {
                     .join('')}
                 </div>`
               : `<div class="p-4 text-center bg-white rounded-xl border border-dashed border-slate-300 text-slate-400 text-xs">
-                  Este cliente aún no tiene mascotas registradas. Usa el formulario de arriba para agregar la primera mascota.
+                  Este cliente aún no tiene mascotas registradas.
                 </div>`
           }
 
@@ -503,7 +501,7 @@ export class ClientesView {
         <div class="bg-white rounded-xl p-4 border border-slate-200 space-y-2.5">
           <div class="flex items-center justify-between border-b border-slate-100 pb-2">
             <h5 class="text-xs font-extrabold text-slate-800 uppercase tracking-wider">
-              <i class="fa-solid fa-clock-rotate-left text-indigo-600 mr-1"></i>Historial de Actividad en la Estética (Nivel Cliente)
+              <i class="fa-solid fa-clock-rotate-left text-indigo-600 mr-1"></i>Actividad en la Estética (Nivel Cliente)
             </h5>
             <span class="text-[11px] font-semibold text-slate-500">${historialCliente.length} registros</span>
           </div>
@@ -577,7 +575,7 @@ export class ClientesView {
             </div>
             <div>
               <div class="flex flex-wrap items-center gap-2">
-                <h6 class="text-sm font-extrabold text-slate-900">Expediente de Mascota: ${m.nombre}</h6>
+                <h6 class="text-sm font-extrabold text-slate-900">Detalle de Mascota: ${m.nombre}</h6>
                 <span class="px-2 py-0.5 rounded-md bg-blue-100 text-blue-800 text-xs font-bold">${m.raza}</span>
                 <span class="font-mono text-xs font-bold px-2.5 py-0.5 rounded bg-slate-900 text-emerald-400">
                   <i class="fa-solid fa-barcode mr-1"></i>${m.codigo_barras || 'SIN-CODIGO'}
@@ -663,15 +661,16 @@ export class ClientesView {
   }
 
   bindExpedienteEvents(data) {
+    const widgetExp = document.getElementById('widget-cliente-expediente');
     const expView = document.getElementById('cliente-expediente-view');
-    const containerResultados = document.getElementById('clientes-resultados-container');
     if (!expView) return;
 
-    const btnVolver = document.getElementById('btn-volver-coincidencias');
-    if (btnVolver) {
-      btnVolver.addEventListener('click', () => {
-        expView.classList.add('hidden');
-        if (containerResultados) containerResultados.classList.remove('hidden');
+    const btnCerrarExp = document.getElementById('btn-cerrar-expediente-cliente');
+    if (btnCerrarExp && widgetExp) {
+      btnCerrarExp.addEventListener('click', () => {
+        widgetExp.classList.add('hidden');
+        expView.innerHTML = '';
+        this.expedienteActual = null;
       });
     }
 
@@ -735,7 +734,7 @@ export class ClientesView {
       if (!coincidencias.length) {
         dropdown.innerHTML = `
           <div class="px-3 py-2 text-[11px] text-slate-500">
-            Se usará raza personalizada: <strong class="text-slate-800">"${inputRaza.value}"</strong>
+            Raza personalizada: <strong class="text-slate-800">"${inputRaza.value}"</strong>
           </div>`;
         return;
       }
@@ -818,10 +817,7 @@ export class ClientesView {
         notas,
       });
       const nuevo = res.cliente;
-      this.notify(
-        `Cliente ${nuevo.nombre} registrado. Abriendo su expediente para agregar mascotas...`,
-        'success'
-      );
+      this.notify(`Cliente ${nuevo.nombre} registrado exitosamente.`, 'success');
       document.getElementById('form-crear-cliente')?.reset();
 
       if (nuevo?.id) {
@@ -851,7 +847,7 @@ export class ClientesView {
       document.getElementById('mascota-corte')?.value.trim() || '';
 
     if (!cliente_id) {
-      this.notify('Abre primero el expediente del dueño de la mascota.', 'warning');
+      this.notify('Abre primero el perfil del dueño de la mascota.', 'warning');
       return;
     }
     if (!nombre || !raza) {
@@ -874,7 +870,7 @@ export class ClientesView {
       });
 
       this.notify(
-        `Mascota "${nombre}" agregada al perfil del cliente con código: ${res.codigo_barras}`,
+        `Mascota "${nombre}" agregada al perfil con código: ${res.codigo_barras}`,
         'success'
       );
 
