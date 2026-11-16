@@ -134,6 +134,7 @@ body {
   display: none !important;
 }
 
+#app-shell.menu-top #btn-toggle-menu-pos,
 #app-shell.menu-top #btn-checkout-turno {
   width: auto !important;
   white-space: nowrap;

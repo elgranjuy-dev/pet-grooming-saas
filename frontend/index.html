@@ -76,7 +76,7 @@
     <!-- MENÚ DE NAVEGACIÓN (LATERAL IZQUIERDO O SUPERIOR) -->
     <aside id="sidebar" class="bg-slate-900 text-slate-100 flex flex-col justify-between shrink-0 h-full overflow-y-auto select-none">
       <div class="sidebar-top-group flex flex-col">
-        <!-- Cabecera de Marca + Controles de Posición/Colapso -->
+        <!-- Cabecera de Marca + Botón Colapsar -->
         <div class="sidebar-header p-3.5 flex items-center justify-between border-b border-slate-800 gap-2">
           <div class="flex items-center gap-2.5 overflow-hidden">
             <div class="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white shrink-0">
@@ -87,17 +87,10 @@
               <p id="sidebar-sucursal-nombre" class="text-[11px] text-emerald-400 font-medium truncate">Sucursal Matriz</p>
             </div>
           </div>
-          <div class="flex items-center gap-1 shrink-0">
-            <button id="btn-toggle-menu-pos" type="button" title="Cambiar posición del menú (Izquierda / Arriba)"
-              class="px-2 h-7 rounded-lg bg-slate-800/90 hover:bg-blue-600 text-slate-300 hover:text-white flex items-center justify-center gap-1.5 text-[11px] font-semibold transition">
-              <i id="icon-toggle-menu-pos" class="fa-solid fa-arrow-up-from-bracket text-xs"></i>
-              <span id="label-toggle-menu-pos" class="sidebar-label">Menú Arriba</span>
-            </button>
-            <button id="btn-toggle-sidebar" type="button" title="Colapsar/Expandir menú lateral"
-              class="w-7 h-7 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition">
-              <i class="fa-solid fa-bars text-sm"></i>
-            </button>
-          </div>
+          <button id="btn-toggle-sidebar" type="button" title="Colapsar/Expandir menú lateral"
+            class="w-7 h-7 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition shrink-0">
+            <i class="fa-solid fa-bars text-sm"></i>
+          </button>
         </div>
 
         <!-- Menú de Navegación por Pestañas -->
@@ -140,7 +133,7 @@
         </nav>
       </div>
 
-      <!-- Tarjeta de Turno Activo + Check-Out -->
+      <!-- Tarjeta de Turno Activo + Cambio de Posición + Check-Out -->
       <div class="sidebar-footer p-2.5 border-t border-slate-800 space-y-2 shrink-0">
         <div class="sidebar-shift-details bg-slate-800/80 rounded-xl p-2.5 text-xs space-y-0.5">
           <div class="flex items-center justify-between gap-2">
@@ -152,6 +145,12 @@
             Entrada: <span id="sidebar-hora-entrada" class="text-emerald-400 font-semibold">--:--</span>
           </p>
         </div>
+
+        <button id="btn-toggle-menu-pos" type="button" title="Cambiar posición del menú (Izquierda / Arriba)"
+          class="w-full py-1.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold transition flex items-center justify-center gap-2">
+          <i id="icon-toggle-menu-pos" class="fa-solid fa-arrow-up-from-bracket text-xs"></i>
+          <span id="label-toggle-menu-pos" class="sidebar-label">Menú Arriba</span>
+        </button>
 
         <button id="btn-checkout-turno" type="button" title="Cerrar turno y registrar corte de caja"
           class="w-full py-2 px-3 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition flex items-center justify-center gap-2">
