@@ -35,6 +35,30 @@
         <p class="text-xs text-blue-100 mt-1">Control Operativo Multi-Tenant &amp; Multi-Sucursal</p>
       </div>
 
+      <div class="px-6 pt-5 pb-2 border-b border-slate-100 bg-slate-50/70">
+        <details class="group">
+          <summary class="cursor-pointer list-none flex items-center justify-between text-xs font-bold text-slate-700">
+            <span><i class="fa-solid fa-cloud text-amber-500 mr-1.5"></i>Acceso Corporativo SaaS (Vincular por Correo)</span>
+            <i class="fa-solid fa-chevron-down text-[10px] text-slate-400 group-open:rotate-180 transition"></i>
+          </summary>
+          <form id="form-login-saas" class="mt-3 space-y-2.5 pb-2">
+            <div>
+              <label class="block text-[10px] font-bold uppercase text-slate-500 mb-1">Correo del Propietario</label>
+              <input id="saas-email-input" type="email" value="admin@thebluedog.mx" placeholder="admin@thebluedog.mx"
+                class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs" />
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold uppercase text-slate-500 mb-1">Contraseña Corporativa</label>
+              <input id="saas-password-input" type="password" placeholder="admin1234"
+                class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs" />
+            </div>
+            <button type="submit" class="w-full py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition">
+              Conectar Organización
+            </button>
+          </form>
+        </details>
+      </div>
+
       <form id="form-login-pin" class="p-6 space-y-4">
         <div>
           <label for="login-org-select" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
@@ -65,9 +89,9 @@
 
         <div>
           <label for="login-pin-input" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
-            4. PIN de Seguridad (Check-In)
+            4. PIN de Seguridad (Por defecto: 1234)
           </label>
-          <input id="login-pin-input" type="password" inputmode="numeric" maxlength="8" required placeholder="••••"
+          <input id="login-pin-input" type="password" inputmode="numeric" maxlength="8" required placeholder="1234"
             class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-center text-lg font-bold tracking-widest focus:outline-none focus:ring-2 focus:ring-blue-600" />
         </div>
 

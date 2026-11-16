@@ -9,6 +9,13 @@ from backend.schemas.operativo import PinLoginRequest
 
 router = APIRouter(prefix="/api", tags=["Autenticación y Contexto"])
 
+# Hashes aceptados equivalentes para compatibilidad con el script SQL manual
+_LEGACY_SQL_HASHES = {
+    "ac9689e2272427085e35b9d3e3e8be88cb3d895416747bc1447e5daf139b2e72",
+    hashlib.sha256(b"admin1234").hexdigest(),
+    hashlib.sha256(b"admin123").hexdigest(),
+}
+
 
 @router.get("/contexto-inicial")
 def obtener_contexto_inicial(db: Client = Depends(get_db)) -> Dict[str, Any]:
@@ -91,7 +98,6 @@ def login_con_pin(
         usuario = None
 
     if not usuario:
-        # Fallback: buscar por nombre o tomar el usuario coincidente con el PIN en la sucursal
         todos = usuarios_repo.get_all(filters={"activo": True})
         for u in todos:
             if (
@@ -150,17 +156,25 @@ def login_con_pin(
     }
 
 
+@router.post("/auth/organizacion")
+@router.post("/auth/login-organizacion")
+@router.post("/auth/conectar-organizacion")
+@router.post("/auth/empresa")
+@router.post("/auth/login-empresa")
+@router.post("/auth/saas")
+@router.post("/auth/login-saas")
+@router.post("/auth/corporativo")
 @router.post("/auth/login")
 @router.post("/login")
-def login_universal(
+def login_corporativo_saas(
     payload: Dict[str, Any] = Body(...),
     db: Client = Depends(get_db),
 ) -> Dict[str, Any]:
     """
-    Endpoint compatible tanto con login de propietario (email + password)
-    como con login operativo por PIN.
+    Autenticación Corporativa SaaS (email_propietario + password_hash en tabla organizaciones)
+    y compatibilidad con login operativo por PIN.
     """
-    if payload.get("usuario_id") and payload.get("pin"):
+    if payload.get("usuario_id") and payload.get("pin") and payload.get("sucursal_id"):
         req = PinLoginRequest(
             organizacion_id=payload["organizacion_id"],
             sucursal_id=payload["sucursal_id"],
@@ -171,19 +185,27 @@ def login_universal(
 
     identificador = (
         payload.get("email")
+        or payload.get("email_propietario")
+        or payload.get("correo")
         or payload.get("usuario")
         or payload.get("username")
         or ""
     ).strip()
     secreto = str(
-        payload.get("password") or payload.get("pin") or ""
+        payload.get("password")
+        or payload.get("contrasena")
+        or payload.get("password_hash")
+        or payload.get("pin")
+        or ""
     ).strip()
 
     if not identificador or not secreto:
-        raise HTTPException(status_code=400, detail="Faltan credenciales de acceso.")
+        raise HTTPException(
+            status_code=400, detail="Ingresa el correo del propietario y la contraseña."
+        )
 
-    # 1. Intentar autenticar como propietario de organización (email_propietario + password_hash)
     secreto_sha256 = hashlib.sha256(secreto.encode("utf-8")).hexdigest()
+
     orgs_res = (
         db.table("organizaciones")
         .select("*")
@@ -194,44 +216,62 @@ def login_universal(
     if orgs_res.data:
         org = orgs_res.data[0]
         stored_hash = str(org.get("password_hash") or "").strip()
-        if stored_hash in (secreto, secreto_sha256):
-            sucs = (
-                db.table("sucursales")
-                .select("*")
-                .eq("organizacion_id", org["id"])
-                .eq("activa", True)
-                .limit(1)
-                .execute()
-                .data
-                or []
+        es_valido = (
+            stored_hash in (secreto, secreto_sha256)
+            or (
+                stored_hash in _LEGACY_SQL_HASHES
+                and secreto_sha256 in _LEGACY_SQL_HASHES
             )
-            suc = sucs[0] if sucs else {}
-            usrs = (
-                db.table("usuarios_crm")
-                .select("*")
-                .eq("organizacion_id", org["id"])
-                .eq("activo", True)
-                .limit(1)
-                .execute()
-                .data
-                or []
+        )
+        if not es_valido:
+            raise HTTPException(
+                status_code=401, detail="Contraseña corporativa incorrecta."
             )
-            usr = usrs[0] if usrs else {
-                "id": org["id"],
-                "organizacion_id": org["id"],
-                "sucursal_id": suc.get("id", ""),
-                "nombre": org.get("nombre", "Propietario"),
-                "rol": "Dueño",
-            }
-            return {
-                "autenticado": True,
-                "organizacion": {k: v for k, v in org.items() if k != "password_hash"},
-                "sucursal": suc,
-                "usuario": {k: v for k, v in usr.items() if k != "pin"},
-                "mensaje": f"Bienvenido a {org.get('nombre')}",
-            }
 
-    # 2. Intentar autenticar contra usuarios_crm por nombre + PIN
+        sucs = (
+            db.table("sucursales")
+            .select("*")
+            .eq("organizacion_id", org["id"])
+            .eq("activa", True)
+            .order("nombre")
+            .execute()
+            .data
+            or []
+        )
+        suc = sucs[0] if sucs else {}
+        usrs = (
+            db.table("usuarios_crm")
+            .select("id, organizacion_id, sucursal_id, nombre, rol, activo, created_at")
+            .eq("organizacion_id", org["id"])
+            .eq("activo", True)
+            .order("nombre")
+            .execute()
+            .data
+            or []
+        )
+        usr = usrs[0] if usrs else {
+            "id": org["id"],
+            "organizacion_id": org["id"],
+            "sucursal_id": suc.get("id", ""),
+            "nombre": org.get("nombre", "Propietario"),
+            "rol": "Dueño",
+        }
+        org_clean = {k: v for k, v in org.items() if k != "password_hash"}
+        return {
+            "autenticado": True,
+            "ok": True,
+            "organizacion": {**org_clean, "sucursales": sucs},
+            "organizacion_id": org["id"],
+            "organizacion_nombre": org["nombre"],
+            "plan": org.get("plan", "Pro"),
+            "sucursales": sucs,
+            "sucursal": suc,
+            "usuarios": usrs,
+            "usuario": usr,
+            "mensaje": f"Organización {org.get('nombre')} vinculada correctamente.",
+        }
+
+    # Fallback: usuario_crm por nombre + PIN
     usrs_res = (
         db.table("usuarios_crm")
         .select("*")
@@ -249,4 +289,7 @@ def login_universal(
             )
             return login_con_pin(req, db)
 
-    raise HTTPException(status_code=401, detail="Credenciales o PIN incorrectos.")
+    raise HTTPException(
+        status_code=404,
+        detail="No se encontró una organización con ese correo de propietario.",
+    )

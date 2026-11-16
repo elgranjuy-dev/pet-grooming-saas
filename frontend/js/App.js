@@ -2,7 +2,7 @@
  * App.js
  * Controlador principal POO del Frontend Operativo.
  * Inicializa ApiClient, SessionManager y las vistas modulares, gestionando
- * el flujo de login por PIN, navegación entre pestañas, barra lateral colapsable y Check-Out.
+ * el flujo de login corporativo SaaS + PIN, navegación entre pestañas, barra lateral colapsable y Check-Out.
  */
 import { ApiClient } from './core/ApiClient.js';
 import { SessionManager } from './core/SessionManager.js';
@@ -24,7 +24,7 @@ export class App {
       agenda: new AgendaView(this.api, notifyBound),
       clientes: new ClientesView(this.api, notifyBound),
       inventario: new InventarioCajaView(this.api, notifyBound),
-      caja: null, // Comparte controlador con InventarioCajaView
+      caja: null,
       config: new ConfigPersonalView(this.api, notifyBound),
     };
     this.views.caja = this.views.inventario;
@@ -32,7 +32,6 @@ export class App {
   }
 
   async init() {
-    // Inicializar listeners de vistas
     this.views.dashboard.init();
     this.views.agenda.init();
     this.views.clientes.init();
@@ -77,6 +76,7 @@ export class App {
     const orgSelect = document.getElementById('login-org-select');
     const sucSelect = document.getElementById('login-sucursal-select');
     const formLogin = document.getElementById('form-login-pin');
+    const formSaaS = document.getElementById('form-login-saas');
 
     if (orgSelect) {
       orgSelect.addEventListener('change', async (e) => {
@@ -96,6 +96,39 @@ export class App {
         e.preventDefault();
         await this.ejecutarLoginPin();
       });
+    }
+
+    if (formSaaS) {
+      formSaaS.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await this.ejecutarLoginCorporativoSaaS();
+      });
+    }
+  }
+
+  async ejecutarLoginCorporativoSaaS() {
+    const email = document.getElementById('saas-email-input')?.value.trim();
+    const password = document.getElementById('saas-password-input')?.value.trim();
+
+    if (!email || !password) {
+      this.notify('Ingresa el correo del propietario y la contraseña.', 'warning');
+      return;
+    }
+
+    try {
+      const res = await this.session.conectarOrganizacionSaaS({ email, password });
+      const orgSelect = document.getElementById('login-org-select');
+      if (orgSelect && res.organizacion) {
+        orgSelect.value = res.organizacion.id;
+        await this.poblarSucursalesLogin(res.organizacion.id);
+      }
+      this.notify(
+        res.mensaje || `Organización ${res.organizacion_nombre} vinculada.`,
+        'success'
+      );
+      document.getElementById('login-pin-input')?.focus();
+    } catch (err) {
+      this.notify(err.message || 'Error al vincular organización', 'error');
     }
   }
 
@@ -193,7 +226,6 @@ export class App {
     document.getElementById('login-screen')?.classList.add('hidden');
     document.getElementById('app-shell')?.classList.remove('hidden');
 
-    // Poblar datos del turno activo en barra lateral y encabezado
     const setText = (id, val) => {
       const el = document.getElementById(id);
       if (el) el.textContent = val;

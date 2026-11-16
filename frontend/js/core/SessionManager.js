@@ -1,6 +1,7 @@
 /**
  * SessionManager.js
- * Gestiona el flujo de login (contexto inicial, usuarios por sucursal, validación de PIN),
+ * Gestiona el flujo de login (vinculación corporativa SaaS por correo/contraseña,
+ * contexto inicial, usuarios por sucursal, validación de PIN),
  * persiste la sesión en sessionStorage y aplica permisos visuales por rol.
  */
 export class SessionManager {
@@ -48,6 +49,25 @@ export class SessionManager {
     const data = await this.api.get('/contexto-inicial');
     this.organizaciones = data.organizaciones || [];
     this.sucursales = data.sucursales || [];
+    return data;
+  }
+
+  async conectarOrganizacionSaaS({ email, password }) {
+    const data = await this.api.post('/auth/organizacion', {
+      email,
+      password,
+    });
+    if (data.organizacion) {
+      const idx = this.organizaciones.findIndex((o) => o.id === data.organizacion.id);
+      if (idx >= 0) {
+        this.organizaciones[idx] = data.organizacion;
+      } else {
+        this.organizaciones.unshift(data.organizacion);
+      }
+    }
+    if (Array.isArray(data.sucursales) && data.sucursales.length) {
+      this.sucursales = data.sucursales;
+    }
     return data;
   }
 
@@ -137,7 +157,6 @@ export class SessionManager {
       }
     });
 
-    // Elementos exclusivos de administración/dueño
     const adminOnlyEls = document.querySelectorAll('[data-role-admin-only]');
     const isAdmin = ['Dueño', 'Administrador'].includes(session.rol);
     adminOnlyEls.forEach((el) => {
