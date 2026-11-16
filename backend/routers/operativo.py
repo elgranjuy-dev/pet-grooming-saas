@@ -1111,19 +1111,40 @@ def listar_personal(
     org_id, suc_id = ctx["organizacion_id"], ctx["sucursal_id"]
     usuarios_repo = BranchRepository(db, "usuarios_crm", org_id, suc_id)
     asistencias_repo = BranchRepository(db, "asistencias", org_id, suc_id)
+    bitacora_repo = BranchRepository(db, "bitacora_auditoria", org_id, suc_id)
 
     personal = usuarios_repo.get_all(
         columns="id, organizacion_id, sucursal_id, nombre, rol, activo, created_at",
         order_by="nombre",
     )
     asistencias = asistencias_repo.get_all(order_by="hora_entrada", desc=True, limit=50)
+    bitacora = bitacora_repo.get_all(order_by="fecha", desc=True, limit=100)
 
     return {
         "personal": personal,
         "usuarios": personal,
         "asistencias": asistencias,
+        "bitacora": bitacora,
         "total": len(personal),
     }
+
+
+@router.get("/bitacora")
+def listar_bitacora(
+    organizacion_id: Optional[str] = Query(default=None),
+    sucursal_id: Optional[str] = Query(default=None),
+    x_organizacion_id: Optional[str] = Header(default=None),
+    x_sucursal_id: Optional[str] = Header(default=None),
+    db: Client = Depends(get_db),
+) -> Dict[str, Any]:
+    ctx = _resolver_contexto(
+        db, organizacion_id, sucursal_id, x_organizacion_id, x_sucursal_id
+    )
+    bitacora_repo = BranchRepository(
+        db, "bitacora_auditoria", ctx["organizacion_id"], ctx["sucursal_id"]
+    )
+    eventos = bitacora_repo.get_all(order_by="fecha", desc=True, limit=100)
+    return {"bitacora": eventos, "total": len(eventos)}
 
 
 @router.post("/personal")

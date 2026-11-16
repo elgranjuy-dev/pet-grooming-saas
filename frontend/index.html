@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pet Grooming SaaS — Panel Operativo Multi-Sucursal</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <!-- FontAwesome CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+  <!-- Google Fonts Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="./css/styles.css" />
+</head>
+<body class="min-h-screen antialiased selection:bg-blue-600 selection:text-white">
+
+  <!-- Contenedor de Notificaciones Toast -->
+  <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-sm"></div>
+
+  <!-- =====================================================================
+       PANTALLA DE LOGIN MULTI-TENANT (Organización -> Sucursal -> Usuario -> PIN)
+  ====================================================================== -->
+  <section id="login-screen" class="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 p-4">
+    <div class="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden">
+      <div class="bg-gradient-to-r from-blue-600 to-indigo-700 p-6 text-white text-center">
+        <div class="w-14 h-14 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center mx-auto mb-3 text-2xl">
+          <i class="fa-solid fa-paw"></i>
+        </div>
+        <h1 class="text-xl font-extrabold tracking-tight">Pet Grooming SaaS</h1>
+        <p class="text-xs text-blue-100 mt-1">Control Operativo Multi-Tenant &amp; Multi-Sucursal</p>
+      </div>
+
+      <form id="form-login-pin" class="p-6 space-y-4">
+        <div>
+          <label for="login-org-select" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+            1. Organización (Tenant)
+          </label>
+          <select id="login-org-select" required class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-600">
+            <option value="">Cargando organizaciones...</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="login-sucursal-select" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+            2. Sucursal Activa
+          </label>
+          <select id="login-sucursal-select" required class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-600">
+            <option value="">Selecciona una sucursal...</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="login-usuario-select" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+            3. Colaborador en Turno
+          </label>
+          <select id="login-usuario-select" required class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-600">
+            <option value="">Selecciona tu usuario...</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="login-pin-input" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+            4. PIN de Seguridad (Check-In)
+          </label>
+          <input id="login-pin-input" type="password" inputmode="numeric" maxlength="8" required placeholder="••••"
+            class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-center text-lg font-bold tracking-widest focus:outline-none focus:ring-2 focus:ring-blue-600" />
+        </div>
+
+        <button type="submit" class="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-lg shadow-blue-600/30 transition flex items-center justify-center gap-2">
+          <i class="fa-solid fa-right-to-bracket"></i>
+          <span>Iniciar Turno y Registrar Entrada</span>
+        </button>
+      </form>
+    </div>
+  </section>
+
+  <!-- =====================================================================
+       SHELL PRINCIPAL DEL SISTEMA OPERATIVO
+  ====================================================================== -->
+  <div id="app-shell" class="hidden min-h-screen flex bg-slate-50">
+
+    <!-- BARRA LATERAL COLAPSABLE -->
+    <aside id="sidebar" class="bg-slate-900 text-slate-100 flex flex-col justify-between shrink-0 min-h-screen select-none">
+      <div>
+        <!-- Cabecera de Marca + Botón Colapsar -->
+        <div class="p-4 flex items-center justify-between border-b border-slate-800">
+          <div class="flex items-center gap-2.5 overflow-hidden">
+            <div class="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white shrink-0">
+              <i class="fa-solid fa-dog"></i>
+            </div>
+            <div class="sidebar-brand-text leading-tight">
+              <p id="sidebar-org-nombre" class="font-extrabold text-sm text-white truncate">The Blue Dog</p>
+              <p id="sidebar-sucursal-nombre" class="text-[11px] text-emerald-400 font-medium truncate">Sucursal Matriz</p>
+            </div>
+          </div>
+          <button id="btn-toggle-sidebar" type="button" title="Colapsar/Expandir menú"
+            class="w-8 h-8 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+        </div>
+
+        <!-- Menú de Navegación por Pestañas -->
+        <nav class="p-3 space-y-1.5">
+          <button type="button" data-tab-target="dashboard"
+            class="nav-btn active w-full flex items-center px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition">
+            <i class="fa-solid fa-chart-pie w-5 mr-2.5 text-center"></i>
+            <span class="sidebar-label">Dashboard</span>
+          </button>
+
+          <button type="button" data-tab-target="agenda"
+            class="nav-btn w-full flex items-center px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition">
+            <i class="fa-solid fa-calendar-check w-5 mr-2.5 text-center"></i>
+            <span class="sidebar-label">Agenda y Turnos</span>
+          </button>
+
+          <button type="button" data-tab-target="clientes"
+            class="nav-btn w-full flex items-center px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition">
+            <i class="fa-solid fa-shield-dog w-5 mr-2.5 text-center"></i>
+            <span class="sidebar-label">Clientes y Expedientes</span>
+          </button>
+
+          <button type="button" data-tab-target="inventario"
+            class="nav-btn w-full flex items-center px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition">
+            <i class="fa-solid fa-boxes-stacked w-5 mr-2.5 text-center"></i>
+            <span class="sidebar-label">Inventario y Escáner</span>
+          </button>
+
+          <button type="button" data-tab-target="caja"
+            class="nav-btn w-full flex items-center px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition">
+            <i class="fa-solid fa-cash-register w-5 mr-2.5 text-center"></i>
+            <span class="sidebar-label">Caja y Cobros</span>
+          </button>
+
+          <button type="button" data-tab-target="config"
+            class="nav-btn w-full flex items-center px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition">
+            <i class="fa-solid fa-sliders w-5 mr-2.5 text-center"></i>
+            <span class="sidebar-label">Configuración y Personal</span>
+          </button>
+        </nav>
+      </div>
+
+      <!-- Tarjeta de Turno Activo + Check-Out -->
+      <div class="p-3 border-t border-slate-800 space-y-2">
+        <div class="sidebar-shift-details bg-slate-800/80 rounded-xl p-3 text-xs space-y-1">
+          <div class="flex items-center justify-between">
+            <span class="text-slate-400">En turno:</span>
+            <span id="sidebar-usuario-rol" class="px-2 py-0.5 rounded bg-blue-600/30 text-blue-300 font-bold text-[10px]">Dueño</span>
+          </div>
+          <p id="sidebar-usuario-nombre" class="font-bold text-white truncate">Administrador</p>
+          <p class="text-[11px] text-slate-400">
+            Entrada: <span id="sidebar-hora-entrada" class="text-emerald-400 font-semibold">--:--</span>
+          </p>
+        </div>
+
+        <button id="btn-checkout-turno" type="button" title="Cerrar turno y registrar corte de caja"
+          class="w-full py-2.5 px-3 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition flex items-center justify-center gap-2">
+          <i class="fa-solid fa-right-from-bracket"></i>
+          <span class="sidebar-label">Check-Out / Corte</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <main class="flex-1 p-5 md:p-7 overflow-y-auto space-y-6">
+
+      <!-- =================================================================
+           VISTA 1: DASHBOARD
+      ================================================================== -->
+      <section id="view-dashboard" class="tab-view space-y-6">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 class="text-xl font-extrabold text-slate-900">Dashboard Operativo de Sucursal</h2>
+            <p class="text-xs text-slate-500">Métricas en tiempo real filtradas estrictamente para la sucursal activa.</p>
+          </div>
+          <button id="btn-refresh-dashboard" type="button"
+            class="px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-xs font-semibold text-slate-700 shadow-sm transition">
+            <i class="fa-solid fa-rotate mr-1"></i>Actualizar KPIs
+          </button>
+        </div>
+
+        <!-- Tarjetas KPI -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
+            <div class="flex items-center justify-between text-xs font-semibold text-slate-500">
+              <span>Ingresos de Sucursal</span>
+              <i class="fa-solid fa-sack-dollar text-emerald-600 text-base"></i>
+            </div>
+            <p id="kpi-ingresos-totales" class="text-2xl font-extrabold text-slate-900 mt-2">$0.00</p>
+            <p id="kpi-ingresos-hoy" class="text-xs text-emerald-600 font-medium mt-1">Hoy: $0.00</p>
+          </div>
+
+          <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
+            <div class="flex items-center justify-between text-xs font-semibold text-slate-500">
+              <span>Citas de Hoy</span>
+              <i class="fa-solid fa-calendar-day text-blue-600 text-base"></i>
+            </div>
+            <p id="kpi-citas-hoy" class="text-2xl font-extrabold text-slate-900 mt-2">0</p>
+            <p id="kpi-citas-resumen" class="text-xs text-slate-500 mt-1">0 completadas · 0 pendientes</p>
+          </div>
+
+          <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
+            <div class="flex items-center justify-between text-xs font-semibold text-slate-500">
+              <span>Padrón Organización</span>
+              <i class="fa-solid fa-users text-indigo-600 text-base"></i>
+            </div>
+            <p id="kpi-clientes-total" class="text-2xl font-extrabold text-slate-900 mt-2">0</p>
+            <p id="kpi-mascotas-total" class="text-xs text-slate-500 mt-1">0 mascotas registradas</p>
+          </div>
+
+          <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
+            <div class="flex items-center justify-between text-xs font-semibold text-slate-500">
+              <span>Alertas de Stock</span>
+              <i class="fa-solid fa-triangle-exclamation text-amber-500 text-base"></i>
+            </div>
+            <p id="kpi-alertas-stock" class="text-2xl font-extrabold text-slate-900 mt-2">0</p>
+            <p class="text-xs text-amber-600 mt-1">Productos bajo stock mínimo</p>
+          </div>
+        </div>
+
+        <!-- Gráficas Chart.js -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+            <h3 class="text-sm font-bold text-slate-800 mb-3">Ingresos por Método de Pago</h3>
+            <div class="h-60">
+              <canvas id="chart-ingresos-metodo"></canvas>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+            <h3 class="text-sm font-bold text-slate-800 mb-3">Demanda por Servicio</h3>
+            <div class="h-60">
+              <canvas id="chart-citas-servicio"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Alertas de Stock + Próximas Citas -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-3">
+            <h3 class="text-sm font-bold text-slate-800">Alertas de Reabastecimiento</h3>
+            <div id="dashboard-alertas-stock" class="space-y-2"></div>
+          </div>
+
+          <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+            <h3 class="text-sm font-bold text-slate-800 mb-3">Últimas Citas en Sucursal</h3>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="border-b border-slate-200 text-[11px] uppercase text-slate-400">
+                    <th class="py-2 px-3">Fecha / Hora</th>
+                    <th class="py-2 px-3">Servicio</th>
+                    <th class="py-2 px-3">Estilista</th>
+                    <th class="py-2 px-3">Estado</th>
+                  </tr>
+                </thead>
+                <tbody id="dashboard-proximas-citas"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           VISTA 2: AGENDA Y TURNOS (AvailabilityEngine)
+      ================================================================== -->
+      <section id="view-agenda" class="tab-view hidden space-y-6">
+        <div>
+          <h2 class="text-xl font-extrabold text-slate-900">Agenda Inteligente y Control de Citas</h2>
+          <p class="text-xs text-slate-500">El motor AvailabilityEngine cruza plantilla semanal, horario de comida, excepciones y citas traslapadas.</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <!-- Panel Izquierdo: Nueva Cita + Motor de Disponibilidad -->
+          <div class="lg:col-span-5 bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+            <h3 class="text-sm font-bold text-slate-800 border-b border-slate-100 pb-2">
+              <i class="fa-solid fa-calendar-plus text-blue-600 mr-1.5"></i>Agendar Nueva Cita
+            </h3>
+
+            <!-- Buscador rápido de mascota -->
+            <div class="space-y-2">
+              <label class="block text-xs font-bold text-slate-600">1. Buscar Mascota (Teléfono, Dueño, Mascota o Código PET-)</label>
+              <div class="flex gap-2">
+                <input id="agenda-buscar-mascota-input" type="text" placeholder="Ej. 5500, Max o PET-..."
+                  class="flex-1 rounded-xl border border-slate-300 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-600" />
+                <button id="btn-agenda-buscar-mascota" type="button"
+                  class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold">
+                  <i class="fa-solid fa-magnifying-glass"></i>
+                </button>
+              </div>
+              <div id="agenda-mascota-resultados" class="space-y-1.5 max-h-40 overflow-y-auto"></div>
+              <div id="agenda-mascota-seleccionada" class="hidden text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg p-2"></div>
+            </div>
+
+            <form id="form-crear-cita" class="space-y-3">
+              <input id="agenda-mascota-id" type="hidden" required />
+              <input id="agenda-hora-seleccionada" type="hidden" required />
+
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-bold text-slate-600 mb-1">2. Servicio</label>
+                  <select id="agenda-servicio-select" class="w-full rounded-xl border border-slate-300 px-2.5 py-2 text-xs">
+                    <option value="Baño Básico">Baño Básico</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-600 mb-1">Fecha de Cita</label>
+                  <input id="agenda-fecha" type="date" required class="w-full rounded-xl border border-slate-300 px-2.5 py-2 text-xs" />
+                </div>
+              </div>
+
+              <div class="grid grid-cols-3 gap-2">
+                <div>
+                  <label class="block text-xs font-bold text-slate-600 mb-1">Duración (min)</label>
+                  <input id="agenda-duracion" type="number" min="15" step="15" value="60" class="w-full rounded-xl border border-slate-300 px-2.5 py-2 text-xs" />
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-600 mb-1">Precio ($)</label>
+                  <input id="agenda-precio" type="number" min="0" step="0.01" value="350" class="w-full rounded-xl border border-slate-300 px-2.5 py-2 text-xs" />
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-600 mb-1">Estilista</label>
+                  <select id="agenda-estilista" class="w-full rounded-xl border border-slate-300 px-2.5 py-2 text-xs">
+                    <option value="Por asignar">Por asignar</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Bloques de Disponibilidad -->
+              <div class="space-y-2 pt-1">
+                <div class="flex items-center justify-between">
+                  <label class="text-xs font-bold text-slate-600">3. Horarios Disponibles</label>
+                  <button id="btn-consultar-disponibilidad" type="button" class="text-xs font-semibold text-blue-600 hover:underline">
+                    <i class="fa-solid fa-arrows-rotate mr-1"></i>Recalcular cupos
+                  </button>
+                </div>
+                <div id="agenda-slots-container" class="grid grid-cols-3 sm:grid-cols-4 gap-2"></div>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1">Notas de Servicio</label>
+                <input id="agenda-notas" type="text" placeholder="Indicaciones especiales..."
+                  class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs" />
+              </div>
+
+              <button type="submit" class="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow transition">
+                <i class="fa-solid fa-calendar-check mr-1"></i>Confirmar y Agendar Cita
+              </button>
+            </form>
+          </div>
+
+          <!-- Panel Derecho: Listado de Citas del Día -->
+          <div class="lg:col-span-7 bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
+              <h3 class="text-sm font-bold text-slate-800">Citas Programadas en Sucursal</h3>
+              <div class="flex items-center gap-2">
+                <input id="citas-filtro-fecha" type="date" class="rounded-xl border border-slate-300 px-2.5 py-1.5 text-xs" />
+                <button id="btn-filtrar-citas" type="button" class="px-3 py-1.5 rounded-xl bg-slate-800 text-white text-xs font-semibold">
+                  Filtrar
+                </button>
+              </div>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="border-b border-slate-200 text-[11px] uppercase text-slate-400">
+                    <th class="py-2 px-3">Hora</th>
+                    <th class="py-2 px-3">Mascota / Dueño</th>
+                    <th class="py-2 px-3">Servicio</th>
+                    <th class="py-2 px-3">Estilista</th>
+                    <th class="py-2 px-3">Precio</th>
+                    <th class="py-2 px-3 text-right">Acción</th>
+                  </tr>
+                </thead>
+                <tbody id="agenda-citas-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           VISTA 3: CLIENTES Y EXPEDIENTES CLÍNICOS (Buscador Privado + Hash PET-)
+      ================================================================== -->
+      <section id="view-clientes" class="tab-view hidden space-y-6">
+        <div>
+          <h2 class="text-xl font-extrabold text-slate-900">Clientes, Expedientes Clínicos y Lealtad</h2>
+          <p class="text-xs text-slate-500">Por políticas de privacidad anti-robo de cartera, el padrón completo está oculto. Realiza búsquedas puntuales.</p>
+        </div>
+
+        <!-- Buscador Privado -->
+        <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+          <form id="form-buscar-clientes" class="flex flex-col sm:flex-row gap-3">
+            <div class="relative flex-1">
+              <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400 text-sm"></i>
+              <input id="clientes-buscar-input" type="text"
+                placeholder="Buscar por teléfono, nombre del cliente, nombre de mascota o código PET-..."
+                class="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600" />
+            </div>
+            <button type="submit" class="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs">
+              Buscar Expediente
+            </button>
+          </form>
+
+          <div id="clientes-resultados-container" class="space-y-3">
+            <div class="p-6 text-center bg-slate-50 rounded-xl border border-dashed border-slate-300 text-slate-500 text-xs">
+              Ingresa un teléfono, nombre o escanea una tarjeta <span class="font-mono font-bold">PET-</span> para consultar su expediente.
+            </div>
+          </div>
+        </div>
+
+        <!-- Formularios de Alta: Cliente y Mascota -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- Alta de Cliente -->
+          <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+            <h3 class="text-sm font-bold text-slate-800 border-b border-slate-100 pb-2">
+              <i class="fa-solid fa-user-plus text-blue-600 mr-1.5"></i>Registrar Nuevo Cliente
+            </h3>
+            <form id="form-crear-cliente" class="space-y-3">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-bold text-slate-600 mb-1">Nombre Completo *</label>
+                  <input id="cliente-nombre" type="text" required placeholder="Ej. María González"
+                    class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs" />
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-600 mb-1">Teléfono (WhatsApp) *</label>
+                  <input id="cliente-telefono" type="text" required placeholder="Ej. 5512345678"
+                    class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs" />
+                </div>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-bold text-slate-600 mb-1">Correo Electrónico</label>
+                  <input id="cliente-email" type="email" placeholder="cliente@correo.com"
+                    class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs" />
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-600 mb-1">Notas</label>
+                  <input id="cliente-notas" type="text" placeholder="Preferencias del cliente..."
+                    class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs" />
+                </div>
+              </div>
+              <button type="submit" class="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition">
+                Guardar Cliente
+              </button>
+            </form>
+          </div>
+
+          <!-- Alta de Mascota (Genera código PET- con SecurityManager) -->
+          <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+              <h3 class="text-sm font-bold text-slate-800">
+                <i class="fa-solid fa-paw text-emerald-600 mr-1.5"></i>Registrar Mascota y Generar Código PET-
+              </h3>
+              <span id="mascota-cliente-nombre-badge" class="hidden text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-700"></span>
+            </div>
+
+            <form id="form-crear-mascota" class="space-y-3">
+              <input id="mascota-cliente-id" type="hidden" required />
+
+              <div class="grid grid-cols-3 gap-2">
+                <div>
+                  <label class="block text-xs font-bold text-slate-600 mb-1">Nombre Mascota *</label>
+                  <input id="mascota-nombre" type="text" required placeholder="Ej. Rocky"
+                    class="w-full rounded-xl border border-slate-300 px-2.5 py-2 text-xs" />
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-600 mb-1">Raza *</label>
+                  <input id="mascota-raza" type="text" required placeholder="Ej. Schnauzer"
+                    class="w-full rounded-xl border border-slate-300 px-2.5 py-2 text-xs" />
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-600 mb-1">Peso (kg)</label>
+                  <input id="mascota-peso" type="number" step="0.1" value="8"
+                    class="w-full rounded-xl border border-slate-300 px-2.5 py-2 text-xs" />
+                </div>
+              </div>
+
+              <div class="grid grid-cols-3 gap-2">
+                <div>
+                  <label class="block text-xs font-bold text-slate-600 mb-1">Edad</label>
+                  <input id="mascota-edad" type="text" placeholder="Ej. 3 años"
+                    class="w-full rounded-xl border border-slate-300 px-2.5 py-2 text-xs" />
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-600 mb-1">Temperamento</label>
+                  <select id="mascota-temperamento" class="w-full rounded-xl border border-slate-300 px-2.5 py-2 text-xs">
+                    <option value="Dócil">Dócil</option>
+                    <option value="Nervioso">Nervioso</option>
+                    <option value="Reactivo / Bozal">Reactivo / Bozal</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-600 mb-1">Alergias Médicas</label>
+                  <input id="mascota-alergias" type="text" value="Ninguna"
+                    class="w-full rounded-xl border border-slate-300 px-2.5 py-2 text-xs" />
+                </div>
+              </div>
+
+              <div class="grid grid-cols-3 gap-2">
+                <div>
+                  <label class="block text-xs font-bold text-slate-600 mb-1"># Navaja</label>
+                  <input id="mascota-navaja" type="text" placeholder="Ej. #7F"
+                    class="w-full rounded-xl border border-slate-300 px-2.5 py-2 text-xs" />
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-600 mb-1">Shampoo</label>
+                  <input id="mascota-shampoo" type="text" placeholder="Ej. Avena Hipoalergénico"
+                    class="w-full rounded-xl border border-slate-300 px-2.5 py-2 text-xs" />
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-600 mb-1">Estilo de Corte</label>
+                  <input id="mascota-corte" type="text" placeholder="Ej. Osito / Estándar"
+                    class="w-full rounded-xl border border-slate-300 px-2.5 py-2 text-xs" />
+                </div>
+              </div>
+
+              <button type="submit" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition">
+                <i class="fa-solid fa-barcode mr-1"></i>Guardar Mascota y Generar Hash PET-
+              </button>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           VISTA 4: INVENTARIO Y ESCÁNER INTELIGENTE
+      ================================================================== -->
+      <section id="view-inventario" class="tab-view hidden space-y-6">
+        <div>
+          <h2 class="text-xl font-extrabold text-slate-900">Inventario de Sucursal y Escáner Inteligente</h2>
+          <p class="text-xs text-slate-500">Control de insumos, productos de venta en mostrador y lector de códigos PET- o códigos de producto.</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <!-- Escáner + Alta de Producto -->
+          <div class="lg:col-span-5 space-y-6">
+            <!-- Escáner -->
+            <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-3">
+              <h3 class="text-sm font-bold text-slate-800 border-b border-slate-100 pb-2">
+                <i class="fa-solid fa-barcode text-blue-600 mr-1.5"></i>Terminal de Escaneo Rápido
+              </h3>
+              <form id="form-escanear-codigo" class="space-y-3">
+                <div>
+                  <label class="block text-xs font-bold text-slate-600 mb-1">Código PET- o Nombre/ID de Producto</label>
+                  <input id="escaner-codigo-input" type="text" required placeholder="Escanea o escribe PET-... o nombre de producto"
+                    class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs font-mono" />
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                  <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Acción</label>
+                    <select id="escaner-accion" class="w-full rounded-xl border border-slate-300 px-2 py-2 text-xs">
+                      <option value="consulta">Consultar</option>
+                      <option value="descontar_insumo">Descontar Insumo</option>
+                      <option value="vender_producto">Vender en Mostrador</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Cantidad</label>
+                    <input id="escaner-cantidad" type="number" min="1" value="1"
+                      class="w-full rounded-xl border border-slate-300 px-2.5 py-2 text-xs" />
+                  </div>
+                  <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Pago (si venta)</label>
+                    <select id="escaner-metodo-pago" class="w-full rounded-xl border border-slate-300 px-2 py-2 text-xs">
+                      <option value="Efectivo">Efectivo</option>
+                      <option value="Tarjeta">Tarjeta</option>
+                      <option value="Transferencia">Transferencia</option>
+                    </select>
+                  </div>
+                </div>
+                <button type="submit" class="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs">
+                  Procesar Código
+                </button>
+              </form>
+              <div id="escaner-resultado-box" class="hidden"></div>
+            </div>
+
+            <!-- Alta Producto -->
+            <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-3">
+              <h3 class="text-sm font-bold text-slate-800 border-b border-slate-100 pb-2">
+                <i class="fa-solid fa-box-open text-emerald-600 mr-1.5"></i>Nuevo Producto / Insumo
+              </h3>
+              <form id="form-crear-producto" class="space-y-3">
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Nombre *</label>
+                    <input id="prod-nombre" type="text" required placeholder="Ej. Shampoo Antipulgas 1L"
+                      class="w-full rounded-xl border border-slate-300 px-2.5 py-2 text-xs" />
+                  </div>
+                  <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Categoría</label>
+                    <select id="prod-categoria" class="w-full rounded-xl border border-slate-300 px-2.5 py-2 text-xs">
+                      <option value="Insumo">Insumo Cabina</option>
+                      <option value="Boutique">Boutique / Venta</option>
+                      <option value="Farmacia">Farmacia</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                  <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Stock Inicial</label>
+                    <input id="prod-stock" type="number" min="0" value="10"
+                      class="w-full rounded-xl border border-slate-300 px-2.5 py-2 text-xs" />
+                  </div>
+                  <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Stock Mínimo</label>
+                    <input id="prod-stock-min" type="number" min="0" value="5"
+                      class="w-full rounded-xl border border-slate-300 px-2.5 py-2 text-xs" />
+                  </div>
+                  <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Precio Venta ($)</label>
+                    <input id="prod-precio" type="number" min="0" step="0.01" value="250"
+                      class="w-full rounded-xl border border-slate-300 px-2.5 py-2 text-xs" />
+                  </div>
+                </div>
+                <button type="submit" class="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs">
+                  Registrar en Inventario
+                </button>
+              </form>
+            </div>
+          </div>
+
+          <!-- Tabla de Inventario -->
+          <div class="lg:col-span-7 bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+            <h3 class="text-sm font-bold text-slate-800 mb-3">Existencias en Sucursal</h3>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="border-b border-slate-200 text-[11px] uppercase text-slate-400">
+                    <th class="py-2 px-3">Producto</th>
+                    <th class="py-2 px-3">Categoría</th>
+                    <th class="py-2 px-3">Stock</th>
+                    <th class="py-2 px-3">Precio Venta</th>
+                    <th class="py-2 px-3 text-right">Acción</th>
+                  </tr>
+                </thead>
+                <tbody id="inventario-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           VISTA 5: CAJA Y COBROS
+      ================================================================== -->
+      <section id="view-caja" class="tab-view hidden space-y-6">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 class="text-xl font-extrabold text-slate-900">Caja y Movimientos Financieros</h2>
+            <p class="text-xs text-slate-500">Registro de cobros automáticos por citas completadas, ventas de mostrador e ingresos manuales.</p>
+          </div>
+          <div class="bg-emerald-600 text-white px-4 py-2 rounded-xl shadow">
+            <span class="text-[11px] uppercase font-bold block opacity-80">Total Acumulado Sucursal</span>
+            <span id="caja-total-ingresos" class="text-lg font-extrabold">$0.00 MXN</span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div class="lg:col-span-4 bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-3">
+            <h3 class="text-sm font-bold text-slate-800 border-b border-slate-100 pb-2">
+              Registrar Ingreso Manual
+            </h3>
+            <form id="form-crear-caja" class="space-y-3">
+              <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1">Concepto *</label>
+                <input id="caja-concepto" type="text" required placeholder="Ej. Venta correa premium / Propina"
+                  class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs" />
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-xs font-bold text-slate-600 mb-1">Monto ($) *</label>
+                  <input id="caja-monto" type="number" min="1" step="0.01" required placeholder="0.00"
+                    class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs" />
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-600 mb-1">Método de Pago</label>
+                  <select id="caja-metodo-pago" class="w-full rounded-xl border border-slate-300 px-2.5 py-2 text-xs">
+                    <option value="Efectivo">Efectivo</option>
+                    <option value="Tarjeta">Tarjeta</option>
+                    <option value="Transferencia">Transferencia</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1">Responsable / Estilista</label>
+                <input id="caja-estilista" type="text" value="General"
+                  class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs" />
+              </div>
+              <button type="submit" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs">
+                Registrar Movimiento en Caja
+              </button>
+            </form>
+          </div>
+
+          <div class="lg:col-span-8 bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+            <h3 class="text-sm font-bold text-slate-800 mb-3">Historial de Movimientos de Caja</h3>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="border-b border-slate-200 text-[11px] uppercase text-slate-400">
+                    <th class="py-2 px-3">Fecha</th>
+                    <th class="py-2 px-3">Concepto</th>
+                    <th class="py-2 px-3">Método</th>
+                    <th class="py-2 px-3">Estilista</th>
+                    <th class="py-2 px-3 text-right">Monto</th>
+                  </tr>
+                </thead>
+                <tbody id="caja-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           VISTA 6: CONFIGURACIÓN, HORARIOS, SERVICIOS, PERSONAL Y BITÁCORA
+      ================================================================== -->
+      <section id="view-config" class="tab-view hidden space-y-6">
+        <div>
+          <h2 class="text-xl font-extrabold text-slate-900">Configuración de Sucursal, Personal y Auditoría</h2>
+          <p class="text-xs text-slate-500">Administra horarios semanales, capacidad de estilistas, catálogo de servicios, personal y bitácora.</p>
+        </div>
+
+        <!-- Plantilla Semanal + Parámetros de Agenda -->
+        <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
+            <h3 class="text-sm font-bold text-slate-800">
+              <i class="fa-solid fa-clock text-blue-600 mr-1.5"></i>Plantilla Semanal de Horarios y Capacidad
+            </h3>
+            <form id="form-agenda-config" class="flex flex-wrap items-center gap-2 text-xs">
+              <label class="font-semibold text-slate-600">Asignación:</label>
+              <select id="cfg-modo-asignacion" class="border border-slate-300 rounded-lg px-2 py-1">
+                <option value="global">Capacidad Global</option>
+                <option value="estilista">Por Estilista</option>
+              </select>
+              <label class="font-semibold text-slate-600 ml-2">Intervalo (min):</label>
+              <input id="cfg-intervalo-minutos" type="number" min="15" step="15" value="60"
+                class="w-16 border border-slate-300 rounded-lg px-2 py-1 text-center" />
+              <button type="submit" class="px-3 py-1.5 rounded-lg bg-slate-800 text-white font-semibold">
+                Guardar Config
+              </button>
+            </form>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="border-b border-slate-200 text-[11px] uppercase text-slate-400">
+                  <th class="py-2 px-2">Día</th>
+                  <th class="py-2 px-2 text-center">Abierto</th>
+                  <th class="py-2 px-2">Apertura</th>
+                  <th class="py-2 px-2">Cierre</th>
+                  <th class="py-2 px-2">Estilistas</th>
+                  <th class="py-2 px-2">Comida Inicio</th>
+                  <th class="py-2 px-2">Comida Fin</th>
+                  <th class="py-2 px-2">En Comida</th>
+                </tr>
+              </thead>
+              <tbody id="cfg-plantilla-tbody"></tbody>
+            </table>
+          </div>
+
+          <div class="flex justify-end">
+            <button id="btn-guardar-plantilla-semanal" type="button"
+              class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs">
+              <i class="fa-solid fa-floppy-disk mr-1"></i>Guardar Plantilla Semanal
+            </button>
+          </div>
+        </div>
+
+        <!-- Catálogo de Servicios + Excepciones de Agenda -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-3">
+            <h3 class="text-sm font-bold text-slate-800">Catálogo de Servicios de Sucursal</h3>
+            <form id="form-crear-servicio" class="grid grid-cols-1 sm:grid-cols-4 gap-2">
+              <input id="srv-nombre" type="text" required placeholder="Nombre servicio"
+                class="sm:col-span-2 rounded-xl border border-slate-300 px-2.5 py-2 text-xs" />
+              <input id="srv-duracion" type="number" min="15" step="15" value="60" placeholder="Minutos"
+                class="rounded-xl border border-slate-300 px-2.5 py-2 text-xs" />
+              <input id="srv-precio" type="number" min="0" step="0.01" placeholder="Precio $"
+                class="rounded-xl border border-slate-300 px-2.5 py-2 text-xs" />
+              <button type="submit" class="sm:col-span-4 py-2 rounded-xl bg-slate-900 text-white font-bold text-xs">
+                Agregar Servicio al Catálogo
+              </button>
+            </form>
+            <div id="cfg-servicios-lista" class="space-y-1.5 max-h-48 overflow-y-auto"></div>
+          </div>
+
+          <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-3">
+            <h3 class="text-sm font-bold text-slate-800">Excepciones y Días Festivos</h3>
+            <form id="form-crear-excepcion" class="space-y-2 text-xs">
+              <div class="grid grid-cols-2 gap-2">
+                <input id="exc-fecha" type="date" required class="rounded-xl border border-slate-300 px-2.5 py-2" />
+                <input id="exc-motivo" type="text" placeholder="Motivo (Ej. Día festivo)"
+                  class="rounded-xl border border-slate-300 px-2.5 py-2" />
+              </div>
+              <div class="flex items-center justify-between gap-2">
+                <label class="flex items-center gap-1.5 font-semibold text-slate-700">
+                  <input id="exc-cerrado" type="checkbox" class="rounded text-blue-600" />
+                  <span>Cerrar todo el día</span>
+                </label>
+                <div class="flex items-center gap-1.5">
+                  <span class="text-slate-600">Estilistas disp.:</span>
+                  <input id="exc-estilistas" type="number" min="0" value="0"
+                    class="w-16 rounded-lg border border-slate-300 px-2 py-1 text-center" />
+                </div>
+              </div>
+              <button type="submit" class="w-full py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs">
+                Registrar Excepción de Agenda
+              </button>
+            </form>
+            <div id="cfg-excepciones-lista" class="space-y-1.5 max-h-48 overflow-y-auto"></div>
+          </div>
+        </div>
+
+        <!-- Personal de Sucursal + Bitácora de Auditoría -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div class="lg:col-span-5 bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-3">
+            <h3 class="text-sm font-bold text-slate-800">Personal y PINs de Acceso</h3>
+            <form id="form-crear-personal" class="grid grid-cols-3 gap-2 text-xs">
+              <input id="per-nombre" type="text" required placeholder="Nombre"
+                class="rounded-xl border border-slate-300 px-2.5 py-2" />
+              <select id="per-rol" class="rounded-xl border border-slate-300 px-2 py-2">
+                <option value="Estilista">Estilista</option>
+                <option value="Cajero">Cajero</option>
+                <option value="Administrador">Administrador</option>
+                <option value="Dueño">Dueño</option>
+              </select>
+              <input id="per-pin" type="password" inputmode="numeric" minlength="4" maxlength="8" required placeholder="PIN (4+)"
+                class="rounded-xl border border-slate-300 px-2.5 py-2 text-center font-mono" />
+              <button type="submit" class="col-span-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold">
+                Dar de Alta Colaborador
+              </button>
+            </form>
+
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="border-b border-slate-200 text-[11px] uppercase text-slate-400">
+                    <th class="py-2 px-3">Nombre</th>
+                    <th class="py-2 px-3">Rol</th>
+                    <th class="py-2 px-3">Estado</th>
+                  </tr>
+                </thead>
+                <tbody id="personal-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="lg:col-span-7 bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-3">
+            <h3 class="text-sm font-bold text-slate-800">Bitácora de Auditoría en Tiempo Real</h3>
+            <div class="overflow-x-auto max-h-80">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="border-b border-slate-200 text-[11px] uppercase text-slate-400">
+                    <th class="py-2 px-2">Fecha</th>
+                    <th class="py-2 px-2">Usuario</th>
+                    <th class="py-2 px-2">Acción</th>
+                    <th class="py-2 px-2">Detalle</th>
+                  </tr>
+                </thead>
+                <tbody id="bitacora-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Controlador Principal POO (ES Module) -->
+  <script type="module" src="./js/App.js"></script>
+</body>
+</html>
