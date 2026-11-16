@@ -1154,14 +1154,66 @@ export class ClientesView {
     });
   }
 
+  _hoyLocalISO() {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
+  _sumarDiasISO(fechaStr, dias) {
+    const partes = String(fechaStr || this._hoyLocalISO())
+      .slice(0, 10)
+      .split('-')
+      .map(Number);
+    const dt = new Date(partes[0], (partes[1] || 1) - 1, partes[2] || 1);
+    dt.setDate(dt.getDate() + dias);
+    const y = dt.getFullYear();
+    const m = String(dt.getMonth() + 1).padStart(2, '0');
+    const day = String(dt.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
+  _actualizarBadgeSeleccionModalCita() {
+    const badge = document.getElementById('modal-cita-seleccion-badge');
+    const fecha = document.getElementById('modal-cita-fecha')?.value || '';
+    const hora =
+      this.slotSeleccionadoModalCita ||
+      document.getElementById('modal-cita-hora-seleccionada')?.value ||
+      '';
+    if (!badge) return;
+
+    if (fecha && hora) {
+      badge.className =
+        'px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 text-[11px] font-extrabold';
+      badge.innerHTML = `<i class="fa-solid fa-check mr-1"></i>${fecha} a las ${hora} hrs`;
+    } else {
+      badge.className =
+        'px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/30 text-[11px] font-extrabold';
+      badge.textContent = 'Selecciona un bloque disponible';
+    }
+  }
+
   initModalAgendarCitaEvents() {
+    this.modalCitaVistaSemana = false;
+
     const modal = document.getElementById('modal-agendar-cita-mascota');
     const btnCerrar = document.getElementById('btn-cerrar-modal-agendar-cita-mascota');
     const btnCancelar = document.getElementById('btn-cancelar-modal-cita-mascota');
     const btnRecalcular = document.getElementById('btn-modal-cita-recalcular');
+    const btnToggleSemana = document.getElementById('btn-modal-cita-toggle-semana');
+    const btnPrev = document.getElementById('btn-modal-cita-prev');
+    const btnHoy = document.getElementById('btn-modal-cita-hoy');
+    const btnNext = document.getElementById('btn-modal-cita-next');
     const selectServicio = document.getElementById('modal-cita-servicio-select');
     const inputFecha = document.getElementById('modal-cita-fecha');
+    const inputDuracion = document.getElementById('modal-cita-duracion');
     const formCita = document.getElementById('form-modal-cita-mascota');
+
+    const btnBuscarMascota = document.getElementById('btn-modal-cita-buscar-mascota');
+    const inputBuscarMascota = document.getElementById('modal-cita-buscar-mascota-input');
+    const btnCambiarMascota = document.getElementById('btn-modal-cita-cambiar-mascota');
 
     const cerrar = () => modal?.classList.add('hidden');
     if (btnCerrar) btnCerrar.addEventListener('click', cerrar);
@@ -1172,11 +1224,85 @@ export class ClientesView {
       });
     }
 
+    if (btnCambiarMascota) {
+      btnCambiarMascota.addEventListener('click', () => {
+        const boxBuscador = document.getElementById('modal-cita-buscador-mascota-box');
+        if (boxBuscador) {
+          boxBuscador.classList.remove('hidden');
+          inputBuscarMascota?.focus();
+        }
+      });
+    }
+
+    if (btnBuscarMascota) {
+      btnBuscarMascota.addEventListener('click', () => this.buscarMascotaDentroDeModalCita());
+    }
+    if (inputBuscarMascota) {
+      inputBuscarMascota.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          this.buscarMascotaDentroDeModalCita();
+        }
+      });
+    }
+
+    if (btnToggleSemana) {
+      btnToggleSemana.addEventListener('click', () => {
+        this.modalCitaVistaSemana = !this.modalCitaVistaSemana;
+        const lbl = document.getElementById('label-modal-cita-toggle-semana');
+        if (lbl) {
+          lbl.textContent = this.modalCitaVistaSemana
+            ? 'Ver Solo Día Seleccionado'
+            : 'Ver Semana Completa';
+        }
+        this.consultarDisponibilidadModalCita();
+      });
+    }
+
+    const cambiarFechaConBloqueoPasado = (nuevaFecha) => {
+      const hoy = this._hoyLocalISO();
+      const msgPasado = document.getElementById('modal-cita-bloqueo-pasado-msg');
+      if (nuevaFecha < hoy) {
+        if (inputFecha) inputFecha.value = hoy;
+        if (msgPasado) msgPasado.classList.remove('hidden');
+        this.notify('No se pueden agendar citas en fechas pasadas.', 'warning');
+      } else {
+        if (inputFecha) inputFecha.value = nuevaFecha;
+        if (msgPasado) msgPasado.classList.add('hidden');
+      }
+      this.consultarDisponibilidadModalCita();
+    };
+
+    if (btnPrev) {
+      btnPrev.addEventListener('click', () => {
+        const actual = inputFecha?.value || this._hoyLocalISO();
+        const salto = this.modalCitaVistaSemana ? -7 : -1;
+        cambiarFechaConBloqueoPasado(this._sumarDiasISO(actual, salto));
+      });
+    }
+    if (btnHoy) {
+      btnHoy.addEventListener('click', () => {
+        cambiarFechaConBloqueoPasado(this._hoyLocalISO());
+      });
+    }
+    if (btnNext) {
+      btnNext.addEventListener('click', () => {
+        const actual = inputFecha?.value || this._hoyLocalISO();
+        const salto = this.modalCitaVistaSemana ? 7 : 1;
+        cambiarFechaConBloqueoPasado(this._sumarDiasISO(actual, salto));
+      });
+    }
+
     if (btnRecalcular) {
       btnRecalcular.addEventListener('click', () => this.consultarDisponibilidadModalCita());
     }
     if (inputFecha) {
-      inputFecha.addEventListener('change', () => this.consultarDisponibilidadModalCita());
+      inputFecha.addEventListener('change', () => {
+        cambiarFechaConBloqueoPasado(inputFecha.value || this._hoyLocalISO());
+      });
+    }
+    if (inputDuracion) {
+      inputDuracion.addEventListener('change', () => this.consultarDisponibilidadModalCita());
     }
     if (selectServicio) {
       selectServicio.addEventListener('change', (e) => {
@@ -1198,28 +1324,137 @@ export class ClientesView {
     }
   }
 
-  async abrirModalAgendarCitaMascota(mascotaInfo) {
+  async buscarMascotaDentroDeModalCita() {
+    const input = document.getElementById('modal-cita-buscar-mascota-input');
+    const cont = document.getElementById('modal-cita-mascota-resultados');
+    if (!input || !cont) return;
+
+    const q = input.value.trim();
+    if (q.length < 2) {
+      cont.innerHTML = `<p class="text-[11px] text-amber-600 font-semibold">Escribe al menos 2 caracteres para buscar.</p>`;
+      return;
+    }
+
+    try {
+      cont.innerHTML = `<p class="text-[11px] text-slate-400">Buscando mascotas...</p>`;
+      const data = await this.api.get('/clientes/buscar', { q });
+      const clientes = data.resultados || [];
+      const items = [];
+      clientes.forEach((cli) => {
+        (cli.mascotas || []).forEach((m) => {
+          items.push({
+            id: m.id,
+            nombre: m.nombre,
+            raza: m.raza || 'Mestiza',
+            codigo: m.codigo_barras || '',
+            cliente_nombre: cli.nombre,
+            cliente_telefono: cli.telefono || '',
+          });
+        });
+      });
+
+      if (!items.length) {
+        cont.innerHTML = `<p class="text-[11px] text-rose-600 font-semibold">No se encontraron mascotas con "${q}".</p>`;
+        return;
+      }
+
+      cont.innerHTML = items
+        .map(
+          (it) => `
+          <button type="button"
+            data-pick-pet-id="${it.id}"
+            data-pick-pet-nombre="${it.nombre}"
+            data-pick-pet-raza="${it.raza}"
+            data-pick-cli-nombre="${it.cliente_nombre}"
+            class="w-full text-left p-2 rounded-xl border border-slate-200 bg-white hover:border-blue-500 hover:bg-blue-50/50 flex items-center justify-between transition">
+            <div>
+              <span class="font-extrabold text-slate-900 text-xs">${it.nombre}</span>
+              <span class="text-[11px] text-slate-500">(${it.raza}) · Dueño: ${it.cliente_nombre} (${it.cliente_telefono})</span>
+            </div>
+            <span class="px-2 py-0.5 rounded-lg bg-blue-600 text-white text-[10px] font-bold">Seleccionar</span>
+          </button>
+        `
+        )
+        .join('');
+
+      cont.querySelectorAll('[data-pick-pet-id]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const pid = btn.getAttribute('data-pick-pet-id');
+          const pnom = btn.getAttribute('data-pick-pet-nombre');
+          const praza = btn.getAttribute('data-pick-pet-raza');
+          const cnom = btn.getAttribute('data-pick-cli-nombre');
+
+          const idInput = document.getElementById('modal-cita-mascota-id');
+          const labelEl = document.getElementById('modal-cita-mascota-label');
+          const boxBuscador = document.getElementById('modal-cita-buscador-mascota-box');
+          const btnCambiar = document.getElementById('btn-modal-cita-cambiar-mascota');
+
+          if (idInput) idInput.value = pid;
+          if (labelEl) {
+            labelEl.textContent = `${pnom} (${praza}) · Dueño: ${cnom}`;
+          }
+          if (boxBuscador) boxBuscador.classList.add('hidden');
+          if (btnCambiar) btnCambiar.classList.remove('hidden');
+          cont.innerHTML = '';
+          input.value = '';
+        });
+      });
+    } catch (err) {
+      cont.innerHTML = `<p class="text-[11px] text-rose-600">Error: ${err.message}</p>`;
+    }
+  }
+
+  async abrirModalAgendarCitaMascota(mascotaInfo = null, prefill = {}) {
     const modal = document.getElementById('modal-agendar-cita-mascota');
     const idInput = document.getElementById('modal-cita-mascota-id');
     const labelEl = document.getElementById('modal-cita-mascota-label');
     const fechaInput = document.getElementById('modal-cita-fecha');
     const horaInput = document.getElementById('modal-cita-hora-seleccionada');
     const notasInput = document.getElementById('modal-cita-notas');
+    const boxBuscador = document.getElementById('modal-cita-buscador-mascota-box');
+    const btnCambiar = document.getElementById('btn-modal-cita-cambiar-mascota');
+    const msgPasado = document.getElementById('modal-cita-bloqueo-pasado-msg');
     if (!modal || !idInput) return;
 
-    this.slotSeleccionadoModalCita = null;
-    idInput.value = mascotaInfo.id;
-    if (horaInput) horaInput.value = '';
-    if (notasInput) notasInput.value = '';
-    if (labelEl) {
-      labelEl.textContent = `${mascotaInfo.nombre} (${mascotaInfo.raza}) · Dueño: ${mascotaInfo.cliente_nombre}`;
+    const hoy = this._hoyLocalISO();
+    if (fechaInput) {
+      fechaInput.min = hoy;
+    }
+    if (msgPasado) {
+      msgPasado.classList.add('hidden');
     }
 
-    const today = new Date().toISOString().slice(0, 10);
-    if (fechaInput && !fechaInput.value) {
-      fechaInput.value = today;
+    if (mascotaInfo && mascotaInfo.id) {
+      idInput.value = mascotaInfo.id;
+      if (labelEl) {
+        labelEl.textContent = `${mascotaInfo.nombre} (${mascotaInfo.raza || 'Mascota'}) · Dueño: ${mascotaInfo.cliente_nombre || ''}`;
+      }
+      if (boxBuscador) boxBuscador.classList.add('hidden');
+      if (btnCambiar) btnCambiar.classList.remove('hidden');
+    } else {
+      idInput.value = '';
+      if (labelEl) {
+        labelEl.textContent = 'Ninguna mascota seleccionada aún — búscala arriba para continuar';
+      }
+      if (boxBuscador) boxBuscador.classList.remove('hidden');
+      if (btnCambiar) btnCambiar.classList.add('hidden');
     }
 
+    const fechaInicial =
+      prefill.fecha && prefill.fecha >= hoy ? prefill.fecha : fechaInput?.value >= hoy ? fechaInput.value : hoy;
+    if (fechaInput) {
+      fechaInput.value = fechaInicial;
+    }
+
+    this.slotSeleccionadoModalCita = prefill.hora || null;
+    if (horaInput) {
+      horaInput.value = prefill.hora || '';
+    }
+    if (notasInput) {
+      notasInput.value = '';
+    }
+
+    this._actualizarBadgeSeleccionModalCita();
     modal.classList.remove('hidden');
 
     await this.cargarCatalogosParaModalCita();
@@ -1273,62 +1508,264 @@ export class ClientesView {
     const slotsContainer = document.getElementById('modal-cita-slots-container');
     if (!fechaInput || !slotsContainer) return;
 
-    const fecha = fechaInput.value || new Date().toISOString().slice(0, 10);
+    const hoy = this._hoyLocalISO();
+    let fecha = fechaInput.value || hoy;
+    if (fecha < hoy) {
+      fecha = hoy;
+      fechaInput.value = hoy;
+      document.getElementById('modal-cita-bloqueo-pasado-msg')?.classList.remove('hidden');
+    }
+
     const duracion_minutos = Number(durInput?.value || 60);
 
     try {
-      slotsContainer.innerHTML = `<div class="col-span-full text-center py-3 text-slate-400">Calculando horarios...</div>`;
-      const data = await this.api.get('/disponibilidad', {
-        fecha,
-        duracion_minutos,
-      });
+      slotsContainer.innerHTML = `<div class="p-6 text-center text-xs text-slate-400">Calculando disponibilidad tipo Outlook...</div>`;
 
-      if (!data.abierto) {
-        slotsContainer.innerHTML = `
-          <div class="col-span-full p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs">
-            <strong>Sucursal cerrada:</strong> ${data.motivo_cierre || 'Día inhábil'}
-          </div>`;
-        return;
-      }
-
-      const slots = data.slots || [];
-      if (!slots.length) {
-        slotsContainer.innerHTML = `<div class="col-span-full p-3 text-slate-500 text-xs">No hay horarios disponibles.</div>`;
-        return;
-      }
-
-      slotsContainer.innerHTML = slots
-        .map((s) => {
-          const disabled = !s.disponible ? 'disabled' : '';
-          const classes = s.disponible
-            ? 'bg-white border-slate-200 text-slate-800 hover:border-blue-500 cursor-pointer'
-            : 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed opacity-60';
-          return `
-            <button type="button" ${disabled}
-              data-hora="${s.hora}"
-              class="slot-chip border rounded-lg p-2 text-center ${classes}">
-              <div class="font-bold text-xs">${s.hora}</div>
-              <div class="text-[10px] ${s.disponible ? 'text-emerald-600' : 'text-red-500'}">
-                ${s.disponible ? `${s.cupos_disponibles} cupo(s)` : 'Agotado'}
-              </div>
-            </button>`;
-        })
-        .join('');
-
-      slotsContainer.querySelectorAll('.slot-chip:not(:disabled)').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          slotsContainer
-            .querySelectorAll('.slot-chip')
-            .forEach((b) => b.classList.remove('selected'));
-          btn.classList.add('selected');
-          this.slotSeleccionadoModalCita = btn.getAttribute('data-hora');
-          const horaInput = document.getElementById('modal-cita-hora-seleccionada');
-          if (horaInput) horaInput.value = this.slotSeleccionadoModalCita;
+      if (this.modalCitaVistaSemana) {
+        const dataSemana = await this.api.get('/disponibilidad/semana', {
+          fecha,
+          duracion_minutos,
         });
-      });
+        this._renderOutlookSemanaEnModalCita(dataSemana, slotsContainer);
+      } else {
+        const dataDia = await this.api.get('/disponibilidad', {
+          fecha,
+          duracion_minutos,
+        });
+        this._renderOutlookDiaEnModalCita(dataDia, slotsContainer);
+      }
     } catch (err) {
-      slotsContainer.innerHTML = `<div class="col-span-full text-red-600 text-xs">Error al consultar disponibilidad: ${err.message}</div>`;
+      slotsContainer.innerHTML = `<div class="p-4 text-red-600 text-xs">Error al consultar disponibilidad: ${err.message}</div>`;
     }
+  }
+
+  _renderOutlookDiaEnModalCita(dataDia, container) {
+    const fecha = dataDia.fecha || '';
+    const nombreDia = dataDia.nombre_dia || '';
+
+    if (!dataDia.abierto) {
+      container.innerHTML = `
+        <div class="p-4 bg-rose-50 text-rose-700 text-xs font-semibold flex items-center justify-between">
+          <span><i class="fa-solid fa-ban mr-1.5"></i><strong>${nombreDia} ${fecha}:</strong> Sucursal cerrada (${dataDia.motivo_cierre || 'Día inhábil'})</span>
+          <span class="text-[11px] text-rose-600">Usa "Ver Semana Completa" para elegir otro día</span>
+        </div>`;
+      return;
+    }
+
+    const slots = dataDia.slots || [];
+    if (!slots.length) {
+      container.innerHTML = `<div class="p-4 text-slate-500 text-xs">No hay bloques configurados para este día.</div>`;
+      return;
+    }
+
+    const rowsHtml = slots
+      .map((s) => {
+        const isSelected = this.slotSeleccionadoModalCita === s.hora;
+        const esPasado = Boolean(s.pasado);
+        const disponible = Boolean(s.disponible) && !esPasado;
+
+        let blockClass = '';
+        let badgeHtml = '';
+
+        if (isSelected && disponible) {
+          blockClass =
+            'bg-blue-600 text-white border-blue-700 shadow-xs ring-2 ring-blue-300 cursor-pointer';
+          badgeHtml = `<span class="px-2 py-0.5 rounded-full bg-white text-blue-700 text-[10px] font-extrabold"><i class="fa-solid fa-check mr-1"></i>Bloque Seleccionado (${s.cupos_disponibles} libre${s.cupos_disponibles === 1 ? '' : 's'})</span>`;
+        } else if (disponible) {
+          blockClass =
+            'bg-teal-50/70 hover:bg-blue-50 text-slate-800 border-teal-300 hover:border-blue-500 cursor-pointer';
+          badgeHtml = `<span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-extrabold"><i class="fa-solid fa-plus mr-1"></i>Disponible · ${s.cupos_disponibles} de ${s.capacidad_total} cupos libres (Clic para elegir)</span>`;
+        } else if (esPasado) {
+          blockClass =
+            'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed opacity-65';
+          badgeHtml = `<span class="px-2 py-0.5 rounded-full bg-slate-200 text-slate-500 text-[10px] font-bold"><i class="fa-solid fa-lock mr-1"></i>Bloqueado (Horario pasado)</span>`;
+        } else if (s.en_horario_comida) {
+          blockClass =
+            'bg-amber-50/70 text-amber-800 border-amber-200 cursor-not-allowed opacity-75';
+          badgeHtml = `<span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold"><i class="fa-solid fa-utensils mr-1"></i>Horario de comida / Sin cupo</span>`;
+        } else {
+          blockClass =
+            'bg-rose-50/60 text-rose-700 border-rose-200 cursor-not-allowed opacity-75';
+          badgeHtml = `<span class="px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 text-[10px] font-bold"><i class="fa-solid fa-calendar-xmark mr-1"></i>Ocupado (${s.citas_traslapadas}/${s.capacidad_total} ocupados)</span>`;
+        }
+
+        return `
+          <div class="flex items-stretch border-b border-slate-100 last:border-b-0">
+            <div class="w-24 shrink-0 px-3 py-2.5 bg-slate-50 border-r border-slate-200 flex flex-col justify-center">
+              <span class="font-mono font-extrabold text-xs text-slate-800">${s.hora}</span>
+              <span class="font-mono text-[10px] text-slate-400">a ${s.hora_fin || ''}</span>
+            </div>
+            <div class="flex-1 p-1.5">
+              <button type="button"
+                ${disponible ? '' : 'disabled'}
+                data-outlook-modal-fecha="${fecha}"
+                data-outlook-modal-hora="${s.hora}"
+                class="w-full h-full rounded-xl border px-3 py-2 text-left flex flex-wrap items-center justify-between gap-2 transition ${blockClass}">
+                <div class="flex items-center gap-2">
+                  <span class="font-extrabold text-xs">${s.hora} - ${s.hora_fin || ''}</span>
+                  ${
+                    s.en_horario_comida && disponible
+                      ? '<span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 font-semibold">Comida parcial</span>'
+                      : ''
+                  }
+                </div>
+                ${badgeHtml}
+              </button>
+            </div>
+          </div>
+        `;
+      })
+      .join('');
+
+    container.innerHTML = `
+      <div class="bg-slate-100 px-3.5 py-2 border-b border-slate-200 flex items-center justify-between text-[11px] font-extrabold text-slate-700">
+        <span><i class="fa-regular fa-calendar mr-1 text-blue-600"></i>${nombreDia} ${fecha} — Vista Día Tipo Outlook</span>
+        <span class="text-emerald-700">${(dataDia.horarios_disponibles || []).length} bloques con cupo disponible</span>
+      </div>
+      <div class="divide-y divide-slate-100">${rowsHtml}</div>
+    `;
+
+    this._bindOutlookModalSlotClicks(container);
+  }
+
+  _renderOutlookSemanaEnModalCita(dataSemana, container) {
+    const dias = dataSemana.dias || [];
+    const horasEje = dataSemana.horas_eje || [];
+    const fechaSeleccionada = document.getElementById('modal-cita-fecha')?.value || '';
+
+    if (!dias.length) {
+      container.innerHTML = `<div class="p-4 text-slate-500 text-xs">No se pudo construir la semana completa.</div>`;
+      return;
+    }
+
+    const headersHtml = dias
+      .map((d) => {
+        const esFechaActiva = d.fecha === fechaSeleccionada;
+        const numDia = String(d.fecha || '').slice(8, 10);
+        return `
+          <th class="p-2 text-center border-l border-slate-200 min-w-[110px] ${
+            esFechaActiva ? 'bg-blue-50 text-blue-800' : 'bg-slate-50 text-slate-700'
+          }">
+            <div class="text-[10px] uppercase font-extrabold">${d.nombre_dia || ''}</div>
+            <div class="text-xs font-black">${numDia} <span class="text-[10px] font-normal text-slate-400">(${String(d.fecha || '').slice(5, 7)})</span></div>
+          </th>
+        `;
+      })
+      .join('');
+
+    const bodyRowsHtml = horasEje
+      .map((hora) => {
+        const cellsHtml = dias
+          .map((d) => {
+            if (!d.abierto) {
+              return `
+                <td class="p-1 border-l border-t border-slate-100 bg-slate-100/70 text-center">
+                  <span class="text-[10px] text-slate-400 font-semibold">Cerrado</span>
+                </td>`;
+            }
+            const slot = (d.slots || []).find((s) => s.hora === hora);
+            if (!slot) {
+              return `<td class="p-1 border-l border-t border-slate-100 bg-slate-50"></td>`;
+            }
+
+            const esPasado = Boolean(slot.pasado);
+            const disp = Boolean(slot.disponible) && !esPasado;
+            const isSelected =
+              d.fecha === fechaSeleccionada && this.slotSeleccionadoModalCita === hora;
+
+            if (isSelected && disp) {
+              return `
+                <td class="p-1 border-l border-t border-slate-100">
+                  <button type="button"
+                    data-outlook-modal-fecha="${d.fecha}"
+                    data-outlook-modal-hora="${hora}"
+                    class="w-full rounded-lg bg-blue-600 text-white px-2 py-1.5 text-center shadow-xs ring-2 ring-blue-300 cursor-pointer">
+                    <div class="font-extrabold text-[11px]"><i class="fa-solid fa-check mr-0.5"></i>${hora}</div>
+                    <div class="text-[9px] text-blue-100">Seleccionado</div>
+                  </button>
+                </td>`;
+            }
+
+            if (disp) {
+              return `
+                <td class="p-1 border-l border-t border-slate-100">
+                  <button type="button"
+                    data-outlook-modal-fecha="${d.fecha}"
+                    data-outlook-modal-hora="${hora}"
+                    class="w-full rounded-lg bg-teal-50 hover:bg-blue-50 border border-teal-300 hover:border-blue-500 text-teal-900 px-2 py-1.5 text-center transition cursor-pointer">
+                    <div class="font-extrabold text-[11px] text-emerald-800">Disponible</div>
+                    <div class="text-[9px] font-semibold text-emerald-600">${slot.cupos_disponibles} cupo(s)</div>
+                  </button>
+                </td>`;
+            }
+
+            if (esPasado) {
+              return `
+                <td class="p-1 border-l border-t border-slate-100 bg-slate-50/80 text-center">
+                  <span class="text-[10px] text-slate-400 font-medium"><i class="fa-solid fa-lock mr-0.5"></i>Pasado</span>
+                </td>`;
+            }
+
+            return `
+              <td class="p-1 border-l border-t border-slate-100 bg-rose-50/40 text-center">
+                <span class="text-[10px] text-rose-400 font-semibold">Sin cupo</span>
+              </td>`;
+          })
+          .join('');
+
+        return `
+          <tr>
+            <td class="px-2.5 py-1.5 border-t border-slate-200 bg-slate-50 font-mono font-extrabold text-[11px] text-slate-700 text-center whitespace-nowrap">
+              ${hora}
+            </td>
+            ${cellsHtml}
+          </tr>
+        `;
+      })
+      .join('');
+
+    container.innerHTML = `
+      <div class="bg-slate-100 px-3.5 py-2 border-b border-slate-200 flex items-center justify-between text-[11px] font-extrabold text-slate-700">
+        <span><i class="fa-solid fa-table-columns mr-1 text-blue-600"></i>Semana del ${dataSemana.fecha_inicio_semana} al ${dataSemana.fecha_fin_semana}</span>
+        <span class="text-blue-700">Da clic en cualquier bloque "Disponible" para elegir día y hora</span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full border-collapse text-xs">
+          <thead>
+            <tr class="border-b border-slate-200">
+              <th class="p-2 bg-slate-100 text-slate-600 font-extrabold text-[10px] uppercase w-16">Hora</th>
+              ${headersHtml}
+            </tr>
+          </thead>
+          <tbody>
+            ${bodyRowsHtml}
+          </tbody>
+        </table>
+      </div>
+    `;
+
+    this._bindOutlookModalSlotClicks(container);
+  }
+
+  _bindOutlookModalSlotClicks(container) {
+    container.querySelectorAll('[data-outlook-modal-hora]:not(:disabled)').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const f = btn.getAttribute('data-outlook-modal-fecha');
+        const h = btn.getAttribute('data-outlook-modal-hora');
+        const fechaInput = document.getElementById('modal-cita-fecha');
+        const horaInput = document.getElementById('modal-cita-hora-seleccionada');
+
+        if (f && fechaInput) {
+          fechaInput.value = f;
+        }
+        this.slotSeleccionadoModalCita = h;
+        if (horaInput) {
+          horaInput.value = h || '';
+        }
+        this._actualizarBadgeSeleccionModalCita();
+        this.consultarDisponibilidadModalCita();
+      });
+    });
   }
 
   async guardarCitaDesdeModalMascota() {
@@ -1346,11 +1783,19 @@ export class ClientesView {
     const notas = document.getElementById('modal-cita-notas')?.value || '';
 
     if (!mascotaId) {
-      this.notify('Mascota no identificada.', 'warning');
+      this.notify('Primero busca y selecciona la mascota para la cita.', 'warning');
+      document.getElementById('modal-cita-buscador-mascota-box')?.classList.remove('hidden');
+      document.getElementById('modal-cita-buscar-mascota-input')?.focus();
       return;
     }
     if (!fecha || !hora) {
-      this.notify('Selecciona una fecha y un horario disponible.', 'warning');
+      this.notify('Haz clic en un bloque disponible del calendario para elegir horario.', 'warning');
+      return;
+    }
+
+    const hoy = this._hoyLocalISO();
+    if (fecha < hoy) {
+      this.notify('No se pueden agendar citas en fechas pasadas.', 'error');
       return;
     }
 
@@ -1366,10 +1811,13 @@ export class ClientesView {
         notas_servicio: notas,
       });
 
-      this.notify('Cita agendada exitosamente para la mascota.', 'success');
+      this.notify('Cita agendada exitosamente.', 'success');
       document.getElementById('modal-agendar-cita-mascota')?.classList.add('hidden');
 
-      if (this.expedienteActual?.cliente?.id) {
+      if (
+        this.expedienteActual?.cliente?.id &&
+        !document.getElementById('modal-expediente-cliente')?.classList.contains('hidden')
+      ) {
         await this.abrirExpedienteCliente(
           this.expedienteActual.cliente.id,
           false,

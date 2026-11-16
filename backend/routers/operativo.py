@@ -636,9 +636,50 @@ def consultar_disponibilidad(
         raise HTTPException(status_code=400, detail=str(exc))
 
 
+@router.get("/disponibilidad/semana")
+def consultar_disponibilidad_semana(
+    fecha: str = Query(..., description="Fecha de referencia en formato YYYY-MM-DD"),
+    duracion_minutos: int = Query(default=60),
+    organizacion_id: Optional[str] = Query(default=None),
+    sucursal_id: Optional[str] = Query(default=None),
+    x_organizacion_id: Optional[str] = Header(default=None),
+    x_sucursal_id: Optional[str] = Header(default=None),
+    db: Client = Depends(get_db),
+) -> Dict[str, Any]:
+    ctx = _resolver_contexto(
+        db, organizacion_id, sucursal_id, x_organizacion_id, x_sucursal_id
+    )
+    engine = AvailabilityEngine(
+        db=db,
+        organizacion_id=ctx["organizacion_id"],
+        sucursal_id=ctx["sucursal_id"],
+    )
+    try:
+        return engine.calcular_disponibilidad_semana(
+            fecha_str=fecha, duracion_minutos=duracion_minutos
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+def _limpiar_tag_no_asistio(notas: Optional[str]) -> str:
+    texto = str(notas or "")
+    return texto.replace("[NO_ASISTIO]", "").strip()
+
+
+def _es_cita_no_asistio(cita: Dict[str, Any]) -> bool:
+    estado = str(cita.get("estado") or "").lower()
+    notas = str(cita.get("notas_servicio") or "")
+    return estado in ("no asistió", "no asistio") or (
+        estado in ("cancelada", "cancelado") and "[NO_ASISTIO]" in notas
+    )
+
+
 @router.get("/citas")
 def listar_citas(
     fecha: Optional[str] = Query(default=None),
+    fecha_inicio: Optional[str] = Query(default=None),
+    fecha_fin: Optional[str] = Query(default=None),
     estado: Optional[str] = Query(default=None),
     organizacion_id: Optional[str] = Query(default=None),
     sucursal_id: Optional[str] = Query(default=None),
@@ -651,9 +692,16 @@ def listar_citas(
     )
     org_id, suc_id = ctx["organizacion_id"], ctx["sucursal_id"]
     citas_repo = BranchRepository(db, "citas", org_id, suc_id)
+    caja_repo = BranchRepository(db, "caja", org_id, suc_id)
 
-    q = citas_repo.query("*, mascotas(id, nombre, raza, codigo_barras, cliente_id, clientes(id, nombre, telefono))")
-    if fecha:
+    q = citas_repo.query(
+        "*, mascotas(id, nombre, raza, codigo_barras, cliente_id, clientes(id, nombre, telefono))"
+    )
+    if fecha_inicio and fecha_fin:
+        q = q.gte("fecha_hora", f"{fecha_inicio[:10]}T00:00:00").lte(
+            "fecha_hora", f"{fecha_fin[:10]}T23:59:59"
+        )
+    elif fecha:
         q = q.gte("fecha_hora", f"{fecha[:10]}T00:00:00").lte(
             "fecha_hora", f"{fecha[:10]}T23:59:59"
         )
@@ -662,12 +710,130 @@ def listar_citas(
 
     try:
         res = q.order("fecha_hora", desc=False).execute()
-        citas = res.data or []
+        citas_raw = res.data or []
     except Exception:
-        # Fallback si no existe relación embebida en PostgREST
-        citas = citas_repo.get_all(order_by="fecha_hora", desc=False)
+        citas_raw = citas_repo.get_all(order_by="fecha_hora", desc=False)
 
-    return {"citas": citas, "total": len(citas)}
+    cita_ids = [c["id"] for c in citas_raw if c.get("id")]
+    pagos_por_cita: Dict[str, Dict[str, Any]] = {}
+    if cita_ids:
+        try:
+            res_caja = caja_repo.query("*").in_("cita_id", cita_ids).execute()
+            for mov in res_caja.data or []:
+                cid = mov.get("cita_id")
+                if cid:
+                    pagos_por_cita[cid] = mov
+        except Exception:
+            pass
+
+    por_cobrar_total = 0.0
+    pendiente_por_cobrar = 0.0
+    cobrado_real = 0.0
+    total_efectivo = 0.0
+    total_tarjeta = 0.0
+    total_transferencia = 0.0
+
+    citas_enriquecidas: List[Dict[str, Any]] = []
+    for c in citas_raw:
+        cid = c.get("id", "")
+        mascota_obj = c.get("mascotas") or {}
+        cliente_obj = (
+            mascota_obj.get("clientes") if isinstance(mascota_obj, dict) else {}
+        ) or {}
+        mov_caja = pagos_por_cita.get(cid)
+
+        estado_db = str(c.get("estado") or "Programada")
+        no_asistio = _es_cita_no_asistio(c)
+        es_completada = estado_db.lower() == "completada"
+        es_cancelada = estado_db.lower() in ("cancelada", "cancelado") and not no_asistio
+
+        if es_completada:
+            asistencia = "asistio"
+            estado_visual = "Asistió"
+        elif no_asistio:
+            asistencia = "no_asistio"
+            estado_visual = "No Asistió"
+        elif es_cancelada:
+            asistencia = "cancelada"
+            estado_visual = "Cancelada"
+        else:
+            asistencia = "pendiente"
+            estado_visual = "Programada"
+
+        precio_cita = float(c.get("precio") or 0.0)
+        monto_pagado = (
+            float(mov_caja.get("monto") or precio_cita) if mov_caja else precio_cita
+        )
+        metodo_pago = (mov_caja.get("metodo_pago") if mov_caja else None) or None
+
+        # Cálculos financieros del día / rango:
+        # Por cobrar = Todas las citas activas o completadas del día (excluyendo No Asistió y Canceladas)
+        if not no_asistio and not es_cancelada:
+            por_cobrar_total += precio_cita
+        if asistencia == "pendiente":
+            pendiente_por_cobrar += precio_cita
+        if es_completada:
+            cobrado_real += monto_pagado
+            mp_low = str(metodo_pago or "Efectivo").lower()
+            if "tarjeta" in mp_low:
+                total_tarjeta += monto_pagado
+            elif "transfer" in mp_low:
+                total_transferencia += monto_pagado
+            else:
+                total_efectivo += monto_pagado
+
+        raw_tel = cliente_obj.get("telefono") or ""
+        citas_enriquecidas.append(
+            {
+                **c,
+                "notas_servicio_limpias": _limpiar_tag_no_asistio(
+                    c.get("notas_servicio")
+                ),
+                "asistencia": asistencia,
+                "estado_visual": estado_visual,
+                "metodo_pago": metodo_pago,
+                "mascota_nombre": (
+                    mascota_obj.get("nombre")
+                    if isinstance(mascota_obj, dict)
+                    else None
+                )
+                or "Mascota",
+                "mascota_raza": (
+                    mascota_obj.get("raza") if isinstance(mascota_obj, dict) else ""
+                )
+                or "",
+                "mascota_codigo": (
+                    mascota_obj.get("codigo_barras")
+                    if isinstance(mascota_obj, dict)
+                    else ""
+                )
+                or "",
+                "cliente_id": (
+                    cliente_obj.get("id") if isinstance(cliente_obj, dict) else None
+                ),
+                "cliente_nombre": (
+                    cliente_obj.get("nombre")
+                    if isinstance(cliente_obj, dict)
+                    else None
+                )
+                or "Sin dueño registrado",
+                "cliente_telefono": raw_tel,
+                "cliente_telefono_enmascarado": _enmascarar_telefono(raw_tel),
+            }
+        )
+
+    return {
+        "citas": citas_enriquecidas,
+        "total": len(citas_enriquecidas),
+        "resumen_financiero": {
+            "por_cobrar_total": round(por_cobrar_total, 2),
+            "pendiente_por_cobrar": round(pendiente_por_cobrar, 2),
+            "cobrado_real": round(cobrado_real, 2),
+            "total_efectivo": round(total_efectivo, 2),
+            "total_tarjeta": round(total_tarjeta, 2),
+            "total_transferencia": round(total_transferencia, 2),
+        },
+    }
 
 
 @router.post("/citas")
@@ -687,6 +853,32 @@ def crear_cita(
         x_sucursal_id,
     )
     org_id, suc_id = ctx["organizacion_id"], ctx["sucursal_id"]
+
+    # Bloqueo estricto para no agendar citas en el pasado
+    raw_fh = str(payload.fecha_hora or "").strip()
+    try:
+        dt_clean = raw_fh.replace("Z", "")
+        if "+" in dt_clean:
+            dt_clean = dt_clean.split("+")[0]
+        dt_cita = datetime.fromisoformat(dt_clean)
+        ahora_local = datetime.now()
+        if dt_cita.date() < ahora_local.date():
+            raise HTTPException(
+                status_code=400,
+                detail="No se pueden agendar citas en fechas pasadas.",
+            )
+        if dt_cita.date() == ahora_local.date() and dt_cita < ahora_local.replace(
+            second=0, microsecond=0
+        ):
+            raise HTTPException(
+                status_code=400,
+                detail="No se pueden agendar citas en un horario que ya pasó el día de hoy.",
+            )
+    except HTTPException:
+        raise
+    except Exception:
+        pass
+
     citas_repo = BranchRepository(db, "citas", org_id, suc_id)
 
     nueva_cita = citas_repo.insert(
@@ -726,7 +918,7 @@ def completar_cita(
     db: Client = Depends(get_db),
 ) -> Dict[str, Any]:
     """
-    Marca una cita como Completada y registra automáticamente el ingreso en caja.
+    Marca una cita como Completada (Asistió) y registra o actualiza automáticamente el ingreso en caja.
     """
     ctx = _resolver_contexto(
         db,
@@ -750,11 +942,13 @@ def completar_cita(
         else float(cita.get("precio") or 0.0)
     )
     estilista_final = payload.estilista or cita.get("estilista") or "General"
-    notas_final = (
+    notas_base = (
         payload.notas_servicio
         if payload.notas_servicio is not None
         else cita.get("notas_servicio", "")
     )
+    notas_final = _limpiar_tag_no_asistio(notas_base)
+    metodo_pago_final = payload.metodo_pago or "Efectivo"
 
     cita_actualizada = citas_repo.update(
         cita_id,
@@ -767,15 +961,28 @@ def completar_cita(
     )
 
     caja_repo = BranchRepository(db, "caja", org_id, suc_id)
-    movimiento_caja = caja_repo.insert(
-        {
-            "cita_id": cita_id,
-            "concepto": f"Servicio cita: {cita.get('servicio', 'Grooming')}",
-            "monto": monto_cobrado,
-            "metodo_pago": payload.metodo_pago or "Efectivo",
-            "estilista": estilista_final,
-        }
-    )
+    existentes = caja_repo.query("*").eq("cita_id", cita_id).execute().data or []
+    if existentes:
+        mov_id = existentes[0]["id"]
+        movimiento_caja = caja_repo.update(
+            mov_id,
+            {
+                "concepto": f"Servicio cita: {cita.get('servicio', 'Grooming')}",
+                "monto": monto_cobrado,
+                "metodo_pago": metodo_pago_final,
+                "estilista": estilista_final,
+            },
+        )
+    else:
+        movimiento_caja = caja_repo.insert(
+            {
+                "cita_id": cita_id,
+                "concepto": f"Servicio cita: {cita.get('servicio', 'Grooming')}",
+                "monto": monto_cobrado,
+                "metodo_pago": metodo_pago_final,
+                "estilista": estilista_final,
+            }
+        )
 
     SecurityManager.registrar_auditoria(
         db=db,
@@ -783,15 +990,77 @@ def completar_cita(
         suc_id=suc_id,
         usuario=payload.usuario_actual or "Sistema",
         rol=payload.rol_actual or "Operativo",
-        accion="COMPLETAR_CITA",
-        detalle=f"Cita {cita_id} completada y cobrada (${monto_cobrado} en {payload.metodo_pago})",
+        accion="ASISTIO_CITA",
+        detalle=f"Cita {cita_id} marcada como Asistió y cobrada (${monto_cobrado} en {metodo_pago_final})",
     )
 
     return {
         "cita": cita_actualizada,
         "movimiento_caja": movimiento_caja,
-        "mensaje": "Cita completada e ingreso registrado en caja.",
+        "mensaje": f"Cita marcada como Asistió (${monto_cobrado} en {metodo_pago_final}).",
     }
+
+
+@router.post("/citas/{cita_id}/no-asistio")
+def marcar_no_asistio_cita(
+    cita_id: str,
+    organizacion_id: Optional[str] = Query(default=None),
+    sucursal_id: Optional[str] = Query(default=None),
+    x_organizacion_id: Optional[str] = Header(default=None),
+    x_sucursal_id: Optional[str] = Header(default=None),
+    db: Client = Depends(get_db),
+) -> Dict[str, Any]:
+    """
+    Marca una cita como No Asistió (guardando estado Cancelada + marcador [NO_ASISTIO])
+    y reversa cualquier cobro asociado en caja si se había marcado antes como asistió.
+    """
+    ctx = _resolver_contexto(
+        db, organizacion_id, sucursal_id, x_organizacion_id, x_sucursal_id
+    )
+    org_id, suc_id = ctx["organizacion_id"], ctx["sucursal_id"]
+
+    citas_repo = BranchRepository(db, "citas", org_id, suc_id)
+    cita = citas_repo.get_by_id(cita_id)
+    if not cita:
+        raise HTTPException(
+            status_code=404, detail="Cita no encontrada en esta sucursal."
+        )
+
+    notas_limpias = _limpiar_tag_no_asistio(cita.get("notas_servicio"))
+    nuevas_notas = (
+        f"[NO_ASISTIO] {notas_limpias}".strip() if notas_limpias else "[NO_ASISTIO]"
+    )
+
+    cita_actualizada = citas_repo.update(
+        cita_id,
+        {
+            "estado": "Cancelada",
+            "notas_servicio": nuevas_notas,
+        },
+    )
+
+    # Si tenía movimiento en caja previo, eliminarlo para cuadrar corte del día
+    caja_repo = BranchRepository(db, "caja", org_id, suc_id)
+    existentes = caja_repo.query("*").eq("cita_id", cita_id).execute().data or []
+    for mov in existentes:
+        if mov.get("id"):
+            caja_repo.delete(mov["id"])
+
+    SecurityManager.registrar_auditoria(
+        db=db,
+        org_id=org_id,
+        suc_id=suc_id,
+        usuario="Operador Agenda",
+        rol="Operativo",
+        accion="NO_ASISTIO_CITA",
+        detalle=f"Cita {cita_id} marcada como No Asistió ({cita.get('servicio', '')})",
+    )
+
+    return {
+        "cita": cita_actualizada,
+        "mensaje": "Cita marcada como No Asistió. Se liberó el espacio y se actualizó el balance del día.",
+    }
+
 
 
 # -------------------------------------------------------------------------

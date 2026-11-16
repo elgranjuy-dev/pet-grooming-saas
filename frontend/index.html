@@ -403,22 +403,84 @@
       </section>
 
       <!-- =================================================================
-           VISTA 2: AGENDA Y TURNOS (AvailabilityEngine)
+           VISTA 2: AGENDA Y TURNOS (CALENDARIO OUTLOOK DÍA / SEMANA + CORTE DEL DÍA)
       ================================================================== -->
       <section id="view-agenda" class="tab-view hidden space-y-4">
-        <div>
-          <h2 class="text-lg font-extrabold text-slate-900 leading-tight">Agenda Inteligente y Control de Citas</h2>
-          <p class="text-[11px] text-slate-500">El motor AvailabilityEngine cruza plantilla semanal, horario de comida, excepciones y citas traslapadas.</p>
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 class="text-lg font-extrabold text-slate-900 leading-tight flex items-center gap-2">
+              <i class="fa-solid fa-calendar-days text-blue-600"></i>
+              <span>Agenda y Turnos — Calendario Operativo Outlook</span>
+            </h2>
+            <p class="text-[11px] text-slate-500">Vista completa del día actual o por semana con bloques disponibles interactivos, control de asistencia (Asistió / No Asistió) y arqueo en tiempo real.</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button id="btn-agenda-abrir-modal-cita" type="button"
+              class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-extrabold shadow-sm flex items-center gap-2 transition cursor-pointer">
+              <i class="fa-solid fa-calendar-plus"></i>
+              <span>+ Agendar Nueva Cita</span>
+            </button>
+          </div>
         </div>
 
         <div class="module-widgets-grid grid grid-cols-1 lg:grid-cols-12 gap-4 items-start" data-grid-id="agenda">
-          <!-- Bloque 1: Nueva Cita + Motor de Disponibilidad -->
-          <div class="module-widget lg:col-span-5 bg-white rounded-2xl p-5 border border-slate-200 shadow-sm" data-widget-id="agenda-nueva-cita">
-            <div draggable="true" class="widget-header flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
-              <h3 class="widget-title text-sm font-bold text-slate-800 flex items-center">
-                <span class="widget-drag-handle w-6 h-6 rounded-md bg-slate-100 hover:bg-blue-50 text-slate-400 hover:text-blue-600 mr-2 inline-flex items-center justify-center transition shrink-0" title="Arrastra desde aquí para mover y ordenar este bloque"><i class="fa-solid fa-grip-vertical text-xs"></i></span><i class="fa-solid fa-calendar-plus text-blue-600 mr-1.5"></i>Agendar Nueva Cita
-              </h3>
-              <div class="widget-actions flex items-center gap-1.5 shrink-0 ml-auto">
+          <!-- Bloque Único a Pantalla Completa: Calendario Outlook + Finanzas del Día -->
+          <div class="module-widget lg:col-span-12 bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-sm" data-widget-id="agenda-citas-dia">
+            <div draggable="true" class="widget-header flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
+              <div class="flex items-center gap-2">
+                <h3 class="widget-title text-sm font-bold text-slate-800 flex items-center">
+                  <span class="widget-drag-handle w-6 h-6 rounded-md bg-slate-100 hover:bg-blue-50 text-slate-400 hover:text-blue-600 mr-2 inline-flex items-center justify-center transition shrink-0" title="Arrastra desde aquí para mover y ordenar este bloque"><i class="fa-solid fa-grip-vertical text-xs"></i></span>
+                  <i class="fa-solid fa-calendar-week text-blue-600 mr-1.5"></i>
+                  <span id="agenda-titulo-calendario">Calendario de Citas y Disponibilidad</span>
+                </h3>
+                <span id="agenda-rango-label" class="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-[11px] font-extrabold">Hoy</span>
+              </div>
+
+              <div class="widget-actions flex flex-wrap items-center gap-2 shrink-0 ml-auto">
+                <!-- Controles de Navegación de Fecha -->
+                <div class="inline-flex items-center bg-slate-100 rounded-xl p-1 border border-slate-200 gap-1">
+                  <button id="btn-agenda-prev" type="button" title="Día / Semana anterior"
+                    class="w-7 h-7 rounded-lg hover:bg-white text-slate-700 flex items-center justify-center text-xs font-bold transition">
+                    <i class="fa-solid fa-chevron-left"></i>
+                  </button>
+                  <button id="btn-agenda-hoy" type="button"
+                    class="px-2.5 py-1 rounded-lg bg-white hover:bg-blue-50 text-slate-800 hover:text-blue-700 text-[11px] font-extrabold shadow-2xs transition">
+                    Hoy
+                  </button>
+                  <button id="btn-agenda-next" type="button" title="Día / Semana siguiente"
+                    class="w-7 h-7 rounded-lg hover:bg-white text-slate-700 flex items-center justify-center text-xs font-bold transition">
+                    <i class="fa-solid fa-chevron-right"></i>
+                  </button>
+                  <input id="citas-filtro-fecha" type="date"
+                    class="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-600" />
+                </div>
+
+                <!-- Switch Vista Día Actual <-> Vista por Semanas (Outlook) -->
+                <div class="inline-flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
+                  <button id="btn-agenda-vista-dia" type="button"
+                    class="px-3 py-1.5 rounded-lg text-xs font-extrabold transition flex items-center gap-1.5 bg-blue-600 text-white shadow-2xs">
+                    <i class="fa-solid fa-calendar-day text-[11px]"></i>
+                    <span>Día Actual</span>
+                  </button>
+
+                  <button id="btn-agenda-switch-toggle" type="button" title="Cambiar entre Vista Día y Vista por Semanas tipo Outlook"
+                    class="mx-1.5 w-9 h-5 rounded-full bg-blue-600/20 border border-blue-500/30 relative flex items-center px-0.5 transition cursor-pointer">
+                    <span id="knob-agenda-switch-vista" class="w-3.5 h-3.5 rounded-full bg-blue-600 transition-transform duration-200 translate-x-0"></span>
+                  </button>
+
+                  <button id="btn-agenda-vista-semana" type="button"
+                    class="px-3 py-1.5 rounded-lg text-xs font-extrabold transition flex items-center gap-1.5 text-slate-600 hover:text-slate-900">
+                    <i class="fa-solid fa-table-columns text-[11px]"></i>
+                    <span>Por Semanas (Outlook)</span>
+                  </button>
+                </div>
+
+                <button id="btn-filtrar-citas" type="button" title="Actualizar calendario"
+                  class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold flex items-center gap-1.5 transition">
+                  <i class="fa-solid fa-arrows-rotate"></i>
+                  <span class="hidden sm:inline">Actualizar</span>
+                </button>
+
                 <div class="widget-window-controls flex items-center gap-1 pl-1">
                   <button type="button" class="widget-minimize-btn w-7 h-7 rounded-lg bg-slate-100 hover:bg-blue-100 text-slate-600 hover:text-blue-700 border border-slate-200/80 flex items-center justify-center transition shrink-0" title="Minimizar / Expandir bloque">
                     <i class="fa-solid fa-minus text-xs pointer-events-none"></i>
@@ -430,119 +492,81 @@
               </div>
             </div>
 
-            <div class="widget-body pt-3.5 space-y-4">
-              <!-- Buscador rápido de mascota -->
-              <div class="space-y-2">
-                <label class="block text-xs font-bold text-slate-600">1. Buscar Mascota (Teléfono, Dueño, Mascota o Código PET-)</label>
-                <div class="flex gap-2">
-                  <input id="agenda-buscar-mascota-input" type="text" placeholder="Ej. 5500, Max o PET-..."
-                    class="flex-1 rounded-xl border border-slate-300 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-600" />
-                  <button id="btn-agenda-buscar-mascota" type="button"
-                    class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                  </button>
+            <div class="widget-body pt-4 space-y-4">
+              <!-- BARRA FINANCIERA SUPERIOR DEL DÍA / SEMANA -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <!-- 1. Cuánto se va a cobrar -->
+                <div class="rounded-2xl p-3.5 bg-gradient-to-br from-slate-900 to-slate-800 text-white shadow-sm border border-slate-700 flex items-center justify-between">
+                  <div>
+                    <p class="text-[10px] font-extrabold uppercase tracking-wider text-slate-300">1. Cuánto se va a Cobrar</p>
+                    <p id="agenda-kpi-por-cobrar" class="text-2xl font-black mt-0.5 text-white">$0.00</p>
+                    <p id="agenda-kpi-pendiente-sub" class="text-[11px] text-amber-300 font-semibold mt-0.5">Pendiente hoy: $0.00</p>
+                  </div>
+                  <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-blue-300 text-lg shrink-0">
+                    <i class="fa-solid fa-calculator"></i>
+                  </div>
                 </div>
-                <div id="agenda-mascota-resultados" class="space-y-1.5 max-h-40 overflow-y-auto"></div>
-                <div id="agenda-mascota-seleccionada" class="hidden text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg p-2"></div>
+
+                <!-- 2. Cuánto se ha cobrado realmente -->
+                <div class="rounded-2xl p-3.5 bg-gradient-to-br from-emerald-600 to-teal-700 text-white shadow-sm border border-emerald-500 flex items-center justify-between">
+                  <div>
+                    <p class="text-[10px] font-extrabold uppercase tracking-wider text-emerald-100">2. Cobrado Realmente (Asistió)</p>
+                    <p id="agenda-kpi-cobrado-real" class="text-2xl font-black mt-0.5 text-white">$0.00</p>
+                    <p id="agenda-kpi-asistencia-sub" class="text-[11px] text-emerald-100 font-semibold mt-0.5">0 asistieron · 0 no asistieron</p>
+                  </div>
+                  <div class="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center text-white text-lg shrink-0">
+                    <i class="fa-solid fa-sack-dollar"></i>
+                  </div>
+                </div>
+
+                <!-- 3. Cuánto debe haber en Efectivo -->
+                <div class="rounded-2xl p-3.5 bg-emerald-50 border border-emerald-200 flex items-center justify-between">
+                  <div>
+                    <p class="text-[10px] font-extrabold uppercase tracking-wider text-emerald-800">3. Debe Haber en Efectivo</p>
+                    <p id="agenda-kpi-efectivo" class="text-2xl font-black mt-0.5 text-emerald-900">$0.00</p>
+                    <p class="text-[11px] text-emerald-700 font-semibold mt-0.5">Arqueo físico en caja</p>
+                  </div>
+                  <div class="w-10 h-10 rounded-xl bg-emerald-600/15 text-emerald-700 flex items-center justify-center text-lg shrink-0">
+                    <i class="fa-solid fa-money-bill-wave"></i>
+                  </div>
+                </div>
+
+                <!-- 4. Cuánto en Pago con Tarjeta -->
+                <div class="rounded-2xl p-3.5 bg-indigo-50 border border-indigo-200 flex items-center justify-between">
+                  <div>
+                    <p class="text-[10px] font-extrabold uppercase tracking-wider text-indigo-800">4. Pago con Tarjeta</p>
+                    <p id="agenda-kpi-tarjeta" class="text-2xl font-black mt-0.5 text-indigo-900">$0.00</p>
+                    <p id="agenda-kpi-transferencia-sub" class="text-[11px] text-indigo-700 font-semibold mt-0.5">Terminal / Voucher electrónico</p>
+                  </div>
+                  <div class="w-10 h-10 rounded-xl bg-indigo-600/15 text-indigo-700 flex items-center justify-center text-lg shrink-0">
+                    <i class="fa-solid fa-credit-card"></i>
+                  </div>
+                </div>
               </div>
 
-              <form id="form-crear-cita" class="space-y-3">
-                <input id="agenda-mascota-id" type="hidden" required />
-                <input id="agenda-hora-seleccionada" type="hidden" required />
-
-                <div class="grid grid-cols-2 gap-3">
-                  <div>
-                    <label class="block text-xs font-bold text-slate-600 mb-1">2. Servicio</label>
-                    <select id="agenda-servicio-select" class="w-full rounded-xl border border-slate-300 px-2.5 py-2 text-xs">
-                      <option value="Baño Básico">Baño Básico</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label class="block text-xs font-bold text-slate-600 mb-1">Fecha de Cita</label>
-                    <input id="agenda-fecha" type="date" required class="w-full rounded-xl border border-slate-300 px-2.5 py-2 text-xs" />
-                  </div>
+              <!-- Leyenda rápida del Calendario Outlook -->
+              <div class="flex flex-wrap items-center justify-between gap-2 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200/80 text-[11px]">
+                <div class="flex flex-wrap items-center gap-3">
+                  <span class="inline-flex items-center gap-1.5 font-bold text-slate-700">
+                    <span class="w-3 h-3 rounded-sm bg-blue-600 inline-block"></span>Cita Programada
+                  </span>
+                  <span class="inline-flex items-center gap-1.5 font-bold text-slate-700">
+                    <span class="w-3 h-3 rounded-sm bg-emerald-600 inline-block"></span>Asistió (Cobrada)
+                  </span>
+                  <span class="inline-flex items-center gap-1.5 font-bold text-slate-700">
+                    <span class="w-3 h-3 rounded-sm bg-rose-500 inline-block"></span>No Asistió
+                  </span>
+                  <span class="inline-flex items-center gap-1.5 font-bold text-slate-700">
+                    <span class="w-3 h-3 rounded-sm bg-teal-50 border border-teal-400 inline-block"></span>Bloque Disponible (Clic para agendar)
+                  </span>
                 </div>
-
-                <div class="grid grid-cols-3 gap-2">
-                  <div>
-                    <label class="block text-xs font-bold text-slate-600 mb-1">Duración (min)</label>
-                    <input id="agenda-duracion" type="number" min="15" step="15" value="60" class="w-full rounded-xl border border-slate-300 px-2.5 py-2 text-xs" />
-                  </div>
-                  <div>
-                    <label class="block text-xs font-bold text-slate-600 mb-1">Precio ($)</label>
-                    <input id="agenda-precio" type="number" min="0" step="0.01" value="350" class="w-full rounded-xl border border-slate-300 px-2.5 py-2 text-xs" />
-                  </div>
-                  <div>
-                    <label class="block text-xs font-bold text-slate-600 mb-1">Estilista</label>
-                    <select id="agenda-estilista" class="w-full rounded-xl border border-slate-300 px-2.5 py-2 text-xs">
-                      <option value="Por asignar">Por asignar</option>
-                    </select>
-                  </div>
-                </div>
-
-                <!-- Bloques de Disponibilidad -->
-                <div class="space-y-2 pt-1">
-                  <div class="flex items-center justify-between">
-                    <label class="text-xs font-bold text-slate-600">3. Horarios Disponibles</label>
-                    <button id="btn-consultar-disponibilidad" type="button" class="text-xs font-semibold text-blue-600 hover:underline">
-                      <i class="fa-solid fa-arrows-rotate mr-1"></i>Recalcular cupos
-                    </button>
-                  </div>
-                  <div id="agenda-slots-container" class="grid grid-cols-3 sm:grid-cols-4 gap-2"></div>
-                </div>
-
-                <div>
-                  <label class="block text-xs font-bold text-slate-600 mb-1">Notas de Servicio</label>
-                  <input id="agenda-notas" type="text" placeholder="Indicaciones especiales..."
-                    class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs" />
-                </div>
-
-                <button type="submit" class="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow transition">
-                  <i class="fa-solid fa-calendar-check mr-1"></i>Confirmar y Agendar Cita
-                </button>
-              </form>
-            </div>
-          </div>
-
-          <!-- Bloque 2: Listado de Citas del Día -->
-          <div class="module-widget lg:col-span-7 bg-white rounded-2xl p-5 border border-slate-200 shadow-sm" data-widget-id="agenda-citas-dia">
-            <div draggable="true" class="widget-header flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
-              <h3 class="widget-title text-sm font-bold text-slate-800 flex items-center">
-                <span class="widget-drag-handle w-6 h-6 rounded-md bg-slate-100 hover:bg-blue-50 text-slate-400 hover:text-blue-600 mr-2 inline-flex items-center justify-center transition shrink-0" title="Arrastra desde aquí para mover y ordenar este bloque"><i class="fa-solid fa-grip-vertical text-xs"></i></span><i class="fa-solid fa-list-check text-indigo-600 mr-1.5"></i>Citas Programadas en Sucursal
-              </h3>
-              <div class="widget-actions flex items-center gap-1.5 shrink-0 ml-auto">
-                <input id="citas-filtro-fecha" type="date" class="rounded-xl border border-slate-300 px-2.5 py-1 text-xs" />
-                <button id="btn-filtrar-citas" type="button" class="px-3 py-1 rounded-xl bg-slate-800 text-white text-xs font-semibold">
-                  Filtrar
-                </button>
-                <div class="widget-window-controls flex items-center gap-1 pl-1">
-                  <button type="button" class="widget-minimize-btn w-7 h-7 rounded-lg bg-slate-100 hover:bg-blue-100 text-slate-600 hover:text-blue-700 border border-slate-200/80 flex items-center justify-center transition shrink-0" title="Minimizar / Expandir bloque">
-                    <i class="fa-solid fa-minus text-xs pointer-events-none"></i>
-                  </button>
-                  <button type="button" class="widget-maximize-btn w-7 h-7 rounded-lg bg-slate-100 hover:bg-indigo-100 text-slate-600 hover:text-indigo-700 border border-slate-200/80 flex items-center justify-center transition shrink-0" title="Maximizar bloque a pantalla completa">
-                    <i class="fa-solid fa-expand text-xs pointer-events-none"></i>
-                  </button>
-                </div>
-              
+                <span class="text-slate-500 font-medium">
+                  <i class="fa-solid fa-hand-pointer text-blue-600 mr-1"></i>Haz clic en cualquier bloque disponible para agregar una cita
+                </span>
               </div>
-            </div>
 
-            <div class="widget-body pt-3.5">
-              <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                  <thead>
-                    <tr class="border-b border-slate-200 text-[11px] uppercase text-slate-400">
-                      <th class="py-2 px-3">Hora</th>
-                      <th class="py-2 px-3">Mascota / Dueño</th>
-                      <th class="py-2 px-3">Servicio</th>
-                      <th class="py-2 px-3">Estilista</th>
-                      <th class="py-2 px-3">Precio</th>
-                      <th class="py-2 px-3 text-right">Acción</th>
-                    </tr>
-                  </thead>
-                  <tbody id="agenda-citas-tbody"></tbody>
-                </table>
-              </div>
+              <!-- CONTENEDOR PRINCIPAL DEL CALENDARIO OUTLOOK (OCUPA TODO EL ESPACIO COMPLETO) -->
+              <div id="agenda-outlook-calendar-container" class="w-full overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-2xs min-h-[540px]"></div>
             </div>
           </div>
         </div>
@@ -1509,84 +1533,152 @@
   </div>
 
   <!-- =====================================================================
-       POP-UP MODAL: AGREGAR CITA DESDE LA CAJA DE UNA MASCOTA
+       POP-UP MODAL: AGREGAR CITA (DESDE MASCOTA O DESDE BLOQUE DE AGENDA OUTLOOK)
   ====================================================================== -->
-  <div id="modal-agendar-cita-mascota" class="hidden fixed inset-0 z-[60] bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-4">
-    <div class="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
-      <div class="px-5 py-3.5 bg-blue-600 text-white flex items-center justify-between shrink-0">
-        <h3 class="text-sm font-extrabold flex items-center gap-2">
-          <i class="fa-solid fa-calendar-plus"></i>
-          <span>Agregar Cita para Mascota</span>
-        </h3>
+  <div id="modal-agendar-cita-mascota" class="hidden fixed inset-0 z-[60] bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+    <div class="w-full max-w-4xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh]">
+      <div class="px-5 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-700 text-white flex items-center justify-between shrink-0">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-white/15 flex items-center justify-center">
+            <i class="fa-solid fa-calendar-plus text-sm"></i>
+          </div>
+          <div>
+            <h3 class="text-sm font-extrabold">Agendar Cita — Disponibilidad Tipo Outlook</h3>
+            <p class="text-[11px] text-blue-100">Bloqueo automático de fechas y horarios pasados · Selecciona un bloque disponible del día o la semana completa</p>
+          </div>
+        </div>
         <button id="btn-cerrar-modal-agendar-cita-mascota" type="button"
-          class="w-7 h-7 rounded-lg bg-blue-700 hover:bg-blue-800 text-blue-100 hover:text-white flex items-center justify-center transition">
+          class="w-7 h-7 rounded-lg bg-white/15 hover:bg-white/25 text-white flex items-center justify-center transition">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
-      <div class="p-5 overflow-y-auto flex-1 text-xs space-y-3.5">
-        <div id="modal-cita-mascota-resumen" class="p-3 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 font-bold text-xs flex items-center gap-2">
-          <i class="fa-solid fa-paw text-blue-600"></i>
-          <span id="modal-cita-mascota-label">Mascota seleccionada</span>
+
+      <div class="p-4 sm:p-5 overflow-y-auto flex-1 text-xs space-y-4">
+        <!-- Buscador rápido de mascota (visible si se abre desde un bloque disponible de Agenda) -->
+        <div id="modal-cita-buscador-mascota-box" class="hidden p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+          <label class="block text-xs font-extrabold text-slate-700">
+            <i class="fa-solid fa-magnifying-glass text-blue-600 mr-1"></i>1. Buscar Mascota o Cliente (Nombre, Teléfono o Código PET-)
+          </label>
+          <div class="flex gap-2">
+            <input id="modal-cita-buscar-mascota-input" type="text" placeholder="Escribe nombre de mascota, dueño o últimos 4 dígitos..."
+              class="flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-600" />
+            <button id="btn-modal-cita-buscar-mascota" type="button"
+              class="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs">
+              Buscar
+            </button>
+          </div>
+          <div id="modal-cita-mascota-resultados" class="space-y-1.5 max-h-36 overflow-y-auto"></div>
         </div>
 
-        <form id="form-modal-cita-mascota" class="space-y-3">
+        <!-- Resumen de mascota seleccionada -->
+        <div id="modal-cita-mascota-resumen" class="p-3 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 font-bold text-xs flex items-center justify-between gap-2">
+          <div class="flex items-center gap-2">
+            <i class="fa-solid fa-paw text-blue-600 text-sm"></i>
+            <span id="modal-cita-mascota-label">Mascota seleccionada</span>
+          </div>
+          <button id="btn-modal-cita-cambiar-mascota" type="button"
+            class="hidden px-2.5 py-1 rounded-lg bg-white hover:bg-blue-100 text-blue-700 border border-blue-200 text-[11px] font-bold transition">
+            Cambiar mascota
+          </button>
+        </div>
+
+        <!-- Aviso de bloqueo contra fechas en el pasado -->
+        <div id="modal-cita-bloqueo-pasado-msg" class="hidden p-2.5 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 font-bold text-[11px] flex items-center gap-2">
+          <i class="fa-solid fa-shield-halved text-amber-600"></i>
+          <span>Bloqueo activo: No está permitido agendar citas en fechas ni horarios en el pasado.</span>
+        </div>
+
+        <form id="form-modal-cita-mascota" class="space-y-4">
           <input id="modal-cita-mascota-id" type="hidden" required />
           <input id="modal-cita-hora-seleccionada" type="hidden" required />
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label class="block text-xs font-bold text-slate-600 mb-1">Servicio</label>
-              <select id="modal-cita-servicio-select" class="w-full rounded-xl border border-slate-300 px-2.5 py-2 text-xs">
+          <div class="grid grid-cols-1 sm:grid-cols-5 gap-2.5 bg-slate-50 p-3 rounded-xl border border-slate-200/80">
+            <div class="sm:col-span-2">
+              <label class="block text-[11px] font-extrabold text-slate-600 mb-1">Servicio</label>
+              <select id="modal-cita-servicio-select" class="w-full rounded-xl border border-slate-300 bg-white px-2.5 py-2 text-xs font-semibold">
                 <option value="Baño y Corte Completo">Baño y Corte Completo</option>
               </select>
             </div>
             <div>
-              <label class="block text-xs font-bold text-slate-600 mb-1">Fecha de Cita</label>
-              <input id="modal-cita-fecha" type="date" required class="w-full rounded-xl border border-slate-300 px-2.5 py-2 text-xs" />
-            </div>
-          </div>
-
-          <div class="grid grid-cols-3 gap-2">
-            <div>
-              <label class="block text-xs font-bold text-slate-600 mb-1">Duración (min)</label>
-              <input id="modal-cita-duracion" type="number" min="15" step="15" value="60" class="w-full rounded-xl border border-slate-300 px-2.5 py-2 text-xs" />
+              <label class="block text-[11px] font-extrabold text-slate-600 mb-1">Fecha (No pasado)</label>
+              <input id="modal-cita-fecha" type="date" required class="w-full rounded-xl border border-slate-300 bg-white px-2.5 py-2 text-xs font-semibold" />
             </div>
             <div>
-              <label class="block text-xs font-bold text-slate-600 mb-1">Precio ($)</label>
-              <input id="modal-cita-precio" type="number" min="0" step="0.01" value="350" class="w-full rounded-xl border border-slate-300 px-2.5 py-2 text-xs" />
+              <label class="block text-[11px] font-extrabold text-slate-600 mb-1">Duración / Precio ($)</label>
+              <div class="grid grid-cols-2 gap-1.5">
+                <input id="modal-cita-duracion" type="number" min="15" step="15" value="60" title="Duración en minutos"
+                  class="w-full rounded-xl border border-slate-300 bg-white px-2 py-2 text-xs font-semibold" />
+                <input id="modal-cita-precio" type="number" min="0" step="0.01" value="350" title="Precio ($)"
+                  class="w-full rounded-xl border border-slate-300 bg-white px-2 py-2 text-xs font-bold text-emerald-700" />
+              </div>
             </div>
             <div>
-              <label class="block text-xs font-bold text-slate-600 mb-1">Estilista</label>
-              <select id="modal-cita-estilista" class="w-full rounded-xl border border-slate-300 px-2.5 py-2 text-xs">
+              <label class="block text-[11px] font-extrabold text-slate-600 mb-1">Estilista</label>
+              <select id="modal-cita-estilista" class="w-full rounded-xl border border-slate-300 bg-white px-2.5 py-2 text-xs font-semibold">
                 <option value="Por asignar">Por asignar</option>
               </select>
             </div>
           </div>
 
-          <div class="space-y-2 pt-1">
-            <div class="flex items-center justify-between">
-              <label class="text-xs font-bold text-slate-600">Horarios Disponibles</label>
-              <button id="btn-modal-cita-recalcular" type="button" class="text-xs font-semibold text-blue-600 hover:underline">
-                <i class="fa-solid fa-arrows-rotate mr-1"></i>Recalcular cupos
+          <!-- SECCIÓN DE DISPONIBILIDAD TIPO OUTLOOK (DÍA SELECCIONADO / SEMANA COMPLETA) -->
+          <div class="space-y-2.5">
+            <div class="flex flex-wrap items-center justify-between gap-2 bg-slate-900 text-white px-3.5 py-2.5 rounded-xl">
+              <div class="flex items-center gap-2">
+                <i class="fa-solid fa-calendar-check text-blue-400"></i>
+                <span class="font-extrabold text-xs">Disponibilidad Outlook</span>
+                <span id="modal-cita-seleccion-badge" class="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/30 text-[11px] font-extrabold">
+                  Sin bloque seleccionado
+                </span>
+              </div>
+
+              <div class="flex flex-wrap items-center gap-1.5">
+                <button id="btn-modal-cita-prev" type="button" title="Día / Semana anterior"
+                  class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center justify-center text-xs transition">
+                  <i class="fa-solid fa-chevron-left"></i>
+                </button>
+                <button id="btn-modal-cita-hoy" type="button"
+                  class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold transition">
+                  Hoy
+                </button>
+                <button id="btn-modal-cita-next" type="button" title="Día / Semana siguiente"
+                  class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center justify-center text-xs transition">
+                  <i class="fa-solid fa-chevron-right"></i>
+                </button>
+
+                <!-- Botón para alternar entre Día Seleccionado y Semana Completa -->
+                <button id="btn-modal-cita-toggle-semana" type="button"
+                  class="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-[11px] flex items-center gap-1.5 shadow-xs transition cursor-pointer">
+                  <i class="fa-solid fa-table-columns"></i>
+                  <span id="label-modal-cita-toggle-semana">Ver Semana Completa</span>
+                </button>
+
+                <button id="btn-modal-cita-recalcular" type="button" title="Recalcular disponibilidad"
+                  class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-blue-300 font-bold text-[11px] transition">
+                  <i class="fa-solid fa-arrows-rotate"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Contenedor de bloques tipo Outlook (Vista Día o Vista Semana Completa) -->
+            <div id="modal-cita-slots-container" class="rounded-xl border border-slate-200 bg-white max-h-72 overflow-auto"></div>
+          </div>
+
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-end justify-between gap-3 pt-1 border-t border-slate-100">
+            <div class="flex-1">
+              <label class="block text-[11px] font-bold text-slate-600 mb-1">Notas de Servicio (Opcional)</label>
+              <input id="modal-cita-notas" type="text" placeholder="Indicaciones especiales de corte o trato..."
+                class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs" />
+            </div>
+
+            <div class="flex items-center justify-end gap-2 shrink-0">
+              <button id="btn-cancelar-modal-cita-mascota" type="button"
+                class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition">
+                Cancelar
+              </button>
+              <button type="submit" class="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs shadow transition cursor-pointer">
+                <i class="fa-solid fa-calendar-check mr-1"></i>Confirmar y Agendar Cita
               </button>
             </div>
-            <div id="modal-cita-slots-container" class="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-44 overflow-y-auto p-0.5"></div>
-          </div>
-
-          <div>
-            <label class="block text-xs font-bold text-slate-600 mb-1">Notas de Servicio</label>
-            <input id="modal-cita-notas" type="text" placeholder="Indicaciones especiales..."
-              class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs" />
-          </div>
-
-          <div class="pt-1 flex items-center justify-end gap-2">
-            <button id="btn-cancelar-modal-cita-mascota" type="button"
-              class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition">
-              Cancelar
-            </button>
-            <button type="submit" class="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow transition">
-              <i class="fa-solid fa-calendar-check mr-1"></i>Confirmar Cita
-            </button>
           </div>
         </form>
       </div>
@@ -1594,6 +1686,6 @@
   </div>
 
   <!-- Controlador Principal POO (ES Module) -->
-  <script type="module" src="./js/App.js?v=0.8.3"></script>
+  <script type="module" src="./js/App.js?v=0.9.0"></script>
 </body>
 </html>
