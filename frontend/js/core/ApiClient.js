@@ -1,11 +1,23 @@
 /**
  * ApiClient.js
- * Cliente HTTP POO desacoplado con URL base configurable (window.API_BASE_URL || 'http://localhost:8000/api')
- * que inyecta automáticamente encabezados y parámetros de contexto multi-tenant y auditoría.
+ * Cliente HTTP POO desacoplado con URL base configurable:
+ * - Si se define window.API_BASE_URL, la utiliza.
+ * - Si se sirve desde el mismo servidor unificado (puerto 8000 o proxy HTTPS), usa `${window.location.origin}/api`.
+ * - Si se abre desde servidor estático en puerto 3000 o file://, usa 'http://localhost:8000/api'.
  */
 export class ApiClient {
   constructor(sessionManager = null) {
-    this.baseUrl = (window.API_BASE_URL || 'http://localhost:8000/api').replace(/\/+$/, '');
+    const isUnifiedHttp =
+      typeof window !== 'undefined' &&
+      window.location &&
+      window.location.protocol.startsWith('http') &&
+      window.location.port !== '3000';
+
+    const defaultBaseUrl = isUnifiedHttp
+      ? `${window.location.origin}/api`
+      : 'http://localhost:8000/api';
+
+    this.baseUrl = (window.API_BASE_URL || defaultBaseUrl).replace(/\/+$/, '');
     this.sessionManager = sessionManager;
   }
 
