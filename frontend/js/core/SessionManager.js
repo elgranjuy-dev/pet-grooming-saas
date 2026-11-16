@@ -8,12 +8,13 @@ export class SessionManager {
   static STORAGE_KEY = 'pet_grooming_saas_session_v1';
 
   // Permisos de pestañas visibles según el rol del usuario activo (o simulado en Impersonate)
+  // El módulo "clientes" (Clientes y Expedientes con base de datos completa) es exclusivo para Dueño y Administrador
   static ROLE_PERMISSIONS = {
     'Dueño': ['dashboard', 'agenda', 'clientes', 'inventario', 'caja', 'config'],
     'Administrador': ['dashboard', 'agenda', 'clientes', 'inventario', 'caja', 'config'],
-    'Recepcionista': ['dashboard', 'agenda', 'clientes', 'inventario', 'caja'],
-    'Cajero': ['dashboard', 'agenda', 'clientes', 'inventario', 'caja'],
-    'Estilista': ['agenda', 'clientes', 'inventario'],
+    'Recepcionista': ['dashboard', 'agenda', 'inventario', 'caja'],
+    'Cajero': ['dashboard', 'agenda', 'inventario', 'caja'],
+    'Estilista': ['agenda', 'inventario'],
   };
 
   constructor(apiClient) {

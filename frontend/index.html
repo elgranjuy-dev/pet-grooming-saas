@@ -549,17 +549,62 @@
       </section>
 
       <!-- =================================================================
-           VISTA 3: CLIENTES Y EXPEDIENTES CLÍNICOS
+           VISTA 3: CLIENTES Y EXPEDIENTES CLÍNICOS (EXCLUSIVO ADMIN Y DUEÑO)
       ================================================================== -->
       <section id="view-clientes" class="tab-view hidden space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h2 class="text-lg font-extrabold text-slate-900 leading-tight flex items-center gap-2">
+              <span>Base de Datos de Clientes y Mascotas</span>
+              <span class="px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-800 text-[10px] font-extrabold uppercase tracking-wider">
+                Solo Administrador / Dueño
+              </span>
+            </h2>
+            <p class="text-[11px] text-slate-500">Consulta la tabla completa de la base de datos, alterna con el switch entre Clientes y Mascotas, y filtra en tiempo real desde cualquier encabezado.</p>
+          </div>
+        </div>
+
         <div class="module-widgets-grid grid grid-cols-1 lg:grid-cols-12 gap-4 items-start" data-grid-id="clientes">
-          <!-- Bloque Único: Resultado de Búsqueda y Expediente del Cliente -->
+          <!-- Bloque Único: Tabla Completa de Base de Datos (Switch Clientes <-> Mascotas) -->
           <div id="widget-cliente-expediente" class="module-widget lg:col-span-12 bg-white rounded-2xl p-5 border border-slate-200 shadow-sm" data-widget-id="cli-expediente">
-            <div draggable="true" class="widget-header flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
+            <div draggable="true" class="widget-header flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
               <h3 class="widget-title text-sm font-bold text-slate-800 flex items-center">
-                <span class="widget-drag-handle w-6 h-6 rounded-md bg-slate-100 hover:bg-blue-50 text-slate-400 hover:text-blue-600 mr-2 inline-flex items-center justify-center transition shrink-0" title="Arrastra desde aquí para mover y ordenar este bloque"><i class="fa-solid fa-grip-vertical text-xs"></i></span><i class="fa-solid fa-folder-open text-blue-600 mr-1.5"></i>Resultado de Búsqueda y Expediente
+                <span class="widget-drag-handle w-6 h-6 rounded-md bg-slate-100 hover:bg-blue-50 text-slate-400 hover:text-blue-600 mr-2 inline-flex items-center justify-center transition shrink-0" title="Arrastra desde aquí para mover y ordenar este bloque"><i class="fa-solid fa-grip-vertical text-xs"></i></span><i class="fa-solid fa-database text-blue-600 mr-1.5"></i>Padrón General en Base de Datos
               </h3>
-              <div class="widget-actions flex items-center gap-1.5 shrink-0 ml-auto">
+
+              <div class="widget-actions flex flex-wrap items-center gap-2 shrink-0 ml-auto">
+                <!-- Switch para cambiar entre Clientes y Mascotas -->
+                <div class="inline-flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
+                  <button id="btn-switch-tabla-clientes" type="button"
+                    class="px-3 py-1.5 rounded-lg text-xs font-extrabold transition flex items-center gap-1.5 bg-blue-600 text-white shadow-2xs">
+                    <i class="fa-solid fa-users text-[11px]"></i>
+                    <span>Clientes</span>
+                    <span id="count-padron-clientes" class="px-1.5 py-0.2 rounded-full bg-white/20 text-[10px]">0</span>
+                  </button>
+
+                  <button id="btn-toggle-switch-padron" type="button" title="Cambiar entre tabla de Clientes y tabla de Mascotas"
+                    class="mx-1.5 w-9 h-5 rounded-full bg-blue-600/20 border border-blue-500/30 relative flex items-center px-0.5 transition cursor-pointer">
+                    <span id="knob-switch-padron" class="w-3.5 h-3.5 rounded-full bg-blue-600 transition-transform duration-200 translate-x-0"></span>
+                  </button>
+
+                  <button id="btn-switch-tabla-mascotas" type="button"
+                    class="px-3 py-1.5 rounded-lg text-xs font-extrabold transition flex items-center gap-1.5 text-slate-600 hover:text-slate-900">
+                    <i class="fa-solid fa-paw text-[11px]"></i>
+                    <span>Mascotas</span>
+                    <span id="count-padron-mascotas" class="px-1.5 py-0.2 rounded-full bg-slate-200 text-slate-700 text-[10px]">0</span>
+                  </button>
+                </div>
+
+                <button id="btn-limpiar-filtros-padron" type="button"
+                  class="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition">
+                  <i class="fa-solid fa-filter-circle-xmark mr-1"></i>Limpiar Filtros
+                </button>
+
+                <button id="btn-recargar-padron" type="button"
+                  class="px-2.5 py-1.5 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold transition">
+                  <i class="fa-solid fa-rotate mr-1"></i>Actualizar
+                </button>
+
                 <div class="widget-window-controls flex items-center gap-1 pl-1">
                   <button type="button" class="widget-minimize-btn w-7 h-7 rounded-lg bg-slate-100 hover:bg-blue-100 text-slate-600 hover:text-blue-700 border border-slate-200/80 flex items-center justify-center transition shrink-0" title="Minimizar / Expandir bloque">
                     <i class="fa-solid fa-minus text-xs pointer-events-none"></i>
@@ -571,12 +616,145 @@
               </div>
             </div>
 
-            <div class="widget-body pt-3.5">
-              <div id="cliente-expediente-view" class="space-y-4">
-                <div class="p-6 text-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 text-xs text-slate-500">
-                  <i class="fa-solid fa-magnifying-glass text-slate-400 text-base mb-1.5 block"></i>
-                  Utiliza la barra de búsqueda en la parte superior del menú izquierdo para buscar un cliente y abrir su expediente.
-                </div>
+            <div class="widget-body pt-3.5 space-y-3">
+              <!-- TABLA 1: BASE DE DATOS COMPLETA DE CLIENTES -->
+              <div id="contenedor-tabla-bd-clientes" class="overflow-x-auto rounded-xl border border-slate-200">
+                <table class="w-full text-left border-collapse text-xs">
+                  <thead class="bg-slate-50 border-b border-slate-200">
+                    <tr class="text-[11px] uppercase text-slate-500 font-extrabold">
+                      <th class="p-2.5 min-w-[180px] align-top">
+                        <div class="mb-1.5 flex items-center gap-1">
+                          <i class="fa-solid fa-user text-slate-400"></i>
+                          <span>Nombre del Cliente</span>
+                        </div>
+                        <input type="text" data-filter-cliente="nombre" placeholder="Filtrar nombre..."
+                          class="w-full rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs font-normal text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                      </th>
+                      <th class="p-2.5 min-w-[140px] align-top">
+                        <div class="mb-1.5 flex items-center gap-1">
+                          <i class="fa-solid fa-mobile-screen text-slate-400"></i>
+                          <span>Teléfono</span>
+                        </div>
+                        <input type="text" data-filter-cliente="telefono" placeholder="Filtrar teléfono..."
+                          class="w-full rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs font-normal text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                      </th>
+                      <th class="p-2.5 min-w-[170px] align-top">
+                        <div class="mb-1.5 flex items-center gap-1">
+                          <i class="fa-solid fa-envelope text-slate-400"></i>
+                          <span>Correo Electrónico</span>
+                        </div>
+                        <input type="text" data-filter-cliente="email" placeholder="Filtrar correo..."
+                          class="w-full rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs font-normal text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                      </th>
+                      <th class="p-2.5 min-w-[210px] align-top">
+                        <div class="mb-1.5 flex items-center gap-1">
+                          <i class="fa-solid fa-paw text-slate-400"></i>
+                          <span>Mascotas Registradas</span>
+                        </div>
+                        <input type="text" data-filter-cliente="mascotas_resumen" placeholder="Filtrar mascota o raza..."
+                          class="w-full rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs font-normal text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                      </th>
+                      <th class="p-2.5 min-w-[180px] align-top">
+                        <div class="mb-1.5 flex items-center gap-1">
+                          <i class="fa-solid fa-note-sticky text-slate-400"></i>
+                          <span>Notas / Observaciones</span>
+                        </div>
+                        <input type="text" data-filter-cliente="notas" placeholder="Filtrar notas..."
+                          class="w-full rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs font-normal text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                      </th>
+                      <th class="p-2.5 min-w-[130px] align-top">
+                        <div class="mb-1.5 flex items-center gap-1">
+                          <i class="fa-solid fa-calendar text-slate-400"></i>
+                          <span>Fecha Alta</span>
+                        </div>
+                        <input type="text" data-filter-cliente="created_at" placeholder="Filtrar fecha..."
+                          class="w-full rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs font-normal text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                      </th>
+                      <th class="p-2.5 text-right align-middle min-w-[120px]">
+                        <span>Expediente</span>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody id="tbody-padron-clientes" class="divide-y divide-slate-100"></tbody>
+                </table>
+              </div>
+
+              <!-- TABLA 2: BASE DE DATOS COMPLETA DE MASCOTAS -->
+              <div id="contenedor-tabla-bd-mascotas" class="hidden overflow-x-auto rounded-xl border border-slate-200">
+                <table class="w-full text-left border-collapse text-xs">
+                  <thead class="bg-slate-50 border-b border-slate-200">
+                    <tr class="text-[11px] uppercase text-slate-500 font-extrabold">
+                      <th class="p-2.5 min-w-[140px] align-top">
+                        <div class="mb-1.5 flex items-center gap-1">
+                          <i class="fa-solid fa-barcode text-slate-400"></i>
+                          <span>Código PET-</span>
+                        </div>
+                        <input type="text" data-filter-mascota="codigo_barras" placeholder="Filtrar código..."
+                          class="w-full rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs font-normal text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                      </th>
+                      <th class="p-2.5 min-w-[150px] align-top">
+                        <div class="mb-1.5 flex items-center gap-1">
+                          <i class="fa-solid fa-dog text-slate-400"></i>
+                          <span>Mascota</span>
+                        </div>
+                        <input type="text" data-filter-mascota="nombre" placeholder="Filtrar mascota..."
+                          class="w-full rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs font-normal text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                      </th>
+                      <th class="p-2.5 min-w-[150px] align-top">
+                        <div class="mb-1.5 flex items-center gap-1">
+                          <i class="fa-solid fa-paw text-slate-400"></i>
+                          <span>Raza</span>
+                        </div>
+                        <input type="text" data-filter-mascota="raza" placeholder="Filtrar raza..."
+                          class="w-full rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs font-normal text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                      </th>
+                      <th class="p-2.5 min-w-[170px] align-top">
+                        <div class="mb-1.5 flex items-center gap-1">
+                          <i class="fa-solid fa-user text-slate-400"></i>
+                          <span>Dueño (Cliente)</span>
+                        </div>
+                        <input type="text" data-filter-mascota="cliente_nombre" placeholder="Filtrar dueño..."
+                          class="w-full rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs font-normal text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                      </th>
+                      <th class="p-2.5 min-w-[125px] align-top">
+                        <div class="mb-1.5 flex items-center gap-1">
+                          <i class="fa-solid fa-weight-scale text-slate-400"></i>
+                          <span>Peso / Edad</span>
+                        </div>
+                        <input type="text" data-filter-mascota="peso_edad" placeholder="Filtrar peso/edad..."
+                          class="w-full rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs font-normal text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                      </th>
+                      <th class="p-2.5 min-w-[165px] align-top">
+                        <div class="mb-1.5 flex items-center gap-1">
+                          <i class="fa-solid fa-notes-medical text-slate-400"></i>
+                          <span>Temp. / Alergias</span>
+                        </div>
+                        <input type="text" data-filter-mascota="clinico" placeholder="Filtrar clínico..."
+                          class="w-full rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs font-normal text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                      </th>
+                      <th class="p-2.5 min-w-[175px] align-top">
+                        <div class="mb-1.5 flex items-center gap-1">
+                          <i class="fa-solid fa-scissors text-slate-400"></i>
+                          <span>Corte / Shampoo / Navaja</span>
+                        </div>
+                        <input type="text" data-filter-mascota="estetica" placeholder="Filtrar parámetros..."
+                          class="w-full rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs font-normal text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                      </th>
+                      <th class="p-2.5 min-w-[110px] align-top">
+                        <div class="mb-1.5 flex items-center gap-1">
+                          <i class="fa-solid fa-award text-slate-400"></i>
+                          <span>Visitas</span>
+                        </div>
+                        <input type="text" data-filter-mascota="visitas_acumuladas" placeholder="Filtrar..."
+                          class="w-full rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs font-normal text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                      </th>
+                      <th class="p-2.5 text-right align-middle min-w-[165px]">
+                        <span>Acciones</span>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody id="tbody-padron-mascotas" class="divide-y divide-slate-100"></tbody>
+                </table>
               </div>
             </div>
           </div>
@@ -1215,7 +1393,7 @@
                 <span>Recepcionista</span>
                 <i class="fa-solid fa-arrow-right text-[10px] text-slate-400 group-hover:text-blue-600"></i>
               </p>
-              <p class="text-[10px] text-slate-500 mt-0.5">Dashboard, Agenda, Clientes, Inv y Caja</p>
+              <p class="text-[10px] text-slate-500 mt-0.5">Dashboard, Agenda, Inv y Caja</p>
             </button>
 
             <button type="button" data-impersonate-role="Cajero"
@@ -1224,7 +1402,7 @@
                 <span>Cajero</span>
                 <i class="fa-solid fa-arrow-right text-[10px] text-slate-400 group-hover:text-blue-600"></i>
               </p>
-              <p class="text-[10px] text-slate-500 mt-0.5">Dashboard, Agenda, Clientes, Inv y Caja</p>
+              <p class="text-[10px] text-slate-500 mt-0.5">Dashboard, Agenda, Inv y Caja</p>
             </button>
 
             <button type="button" data-impersonate-role="Estilista"
@@ -1233,7 +1411,7 @@
                 <span>Estilista</span>
                 <i class="fa-solid fa-arrow-right text-[10px] text-slate-400 group-hover:text-blue-600"></i>
               </p>
-              <p class="text-[10px] text-slate-500 mt-0.5">Solo Agenda, Clientes e Inventario</p>
+              <p class="text-[10px] text-slate-500 mt-0.5">Solo Agenda e Inventario</p>
             </button>
           </div>
         </div>
@@ -1416,6 +1594,6 @@
   </div>
 
   <!-- Controlador Principal POO (ES Module) -->
-  <script type="module" src="./js/App.js?v=0.8.2"></script>
+  <script type="module" src="./js/App.js?v=0.8.3"></script>
 </body>
 </html>

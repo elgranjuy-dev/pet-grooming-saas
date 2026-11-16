@@ -292,6 +292,80 @@ def buscar_clientes_privado(
     }
 
 
+@router.get("/clientes-mascotas/padron")
+def obtener_padron_clientes_mascotas(
+    organizacion_id: Optional[str] = Query(default=None),
+    x_organizacion_id: Optional[str] = Header(default=None),
+    db: Client = Depends(get_db),
+) -> Dict[str, Any]:
+    """
+    Devuelve la tabla completa de clientes y la tabla completa de mascotas de la organización
+    para el módulo de Clientes y Expedientes (exclusivo de Administrador y Dueño).
+    """
+    ctx = _resolver_contexto(
+        db,
+        organizacion_id=organizacion_id,
+        x_organizacion_id=x_organizacion_id,
+        requiere_sucursal=False,
+    )
+    org_id = ctx["organizacion_id"]
+
+    clientes_repo = OrganizationRepository(db, "clientes", org_id)
+    mascotas_repo = OrganizationRepository(db, "mascotas", org_id)
+
+    clientes_raw = clientes_repo.get_all(order_by="created_at", desc=True)
+    mascotas_raw = mascotas_repo.get_all(order_by="created_at", desc=True)
+
+    clientes_por_id: Dict[str, Dict[str, Any]] = {
+        c["id"]: c for c in clientes_raw if c.get("id")
+    }
+    mascotas_por_cliente: Dict[str, List[Dict[str, Any]]] = {}
+    for m in mascotas_raw:
+        cid = m.get("cliente_id")
+        if cid:
+            mascotas_por_cliente.setdefault(cid, []).append(m)
+
+    clientes_tabla: List[Dict[str, Any]] = []
+    for c in clientes_raw:
+        cid = c.get("id", "")
+        pets = mascotas_por_cliente.get(cid, [])
+        nombres_mascotas = ", ".join(
+            f"{p.get('nombre', '')} ({p.get('raza', '')})" for p in pets
+        )
+        clientes_tabla.append(
+            {
+                **c,
+                "telefono_enmascarado": _enmascarar_telefono(c.get("telefono")),
+                "ultimos_4_telefono": _ultimos_4_telefono(c.get("telefono")),
+                "mascotas": pets,
+                "total_mascotas": len(pets),
+                "mascotas_resumen": nombres_mascotas or "Sin mascotas",
+            }
+        )
+
+    mascotas_tabla: List[Dict[str, Any]] = []
+    for m in mascotas_raw:
+        dueno = clientes_por_id.get(m.get("cliente_id", ""), {})
+        mascotas_tabla.append(
+            {
+                **m,
+                "cliente_nombre": dueno.get("nombre") or "Sin dueño",
+                "cliente_telefono": dueno.get("telefono") or "",
+                "cliente_telefono_enmascarado": _enmascarar_telefono(
+                    dueno.get("telefono")
+                ),
+                "cliente_email": dueno.get("email") or "",
+            }
+        )
+
+    return {
+        "clientes": clientes_tabla,
+        "mascotas": mascotas_tabla,
+        "total_clientes": len(clientes_tabla),
+        "total_mascotas": len(mascotas_tabla),
+    }
+
+
 @router.get("/clientes/{cliente_id}/expediente")
 def obtener_expediente_cliente(
     cliente_id: str,

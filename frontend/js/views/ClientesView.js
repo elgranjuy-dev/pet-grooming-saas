@@ -62,6 +62,9 @@ export class ClientesView {
     this.api = apiClient;
     this.notify = notify;
     this.clientesEncontrados = [];
+    this.padronClientes = [];
+    this.padronMascotas = [];
+    this.modoTabla = 'clientes'; // 'clientes' | 'mascotas'
     this.expedienteActual = null;
     this.mascotaSeleccionadaId = null;
     this.serviciosCatalogo = [];
@@ -138,12 +141,327 @@ export class ClientesView {
       });
     }
 
-    // 4. Pop-up de Agregar Cita para Mascota
+    // 4. Switch Clientes <-> Mascotas y filtros de encabezados en el módulo Clientes y Expedientes
+    this.initTablaPadronEvents();
+
+    // 5. Pop-up de Agregar Cita para Mascota
     this.initModalAgendarCitaEvents();
   }
 
   async load() {
-    // Nunca se precarga información de clientes sin búsqueda previa
+    await this.cargarPadronGeneral();
+  }
+
+  initTablaPadronEvents() {
+    const btnSwitchClientes = document.getElementById('btn-switch-tabla-clientes');
+    const btnSwitchMascotas = document.getElementById('btn-switch-tabla-mascotas');
+    const btnToggleSwitch = document.getElementById('btn-toggle-switch-padron');
+    const btnLimpiarFiltros = document.getElementById('btn-limpiar-filtros-padron');
+    const btnRecargar = document.getElementById('btn-recargar-padron');
+
+    if (btnSwitchClientes) {
+      btnSwitchClientes.addEventListener('click', () => this.cambiarModoTabla('clientes'));
+    }
+    if (btnSwitchMascotas) {
+      btnSwitchMascotas.addEventListener('click', () => this.cambiarModoTabla('mascotas'));
+    }
+    if (btnToggleSwitch) {
+      btnToggleSwitch.addEventListener('click', () => {
+        const nuevoModo = this.modoTabla === 'clientes' ? 'mascotas' : 'clientes';
+        this.cambiarModoTabla(nuevoModo);
+      });
+    }
+
+    if (btnLimpiarFiltros) {
+      btnLimpiarFiltros.addEventListener('click', () => {
+        document
+          .querySelectorAll('[data-filter-cliente], [data-filter-mascota]')
+          .forEach((inp) => {
+            inp.value = '';
+          });
+        this.renderTablaClientesFiltrada();
+        this.renderTablaMascotasFiltrada();
+      });
+    }
+
+    if (btnRecargar) {
+      btnRecargar.addEventListener('click', () => this.cargarPadronGeneral());
+    }
+
+    document.querySelectorAll('[data-filter-cliente]').forEach((inp) => {
+      inp.addEventListener('input', () => this.renderTablaClientesFiltrada());
+    });
+
+    document.querySelectorAll('[data-filter-mascota]').forEach((inp) => {
+      inp.addEventListener('input', () => this.renderTablaMascotasFiltrada());
+    });
+  }
+
+  cambiarModoTabla(modo) {
+    this.modoTabla = modo === 'mascotas' ? 'mascotas' : 'clientes';
+    const esMascotas = this.modoTabla === 'mascotas';
+
+    const contClientes = document.getElementById('contenedor-tabla-bd-clientes');
+    const contMascotas = document.getElementById('contenedor-tabla-bd-mascotas');
+    const btnClientes = document.getElementById('btn-switch-tabla-clientes');
+    const btnMascotas = document.getElementById('btn-switch-tabla-mascotas');
+    const countCli = document.getElementById('count-padron-clientes');
+    const countPet = document.getElementById('count-padron-mascotas');
+    const knob = document.getElementById('knob-switch-padron');
+
+    if (contClientes) contClientes.classList.toggle('hidden', esMascotas);
+    if (contMascotas) contMascotas.classList.toggle('hidden', !esMascotas);
+
+    if (btnClientes) {
+      btnClientes.className = esMascotas
+        ? 'px-3 py-1.5 rounded-lg text-xs font-extrabold transition flex items-center gap-1.5 text-slate-600 hover:text-slate-900'
+        : 'px-3 py-1.5 rounded-lg text-xs font-extrabold transition flex items-center gap-1.5 bg-blue-600 text-white shadow-2xs';
+    }
+    if (btnMascotas) {
+      btnMascotas.className = esMascotas
+        ? 'px-3 py-1.5 rounded-lg text-xs font-extrabold transition flex items-center gap-1.5 bg-blue-600 text-white shadow-2xs'
+        : 'px-3 py-1.5 rounded-lg text-xs font-extrabold transition flex items-center gap-1.5 text-slate-600 hover:text-slate-900';
+    }
+
+    if (countCli) {
+      countCli.className = esMascotas
+        ? 'px-1.5 py-0.2 rounded-full bg-slate-200 text-slate-700 text-[10px]'
+        : 'px-1.5 py-0.2 rounded-full bg-white/20 text-[10px]';
+    }
+    if (countPet) {
+      countPet.className = esMascotas
+        ? 'px-1.5 py-0.2 rounded-full bg-white/20 text-[10px]'
+        : 'px-1.5 py-0.2 rounded-full bg-slate-200 text-slate-700 text-[10px]';
+    }
+
+    if (knob) {
+      knob.className = `w-3.5 h-3.5 rounded-full bg-blue-600 transition-transform duration-200 ${
+        esMascotas ? 'translate-x-4' : 'translate-x-0'
+      }`;
+    }
+  }
+
+  async cargarPadronGeneral() {
+    try {
+      const data = await this.api.get('/clientes-mascotas/padron');
+      this.padronClientes = data.clientes || [];
+      this.padronMascotas = data.mascotas || [];
+
+      const countCli = document.getElementById('count-padron-clientes');
+      const countPet = document.getElementById('count-padron-mascotas');
+      if (countCli) countCli.textContent = String(this.padronClientes.length);
+      if (countPet) countPet.textContent = String(this.padronMascotas.length);
+
+      this.renderTablaClientesFiltrada();
+      this.renderTablaMascotasFiltrada();
+    } catch (err) {
+      console.warn('Error al cargar padrón de clientes y mascotas:', err);
+    }
+  }
+
+  obtenerFiltrosActivos(selectorAttr) {
+    const filtros = {};
+    document.querySelectorAll(`[${selectorAttr}]`).forEach((inp) => {
+      const key = inp.getAttribute(selectorAttr);
+      const val = (inp.value || '').trim().toLowerCase();
+      if (key && val) {
+        filtros[key] = val;
+      }
+    });
+    return filtros;
+  }
+
+  renderTablaClientesFiltrada() {
+    const tbody = document.getElementById('tbody-padron-clientes');
+    if (!tbody) return;
+
+    const filtros = this.obtenerFiltrosActivos('data-filter-cliente');
+    const lista = (this.padronClientes || []).filter((c) => {
+      const fechaStr = this.formatearFechaHora(c.created_at).toLowerCase();
+      const mapCampos = {
+        nombre: String(c.nombre || '').toLowerCase(),
+        telefono: `${c.telefono || ''} ${c.telefono_enmascarado || ''} ${c.ultimos_4_telefono || ''}`.toLowerCase(),
+        email: String(c.email || '').toLowerCase(),
+        mascotas_resumen: String(c.mascotas_resumen || '').toLowerCase(),
+        notas: String(c.notas || '').toLowerCase(),
+        created_at: `${c.created_at || ''} ${fechaStr}`,
+      };
+
+      return Object.entries(filtros).every(([campo, term]) =>
+        (mapCampos[campo] || '').includes(term)
+      );
+    });
+
+    if (!lista.length) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" class="py-8 text-center text-slate-400 text-xs">
+            No se encontraron clientes con los filtros aplicados.
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = lista
+      .map((c) => {
+        const mascotas = c.mascotas || [];
+        const chips = mascotas.length
+          ? mascotas
+              .map(
+                (m) =>
+                  `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200/70 text-[10px] font-bold mr-1 mb-1">
+                    <i class="fa-solid fa-paw text-[9px]"></i>${m.nombre} (${m.raza})
+                  </span>`
+              )
+              .join('')
+          : `<span class="text-slate-400 italic text-[11px]">Sin mascotas</span>`;
+
+        return `
+          <tr class="hover:bg-blue-50/40 transition">
+            <td class="p-2.5 font-extrabold text-slate-900">
+              <button type="button" data-open-cliente-id="${c.id}" class="btn-tabla-abrir-cliente text-left hover:text-blue-600 transition flex items-center gap-2">
+                <span class="w-6 h-6 rounded-lg bg-slate-900 text-white text-[10px] font-extrabold inline-flex items-center justify-center shrink-0">
+                  ${(c.nombre || 'C').charAt(0).toUpperCase()}
+                </span>
+                <span>${c.nombre}</span>
+              </button>
+            </td>
+            <td class="p-2.5 font-mono text-slate-700 font-semibold">${c.telefono || '-'}</td>
+            <td class="p-2.5 text-slate-600">${c.email || '-'}</td>
+            <td class="p-2.5">${chips}</td>
+            <td class="p-2.5 text-slate-600">${c.notas || '-'}</td>
+            <td class="p-2.5 text-slate-500 whitespace-nowrap">${this.formatearFechaHora(c.created_at)}</td>
+            <td class="p-2.5 text-right whitespace-nowrap">
+              <button type="button" data-open-cliente-id="${c.id}"
+                class="btn-tabla-abrir-cliente px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-blue-600 text-white font-bold text-[11px] transition inline-flex items-center gap-1.5">
+                <i class="fa-solid fa-folder-open text-[10px]"></i>
+                <span>Ver Perfil</span>
+              </button>
+            </td>
+          </tr>
+        `;
+      })
+      .join('');
+
+    tbody.querySelectorAll('.btn-tabla-abrir-cliente').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const cid = btn.getAttribute('data-open-cliente-id');
+        if (cid) this.abrirExpedienteCliente(cid);
+      });
+    });
+  }
+
+  renderTablaMascotasFiltrada() {
+    const tbody = document.getElementById('tbody-padron-mascotas');
+    if (!tbody) return;
+
+    const filtros = this.obtenerFiltrosActivos('data-filter-mascota');
+    const lista = (this.padronMascotas || []).filter((m) => {
+      const mapCampos = {
+        codigo_barras: String(m.codigo_barras || '').toLowerCase(),
+        nombre: String(m.nombre || '').toLowerCase(),
+        raza: String(m.raza || '').toLowerCase(),
+        cliente_nombre: `${m.cliente_nombre || ''} ${m.cliente_telefono || ''}`.toLowerCase(),
+        peso_edad: `${m.peso_kg || 0} kg ${m.edad || ''}`.toLowerCase(),
+        clinico: `${m.temperamento || ''} ${m.alergias_medicas || ''}`.toLowerCase(),
+        estetica: `${m.estilo_corte || ''} ${m.tipo_shampoo || ''} ${m.numero_navaja || ''}`.toLowerCase(),
+        visitas_acumuladas: String(m.visitas_acumuladas || 0).toLowerCase(),
+      };
+
+      return Object.entries(filtros).every(([campo, term]) =>
+        (mapCampos[campo] || '').includes(term)
+      );
+    });
+
+    if (!lista.length) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="9" class="py-8 text-center text-slate-400 text-xs">
+            No se encontraron mascotas con los filtros aplicados.
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = lista
+      .map((m) => {
+        return `
+          <tr class="hover:bg-blue-50/40 transition">
+            <td class="p-2.5">
+              <span class="font-mono text-[11px] font-bold px-2 py-0.5 rounded bg-slate-900 text-emerald-400">
+                ${m.codigo_barras || 'SIN-COD'}
+              </span>
+            </td>
+            <td class="p-2.5 font-extrabold text-slate-900">${m.nombre}</td>
+            <td class="p-2.5 font-semibold text-blue-700">${m.raza}</td>
+            <td class="p-2.5">
+              <div class="font-bold text-slate-800">${m.cliente_nombre}</div>
+              <div class="font-mono text-[10px] text-slate-400">${m.cliente_telefono || ''}</div>
+            </td>
+            <td class="p-2.5 text-slate-700">
+              <strong>${m.peso_kg || 0} kg</strong>
+              <span class="text-slate-400 block text-[10px]">${m.edad || 'Sin edad'}</span>
+            </td>
+            <td class="p-2.5">
+              <span class="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-bold text-[10px]">${m.temperamento || 'Dócil'}</span>
+              <span class="block text-[10px] text-red-600 mt-0.5">Alergias: ${m.alergias_medicas || 'Ninguna'}</span>
+            </td>
+            <td class="p-2.5 text-[11px] text-slate-600">
+              <div><strong>Corte:</strong> ${m.estilo_corte || 'Estándar'}</div>
+              <div class="text-[10px] text-slate-400">Navaja: ${m.numero_navaja || '-'} · Shampoo: ${m.tipo_shampoo || '-'}</div>
+            </td>
+            <td class="p-2.5 font-extrabold text-blue-700 text-center">
+              ${m.visitas_acumuladas || 0} / ${m.meta_lealtad || 5}
+            </td>
+            <td class="p-2.5 text-right whitespace-nowrap space-x-1">
+              <button type="button"
+                data-open-cliente-id="${m.cliente_id}"
+                data-open-pet-id="${m.id}"
+                class="btn-tabla-abrir-mascota px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-900 text-slate-700 hover:text-white font-bold text-[11px] transition inline-flex items-center gap-1">
+                <i class="fa-solid fa-folder-open text-[10px]"></i>
+                <span>Perfil</span>
+              </button>
+              <button type="button"
+                data-agendar-pet-id="${m.id}"
+                data-agendar-pet-nombre="${m.nombre}"
+                data-agendar-pet-raza="${m.raza}"
+                data-agendar-cliente-nombre="${m.cliente_nombre}"
+                class="btn-tabla-agendar-cita px-2.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-[11px] transition inline-flex items-center gap-1">
+                <i class="fa-solid fa-calendar-plus text-[10px]"></i>
+                <span>Agregar Cita</span>
+              </button>
+            </td>
+          </tr>
+        `;
+      })
+      .join('');
+
+    tbody.querySelectorAll('.btn-tabla-abrir-mascota').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const cid = btn.getAttribute('data-open-cliente-id');
+        const pid = btn.getAttribute('data-open-pet-id');
+        if (cid) this.abrirExpedienteCliente(cid, false, pid);
+      });
+    });
+
+    tbody.querySelectorAll('.btn-tabla-agendar-cita').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const petId = btn.getAttribute('data-agendar-pet-id');
+        const petNombre = btn.getAttribute('data-agendar-pet-nombre') || 'Mascota';
+        const petRaza = btn.getAttribute('data-agendar-pet-raza') || '';
+        const cliNombre = btn.getAttribute('data-agendar-cliente-nombre') || '';
+        if (petId) {
+          this.abrirModalAgendarCitaMascota({
+            id: petId,
+            nombre: petNombre,
+            raza: petRaza,
+            cliente_nombre: cliNombre,
+          });
+        }
+      });
+    });
   }
 
   enmascararUltimos4(telefonoStr, ultimos4 = '') {
@@ -163,36 +481,6 @@ export class ClientesView {
 
   cerrarPopupExpediente() {
     document.getElementById('modal-expediente-cliente')?.classList.add('hidden');
-  }
-
-  renderResultadosEnModulo(clientes) {
-    const expView = document.getElementById('cliente-expediente-view');
-    if (!expView) return;
-
-    if (!clientes || !clientes.length) {
-      expView.innerHTML = `
-        <div class="p-6 text-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 text-xs text-slate-500">
-          <i class="fa-solid fa-magnifying-glass text-slate-400 text-base mb-1.5 block"></i>
-          No hay coincidencias.
-        </div>
-      `;
-      return;
-    }
-
-    expView.innerHTML = `
-      <div class="space-y-2">
-        ${this.construirTarjetasCoincidenciasHtml(clientes)}
-      </div>
-    `;
-
-    expView.querySelectorAll('.card-coincidencia-cliente').forEach((card) => {
-      card.addEventListener('click', () => {
-        const cid = card.getAttribute('data-open-cliente-id');
-        if (cid) {
-          this.abrirExpedienteCliente(cid);
-        }
-      });
-    });
   }
 
   construirTarjetasCoincidenciasHtml(clientes) {
@@ -282,7 +570,6 @@ export class ClientesView {
     if (q.length < 2) {
       this.clientesEncontrados = [];
       this.mostrarVentanaSinCoincidencias();
-      this.renderResultadosEnModulo([]);
       return;
     }
 
@@ -295,12 +582,10 @@ export class ClientesView {
 
       if (!this.clientesEncontrados.length) {
         this.mostrarVentanaSinCoincidencias();
-        this.renderResultadosEnModulo([]);
         return;
       }
 
       this.renderPopupCoincidencias(this.clientesEncontrados);
-      this.renderResultadosEnModulo(this.clientesEncontrados);
     } catch (_) {
       this.clientesEncontrados = [];
       this.mostrarVentanaSinCoincidencias();
@@ -1205,6 +1490,7 @@ export class ClientesView {
       document.getElementById('modal-nuevo-cliente')?.classList.add('hidden');
 
       if (nuevo?.id) {
+        await this.cargarPadronGeneral();
         await this.abrirExpedienteCliente(nuevo.id, true);
       }
     } catch (err) {
@@ -1259,6 +1545,7 @@ export class ClientesView {
       );
 
       const nuevaMascotaId = res.mascota?.id || null;
+      await this.cargarPadronGeneral();
       await this.abrirExpedienteCliente(cliente_id, false, nuevaMascotaId);
     } catch (err) {
       this.notify(`Error al registrar mascota: ${err.message}`, 'error');
