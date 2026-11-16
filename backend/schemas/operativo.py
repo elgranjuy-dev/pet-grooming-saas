@@ -17,6 +17,14 @@ class PinLoginRequest(BaseModel):
     pin: str = Field(..., min_length=1)
 
 
+class TenantLoginRequest(BaseModel):
+    usuario: str = Field(..., min_length=2)
+    password: str = Field(..., min_length=1)
+    subdominio: Optional[str] = None
+    organizacion_id: Optional[str] = None
+    sucursal_id: Optional[str] = None
+
+
 class ClienteCreate(ContextoOperativoMixin):
     nombre: str
     telefono: str
@@ -81,8 +89,16 @@ class EscaneoRequest(ContextoOperativoMixin):
 class UsuarioCreate(ContextoOperativoMixin):
     nombre: str
     rol: str = "Estilista"
-    pin: str = Field(..., min_length=4)
+    pin: str = Field(..., min_length=3)
     activo: Optional[bool] = True
+
+
+class UsuarioUpdate(ContextoOperativoMixin):
+    nombre: Optional[str] = None
+    rol: Optional[str] = None
+    pin: Optional[str] = None
+    activo: Optional[bool] = None
+    nueva_sucursal_id: Optional[str] = None
 
 
 class CheckOutRequest(ContextoOperativoMixin):

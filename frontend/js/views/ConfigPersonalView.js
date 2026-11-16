@@ -1,13 +1,16 @@
 /**
  * ConfigPersonalView.js
  * Vista POO para Configuración de Agenda (intervalo, plantilla semanal, catálogo de servicios,
- * excepciones/bloqueos), alta de Personal y Bitácora de Auditoría / Asistencias.
+ * excepciones/bloqueos), gestión de Personal (alta, edición de perfil/rol/contraseña y eliminación)
+ * y Bitácora de Auditoría.
  */
 export class ConfigPersonalView {
   constructor(apiClient, notify) {
     this.api = apiClient;
     this.notify = notify;
     this.plantillaActual = [];
+    this.personalActual = [];
+    this.sucursalesOrg = [];
   }
 
   init() {
@@ -47,6 +50,24 @@ export class ConfigPersonalView {
         this.crearPersonal();
       });
     }
+
+    const formEditPersonal = document.getElementById('form-editar-personal');
+    if (formEditPersonal) {
+      formEditPersonal.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.guardarEdicionPersonal();
+      });
+    }
+
+    const cerrarModalBtns = [
+      document.getElementById('btn-cerrar-modal-personal'),
+      document.getElementById('btn-cancelar-modal-personal'),
+    ];
+    cerrarModalBtns.forEach((btn) => {
+      if (btn) {
+        btn.addEventListener('click', () => this.cerrarModalEditarPersonal());
+      }
+    });
   }
 
   async load() {
@@ -311,7 +332,9 @@ export class ConfigPersonalView {
   async cargarPersonalYBitacora() {
     try {
       const data = await this.api.get('/personal');
-      this.renderPersonal(data.personal || []);
+      this.personalActual = data.personal || [];
+      this.sucursalesOrg = data.sucursales || [];
+      this.renderPersonal(this.personalActual);
       this.renderBitacora(data.bitacora || []);
     } catch (err) {
       this.notify(`Error al cargar personal: ${err.message}`, 'error');
@@ -323,26 +346,156 @@ export class ConfigPersonalView {
     if (!tbody) return;
 
     if (!usuarios.length) {
-      tbody.innerHTML = `<tr><td colspan="3" class="py-4 text-center text-slate-400 text-xs">Sin personal registrado.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="4" class="py-4 text-center text-slate-400 text-xs">Sin personal registrado.</td></tr>`;
       return;
     }
+
+    const badgeRolColor = {
+      'Dueño': 'bg-indigo-100 text-indigo-800',
+      'Administrador': 'bg-purple-100 text-purple-800',
+      'Cajero': 'bg-emerald-100 text-emerald-800',
+      'Recepcionista': 'bg-teal-100 text-teal-800',
+      'Estilista': 'bg-blue-100 text-blue-700',
+    };
 
     tbody.innerHTML = usuarios
       .map(
         (u) => `
-        <tr class="border-b border-slate-100 text-xs">
-          <td class="py-2.5 px-3 font-semibold text-slate-800">${u.nombre}</td>
-          <td class="py-2.5 px-3">
-            <span class="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-semibold">${u.rol}</span>
+        <tr class="border-b border-slate-100 text-xs hover:bg-slate-50/70 transition">
+          <td class="py-2.5 px-2">
+            <div class="font-bold text-slate-800">${u.nombre}</div>
+            <div class="text-[10px] text-slate-400">${u.sucursal_nombre || 'Sucursal Matriz'}</div>
           </td>
-          <td class="py-2.5 px-3">
-            <span class="px-2 py-0.5 rounded-full ${
+          <td class="py-2.5 px-2">
+            <span class="px-2 py-0.5 rounded-full font-semibold ${
+              badgeRolColor[u.rol] || 'bg-blue-100 text-blue-700'
+            }">${u.rol}</span>
+          </td>
+          <td class="py-2.5 px-2">
+            <span class="px-2 py-0.5 rounded-full font-semibold ${
               u.activo ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'
             }">${u.activo ? 'Activo' : 'Inactivo'}</span>
+          </td>
+          <td class="py-2.5 px-2 text-right whitespace-nowrap">
+            <button type="button" data-edit-user="${u.id}" title="Editar perfil / rol / contraseña"
+              class="px-2 py-1 rounded-lg bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-600 font-semibold transition mr-1">
+              <i class="fa-solid fa-pen-to-square"></i> Editar
+            </button>
+            <button type="button" data-delete-user="${u.id}" title="Eliminar colaborador"
+              class="px-2 py-1 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 font-semibold transition">
+              <i class="fa-solid fa-trash"></i>
+            </button>
           </td>
         </tr>`
       )
       .join('');
+
+    tbody.querySelectorAll('[data-edit-user]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const uid = btn.getAttribute('data-edit-user');
+        this.abrirModalEditarPersonal(uid);
+      });
+    });
+
+    tbody.querySelectorAll('[data-delete-user]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const uid = btn.getAttribute('data-delete-user');
+        this.eliminarPersonal(uid);
+      });
+    });
+  }
+
+  abrirModalEditarPersonal(usuarioId) {
+    const usr = this.personalActual.find((u) => String(u.id) === String(usuarioId));
+    if (!usr) return;
+
+    const modal = document.getElementById('modal-editar-personal');
+    const idEl = document.getElementById('edit-per-id');
+    const nomEl = document.getElementById('edit-per-nombre');
+    const rolEl = document.getElementById('edit-per-rol');
+    const actEl = document.getElementById('edit-per-activo');
+    const sucEl = document.getElementById('edit-per-sucursal');
+    const pinEl = document.getElementById('edit-per-pin');
+
+    if (idEl) idEl.value = usr.id;
+    if (nomEl) nomEl.value = usr.nombre || '';
+    if (rolEl) rolEl.value = usr.rol || 'Estilista';
+    if (actEl) actEl.value = usr.activo !== false ? 'true' : 'false';
+    if (pinEl) pinEl.value = '';
+
+    if (sucEl) {
+      if (this.sucursalesOrg.length) {
+        sucEl.innerHTML = this.sucursalesOrg
+          .map(
+            (s) =>
+              `<option value="${s.id}" ${
+                s.id === usr.sucursal_id ? 'selected' : ''
+              }>${s.nombre}</option>`
+          )
+          .join('');
+      } else {
+        sucEl.innerHTML = `<option value="${usr.sucursal_id || ''}">${
+          usr.sucursal_nombre || 'Sucursal Actual'
+        }</option>`;
+      }
+    }
+
+    if (modal) modal.classList.remove('hidden');
+  }
+
+  cerrarModalEditarPersonal() {
+    document.getElementById('modal-editar-personal')?.classList.add('hidden');
+  }
+
+  async guardarEdicionPersonal() {
+    const usuarioId = document.getElementById('edit-per-id')?.value;
+    const nombre = document.getElementById('edit-per-nombre')?.value.trim();
+    const rol = document.getElementById('edit-per-rol')?.value || 'Estilista';
+    const activo = document.getElementById('edit-per-activo')?.value === 'true';
+    const nueva_sucursal_id = document.getElementById('edit-per-sucursal')?.value || undefined;
+    const pin = document.getElementById('edit-per-pin')?.value.trim();
+
+    if (!usuarioId || !nombre) {
+      this.notify('El nombre de usuario no puede estar vacío.', 'warning');
+      return;
+    }
+
+    try {
+      const payload = {
+        nombre,
+        rol,
+        activo,
+        nueva_sucursal_id,
+      };
+      if (pin) {
+        payload.pin = pin;
+      }
+
+      const res = await this.api.put(`/personal/${usuarioId}`, payload);
+      this.notify(res.mensaje || 'Colaborador actualizado.', 'success');
+      this.cerrarModalEditarPersonal();
+      await this.cargarPersonalYBitacora();
+    } catch (err) {
+      this.notify(`Error al actualizar colaborador: ${err.message}`, 'error');
+    }
+  }
+
+  async eliminarPersonal(usuarioId) {
+    const usr = this.personalActual.find((u) => String(u.id) === String(usuarioId));
+    if (!usr) return;
+
+    const confirmar = window.confirm(
+      `¿Estás seguro de eliminar al colaborador "${usr.nombre}" (${usr.rol})?\nEsta acción revocará su acceso de forma permanente.`
+    );
+    if (!confirmar) return;
+
+    try {
+      const res = await this.api.delete(`/personal/${usuarioId}`);
+      this.notify(res.mensaje || `Colaborador ${usr.nombre} eliminado.`, 'info');
+      await this.cargarPersonalYBitacora();
+    } catch (err) {
+      this.notify(`No se pudo eliminar: ${err.message}`, 'error');
+    }
   }
 
   async crearPersonal() {
@@ -350,8 +503,8 @@ export class ConfigPersonalView {
     const rol = document.getElementById('per-rol')?.value || 'Estilista';
     const pin = document.getElementById('per-pin')?.value.trim();
 
-    if (!nombre || !pin || pin.length < 4) {
-      this.notify('Ingresa nombre y un PIN de al menos 4 dígitos.', 'warning');
+    if (!nombre || !pin || pin.length < 3) {
+      this.notify('Ingresa usuario y una contraseña de al menos 3 caracteres.', 'warning');
       return;
     }
 
@@ -362,7 +515,7 @@ export class ConfigPersonalView {
         pin,
         activo: true,
       });
-      this.notify(`Colaborador ${nombre} dado de alta.`, 'success');
+      this.notify(`Colaborador ${nombre} (${rol}) dado de alta.`, 'success');
       document.getElementById('form-crear-personal')?.reset();
       await this.cargarPersonalYBitacora();
     } catch (err) {

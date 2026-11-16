@@ -1109,20 +1109,44 @@ def listar_personal(
         db, organizacion_id, sucursal_id, x_organizacion_id, x_sucursal_id
     )
     org_id, suc_id = ctx["organizacion_id"], ctx["sucursal_id"]
-    usuarios_repo = BranchRepository(db, "usuarios_crm", org_id, suc_id)
+
+    # Obtener sucursales de la organización para mostrar la sucursal de cada colaborador
+    sucs = (
+        db.table("sucursales")
+        .select("id, nombre, activa")
+        .eq("organizacion_id", org_id)
+        .order("nombre")
+        .execute()
+        .data
+        or []
+    )
+    sucs_map = {s["id"]: s["nombre"] for s in sucs}
+
+    # Listar todos los colaboradores de la organización para que el Dueño/Admin gestione toda su plantilla
+    personal_raw = (
+        db.table("usuarios_crm")
+        .select("id, organizacion_id, sucursal_id, nombre, rol, activo, created_at")
+        .eq("organizacion_id", org_id)
+        .order("nombre")
+        .execute()
+        .data
+        or []
+    )
+    personal = [
+        {**u, "sucursal_nombre": sucs_map.get(u.get("sucursal_id"), "Sucursal Matriz")}
+        for u in personal_raw
+    ]
+
     asistencias_repo = BranchRepository(db, "asistencias", org_id, suc_id)
     bitacora_repo = BranchRepository(db, "bitacora_auditoria", org_id, suc_id)
 
-    personal = usuarios_repo.get_all(
-        columns="id, organizacion_id, sucursal_id, nombre, rol, activo, created_at",
-        order_by="nombre",
-    )
     asistencias = asistencias_repo.get_all(order_by="hora_entrada", desc=True, limit=50)
     bitacora = bitacora_repo.get_all(order_by="fecha", desc=True, limit=100)
 
     return {
         "personal": personal,
         "usuarios": personal,
+        "sucursales": sucs,
         "asistencias": asistencias,
         "bitacora": bitacora,
         "total": len(personal),
@@ -1163,9 +1187,44 @@ def crear_usuario_personal(
         x_organizacion_id,
         x_sucursal_id,
     )
-    org_id, suc_id = ctx["organizacion_id"], ctx["sucursal_id"]
-    usuarios_repo = BranchRepository(db, "usuarios_crm", org_id, suc_id)
+    org_id = ctx["organizacion_id"]
+    suc_id = payload.sucursal_id or ctx["sucursal_id"]
 
+    # Verificar límite de usuarios del plan
+    org_res = db.table("organizaciones").select("max_usuarios").eq("id", org_id).limit(1).execute()
+    if org_res.data:
+        max_usr = int(org_res.data[0].get("max_usuarios") or 10)
+        actuales = (
+            db.table("usuarios_crm")
+            .select("id")
+            .eq("organizacion_id", org_id)
+            .execute()
+            .data
+            or []
+        )
+        if len(actuales) >= max_usr:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Has alcanzado el límite de {max_usr} colaboradores de tu plan actual.",
+            )
+
+    # Validar que no exista otro colaborador con el mismo nombre de usuario en la organización
+    duplicados = (
+        db.table("usuarios_crm")
+        .select("id, nombre")
+        .eq("organizacion_id", org_id)
+        .ilike("nombre", payload.nombre.strip())
+        .execute()
+        .data
+        or []
+    )
+    if duplicados:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Ya existe un colaborador con el usuario '{payload.nombre.strip()}'.",
+        )
+
+    usuarios_repo = BranchRepository(db, "usuarios_crm", org_id, suc_id)
     nuevo_usuario = usuarios_repo.insert(
         {
             "nombre": payload.nombre.strip(),
@@ -1187,6 +1246,189 @@ def crear_usuario_personal(
 
     usuario_seguro = {k: v for k, v in nuevo_usuario.items() if k != "pin"}
     return {"usuario": usuario_seguro, "mensaje": "Colaborador registrado exitosamente."}
+
+
+@router.put("/personal/{usuario_id}")
+def actualizar_usuario_personal(
+    usuario_id: str,
+    payload: UsuarioUpdate,
+    organizacion_id: Optional[str] = Query(default=None),
+    sucursal_id: Optional[str] = Query(default=None),
+    x_organizacion_id: Optional[str] = Header(default=None),
+    x_sucursal_id: Optional[str] = Header(default=None),
+    db: Client = Depends(get_db),
+) -> Dict[str, Any]:
+    """
+    Permite al Dueño / Administrador editar el perfil de un colaborador:
+    nombre (usuario de login), rol (vista asignada), contraseña/PIN, sucursal y estado activo.
+    """
+    ctx = _resolver_contexto(
+        db,
+        organizacion_id or payload.organizacion_id,
+        sucursal_id or payload.sucursal_id,
+        x_organizacion_id,
+        x_sucursal_id,
+    )
+    org_id, suc_id = ctx["organizacion_id"], ctx["sucursal_id"]
+
+    usr_res = (
+        db.table("usuarios_crm")
+        .select("*")
+        .eq("id", usuario_id)
+        .eq("organizacion_id", org_id)
+        .limit(1)
+        .execute()
+    )
+    if not usr_res.data:
+        raise HTTPException(status_code=404, detail="Colaborador no encontrado.")
+    actual = usr_res.data[0]
+
+    cambios: Dict[str, Any] = {}
+    if payload.nombre is not None and payload.nombre.strip():
+        nuevo_nombre = payload.nombre.strip()
+        if nuevo_nombre.lower() != str(actual.get("nombre", "")).lower():
+            dup = (
+                db.table("usuarios_crm")
+                .select("id")
+                .eq("organizacion_id", org_id)
+                .ilike("nombre", nuevo_nombre)
+                .neq("id", usuario_id)
+                .execute()
+                .data
+                or []
+            )
+            if dup:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Ya existe otro colaborador con el usuario '{nuevo_nombre}'.",
+                )
+        cambios["nombre"] = nuevo_nombre
+
+    if payload.rol is not None and payload.rol.strip():
+        cambios["rol"] = payload.rol.strip()
+
+    if payload.pin is not None and payload.pin.strip():
+        if len(payload.pin.strip()) < 3:
+            raise HTTPException(
+                status_code=400,
+                detail="La nueva contraseña o PIN debe tener al menos 3 caracteres.",
+            )
+        cambios["pin"] = payload.pin.strip()
+
+    if payload.activo is not None:
+        cambios["activo"] = payload.activo
+
+    if payload.nueva_sucursal_id:
+        cambios["sucursal_id"] = payload.nueva_sucursal_id
+
+    if not cambios:
+        usuario_seguro = {k: v for k, v in actual.items() if k != "pin"}
+        return {"usuario": usuario_seguro, "mensaje": "Sin cambios para aplicar."}
+
+    upd = (
+        db.table("usuarios_crm")
+        .update(cambios)
+        .eq("id", usuario_id)
+        .eq("organizacion_id", org_id)
+        .execute()
+    )
+    actualizado = upd.data[0] if upd.data else {**actual, **cambios}
+
+    SecurityManager.registrar_auditoria(
+        db=db,
+        org_id=org_id,
+        suc_id=suc_id,
+        usuario=payload.usuario_actual or "Administrador",
+        rol=payload.rol_actual or "Dueño",
+        accion="EDITAR_PERSONAL",
+        detalle=f"Perfil actualizado: {actualizado.get('nombre')} -> Rol: {actualizado.get('rol')} ({'Activo' if actualizado.get('activo') else 'Inactivo'})",
+    )
+
+    usuario_seguro = {k: v for k, v in actualizado.items() if k != "pin"}
+    return {
+        "usuario": usuario_seguro,
+        "mensaje": f"Perfil de '{actualizado.get('nombre')}' actualizado correctamente.",
+    }
+
+
+@router.delete("/personal/{usuario_id}")
+def eliminar_usuario_personal(
+    usuario_id: str,
+    organizacion_id: Optional[str] = Query(default=None),
+    sucursal_id: Optional[str] = Query(default=None),
+    usuario_actual: Optional[str] = Query(default=None),
+    rol_actual: Optional[str] = Query(default=None),
+    x_organizacion_id: Optional[str] = Header(default=None),
+    x_sucursal_id: Optional[str] = Header(default=None),
+    x_usuario_actual: Optional[str] = Header(default=None),
+    x_rol_actual: Optional[str] = Header(default=None),
+    db: Client = Depends(get_db),
+) -> Dict[str, Any]:
+    """
+    Elimina un colaborador de la organización y limpia sus registros de asistencia vinculados.
+    Protege que no se elimine al único Dueño de la organización.
+    """
+    ctx = _resolver_contexto(
+        db, organizacion_id, sucursal_id, x_organizacion_id, x_sucursal_id
+    )
+    org_id, suc_id = ctx["organizacion_id"], ctx["sucursal_id"]
+
+    usr_res = (
+        db.table("usuarios_crm")
+        .select("*")
+        .eq("id", usuario_id)
+        .eq("organizacion_id", org_id)
+        .limit(1)
+        .execute()
+    )
+    if not usr_res.data:
+        raise HTTPException(status_code=404, detail="Colaborador no encontrado.")
+    objetivo = usr_res.data[0]
+
+    # Evitar dejar la organización sin ningún Dueño/Administrador
+    if objetivo.get("rol") == "Dueño":
+        otros_duenos = (
+            db.table("usuarios_crm")
+            .select("id")
+            .eq("organizacion_id", org_id)
+            .eq("rol", "Dueño")
+            .neq("id", usuario_id)
+            .execute()
+            .data
+            or []
+        )
+        if not otros_duenos:
+            raise HTTPException(
+                status_code=400,
+                detail="No puedes eliminar al único usuario con rol 'Dueño' de la organización. Puedes editar su nombre o contraseña.",
+            )
+
+    # Limpiar asistencias vinculadas a este usuario_id para evitar bloqueo por llave foránea
+    try:
+        db.table("asistencias").delete().eq("usuario_id", usuario_id).execute()
+    except Exception:
+        pass
+
+    db.table("usuarios_crm").delete().eq("id", usuario_id).eq(
+        "organizacion_id", org_id
+    ).execute()
+
+    SecurityManager.registrar_auditoria(
+        db=db,
+        org_id=org_id,
+        suc_id=suc_id,
+        usuario=usuario_actual or x_usuario_actual or "Administrador",
+        rol=rol_actual or x_rol_actual or "Dueño",
+        accion="ELIMINAR_PERSONAL",
+        detalle=f"Colaborador eliminado: {objetivo.get('nombre')} ({objetivo.get('rol')})",
+    )
+
+    return {
+        "eliminado": True,
+        "usuario_id": usuario_id,
+        "mensaje": f"Colaborador '{objetivo.get('nombre')}' eliminado permanentemente.",
+    }
+
 
 
 @router.post("/checkout")

@@ -2,7 +2,8 @@
  * App.js
  * Controlador principal POO del Frontend Operativo.
  * Inicializa ApiClient, SessionManager y las vistas modulares, gestionando
- * el flujo de login corporativo SaaS + PIN, navegación entre pestañas, barra lateral colapsable y Check-Out.
+ * el flujo de login por subdominio (Usuario + Contraseña), vistas dinámicas por rol,
+ * barra lateral colapsable y Check-Out.
  */
 import { ApiClient } from './core/ApiClient.js';
 import { SessionManager } from './core/SessionManager.js';
@@ -73,62 +74,12 @@ export class App {
   }
 
   bindLoginEvents() {
-    const orgSelect = document.getElementById('login-org-select');
-    const sucSelect = document.getElementById('login-sucursal-select');
-    const formLogin = document.getElementById('form-login-pin');
-    const formSaaS = document.getElementById('form-login-saas');
-
-    if (orgSelect) {
-      orgSelect.addEventListener('change', async (e) => {
-        await this.poblarSucursalesLogin(e.target.value);
-      });
-    }
-
-    if (sucSelect) {
-      sucSelect.addEventListener('change', async (e) => {
-        const orgId = orgSelect?.value || '';
-        await this.poblarUsuariosLogin(e.target.value, orgId);
-      });
-    }
-
+    const formLogin = document.getElementById('form-login-tenant');
     if (formLogin) {
       formLogin.addEventListener('submit', async (e) => {
         e.preventDefault();
-        await this.ejecutarLoginPin();
+        await this.ejecutarLoginTenant();
       });
-    }
-
-    if (formSaaS) {
-      formSaaS.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        await this.ejecutarLoginCorporativoSaaS();
-      });
-    }
-  }
-
-  async ejecutarLoginCorporativoSaaS() {
-    const email = document.getElementById('saas-email-input')?.value.trim();
-    const password = document.getElementById('saas-password-input')?.value.trim();
-
-    if (!email || !password) {
-      this.notify('Ingresa el correo del propietario y la contraseña.', 'warning');
-      return;
-    }
-
-    try {
-      const res = await this.session.conectarOrganizacionSaaS({ email, password });
-      const orgSelect = document.getElementById('login-org-select');
-      if (orgSelect && res.organizacion) {
-        orgSelect.value = res.organizacion.id;
-        await this.poblarSucursalesLogin(res.organizacion.id);
-      }
-      this.notify(
-        res.mensaje || `Organización ${res.organizacion_nombre} vinculada.`,
-        'success'
-      );
-      document.getElementById('login-pin-input')?.focus();
-    } catch (err) {
-      this.notify(err.message || 'Error al vincular organización', 'error');
     }
   }
 
@@ -136,86 +87,45 @@ export class App {
     document.getElementById('login-screen')?.classList.remove('hidden');
     document.getElementById('app-shell')?.classList.add('hidden');
 
-    const orgSelect = document.getElementById('login-org-select');
     try {
-      await this.session.cargarContextoInicial();
-      const orgs = this.session.organizaciones || [];
-
-      if (orgSelect) {
-        if (!orgs.length) {
-          orgSelect.innerHTML = `<option value="">Sin organizaciones activas</option>`;
-          return;
+      const ctx = await this.session.cargarContextoInicial();
+      const tenant = ctx.tenant_detectado;
+      if (tenant) {
+        const nombreEl = document.getElementById('login-tenant-nombre');
+        const subEl = document.getElementById('login-tenant-subdominio');
+        if (nombreEl) nombreEl.textContent = tenant.nombre;
+        if (subEl) {
+          subEl.textContent = `Acceso al sistema · ${tenant.subdominio || 'portal'}.petgrooming.mx`;
         }
-        orgSelect.innerHTML = orgs
-          .map((o) => `<option value="${o.id}">${o.nombre} (Plan ${o.plan || 'Pro'})</option>`)
-          .join('');
-        await this.poblarSucursalesLogin(orgs[0].id);
       }
-    } catch (err) {
-      this.notify(`No se pudo conectar con la API: ${err.message}`, 'error');
+    } catch (_) {
+      // Si aún no hay conexión, mantiene título por defecto
     }
   }
 
-  async poblarSucursalesLogin(organizacionId) {
-    const sucSelect = document.getElementById('login-sucursal-select');
-    if (!sucSelect) return;
+  async ejecutarLoginTenant() {
+    const usuario = document.getElementById('login-usuario-input')?.value.trim();
+    const password = document.getElementById('login-password-input')?.value.trim();
 
-    const sucursales = this.session.obtenerSucursalesPorOrganizacion(organizacionId);
-    if (!sucursales.length) {
-      sucSelect.innerHTML = `<option value="">Sin sucursales activas</option>`;
-      return;
-    }
-
-    sucSelect.innerHTML = sucursales
-      .map((s) => `<option value="${s.id}">${s.nombre}</option>`)
-      .join('');
-    await this.poblarUsuariosLogin(sucursales[0].id, organizacionId);
-  }
-
-  async poblarUsuariosLogin(sucursalId, organizacionId) {
-    const userSelect = document.getElementById('login-usuario-select');
-    if (!userSelect) return;
-
-    try {
-      const usuarios = await this.session.cargarUsuariosSucursal(
-        sucursalId,
-        organizacionId
-      );
-      if (!usuarios.length) {
-        userSelect.innerHTML = `<option value="">Sin personal activo en esta sucursal</option>`;
-        return;
-      }
-      userSelect.innerHTML = usuarios
-        .map((u) => `<option value="${u.id}">${u.nombre} — ${u.rol}</option>`)
-        .join('');
-    } catch (err) {
-      this.notify(`Error al cargar usuarios: ${err.message}`, 'error');
-    }
-  }
-
-  async ejecutarLoginPin() {
-    const organizacionId = document.getElementById('login-org-select')?.value;
-    const sucursalId = document.getElementById('login-sucursal-select')?.value;
-    const usuarioId = document.getElementById('login-usuario-select')?.value;
-    const pin = document.getElementById('login-pin-input')?.value.trim();
-
-    if (!organizacionId || !sucursalId || !usuarioId || !pin) {
-      this.notify('Completa todos los campos e ingresa tu PIN.', 'warning');
+    if (!usuario || !password) {
+      this.notify('Ingresa tu usuario y contraseña.', 'warning');
       return;
     }
 
     try {
-      const sesion = await this.session.iniciarSesionPin({
-        organizacionId,
-        sucursalId,
-        usuarioId,
-        pin,
+      const sesion = await this.session.iniciarSesionTenant({
+        usuario,
+        password,
       });
-      document.getElementById('login-pin-input').value = '';
-      this.notify(`Turno iniciado: ${sesion.usuario_nombre} (${sesion.rol})`, 'success');
+      const passInput = document.getElementById('login-password-input');
+      if (passInput) passInput.value = '';
+      this.notify(
+        `Sesión iniciada: ${sesion.usuario_nombre} — Vista ${sesion.rol}`,
+        'success'
+      );
       this.mostrarPanelOperativo();
     } catch (err) {
-      this.notify(err.message || 'PIN inválido', 'error');
+      this.notify(err.message || 'Usuario o contraseña incorrectos.', 'error');
     }
   }
 
@@ -263,17 +173,29 @@ export class App {
   }
 
   async switchTab(tabName) {
+    const allowedTabs = this.session.getAllowedTabs();
+    if (!allowedTabs.includes(tabName)) {
+      this.notify('Tu rol no tiene acceso a este módulo.', 'warning');
+      return;
+    }
+
     this.activeTab = tabName;
 
     document.querySelectorAll('[data-tab-target]').forEach((btn) => {
       const isTarget = btn.getAttribute('data-tab-target') === tabName;
-      btn.classList.toggle('active', isTarget);
+      btn.classList.toggle('bg-blue-600', isTarget);
+      btn.classList.toggle('text-white', isTarget);
+      btn.classList.toggle('text-slate-300', !isTarget);
     });
 
     document.querySelectorAll('.tab-view').forEach((section) => {
-      const isMatch = section.id === `view-${tabName}`;
-      section.classList.toggle('hidden', !isMatch);
+      section.classList.add('hidden');
     });
+
+    const activeSection = document.getElementById(`view-${tabName}`);
+    if (activeSection) {
+      activeSection.classList.remove('hidden');
+    }
 
     const viewInstance = this.views[tabName];
     if (viewInstance && typeof viewInstance.load === 'function') {
@@ -282,29 +204,33 @@ export class App {
   }
 
   bindSidebarAndCheckoutEvents() {
-    const toggleBtn = document.getElementById('btn-toggle-sidebar');
+    const btnToggleSidebar = document.getElementById('btn-toggle-sidebar');
     const sidebar = document.getElementById('sidebar');
-    if (toggleBtn && sidebar) {
-      toggleBtn.addEventListener('click', () => {
+
+    if (btnToggleSidebar && sidebar) {
+      btnToggleSidebar.addEventListener('click', () => {
         sidebar.classList.toggle('collapsed');
       });
     }
 
-    const checkoutBtn = document.getElementById('btn-checkout-turno');
-    if (checkoutBtn) {
-      checkoutBtn.addEventListener('click', async () => {
+    const btnCheckout = document.getElementById('btn-checkout-turno');
+    if (btnCheckout) {
+      btnCheckout.addEventListener('click', async () => {
         const montoStr = window.prompt(
-          'Ingresa el monto declarado en corte de caja al cerrar turno ($ MXN):',
+          'Corte de Caja al finalizar turno ($ MXN):\nIngresa el monto efectivo en caja (o 0 si no aplica):',
           '0'
         );
         if (montoStr === null) return;
 
+        const monto = Number(montoStr) || 0;
         try {
-          await this.session.cerrarTurno(Number(montoStr || 0));
-          this.notify('Turno cerrado y corte de caja registrado.', 'success');
+          await this.session.cerrarTurno(monto);
+          this.notify('Turno cerrado y salida registrada en asistencia.', 'info');
           await this.mostrarPantallaLogin();
         } catch (err) {
-          this.notify(`Error al cerrar turno: ${err.message}`, 'error');
+          this.session.clearSession();
+          this.notify(`Sesión finalizada (${err.message})`, 'warning');
+          await this.mostrarPantallaLogin();
         }
       });
     }
@@ -313,6 +239,6 @@ export class App {
 
 document.addEventListener('DOMContentLoaded', () => {
   const app = new App();
-  window.petGroomingApp = app;
   app.init();
+  window.petGroomingApp = app;
 });

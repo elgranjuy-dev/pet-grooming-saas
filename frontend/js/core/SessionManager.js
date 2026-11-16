@@ -1,7 +1,6 @@
 /**
  * SessionManager.js
- * Gestiona el flujo de login (vinculación corporativa SaaS por correo/contraseña,
- * contexto inicial, usuarios por sucursal, validación de PIN),
+ * Gestiona el flujo de login por subdominio (Usuario + Contraseña),
  * persiste la sesión en sessionStorage y aplica permisos visuales por rol.
  */
 export class SessionManager {
@@ -18,9 +17,9 @@ export class SessionManager {
 
   constructor(apiClient) {
     this.api = apiClient;
+    this.tenantDetectado = null;
     this.organizaciones = [];
     this.sucursales = [];
-    this.usuariosSucursal = [];
   }
 
   getSession() {
@@ -45,70 +44,49 @@ export class SessionManager {
     return Boolean(s && s.organizacion_id && s.sucursal_id && s.usuario_id);
   }
 
+  detectarSubdominio() {
+    const params = new URLSearchParams(window.location.search);
+    const paramTenant = params.get('tenant') || params.get('subdominio') || params.get('org');
+    if (paramTenant) return paramTenant.trim().toLowerCase();
+
+    const host = (window.location.hostname || '').toLowerCase();
+    const parts = host.split('.');
+    if (parts.length >= 2 && !['www', 'localhost', '127', 'app', 'api'].includes(parts[0])) {
+      return parts[0];
+    }
+    return '';
+  }
+
   async cargarContextoInicial() {
-    const data = await this.api.get('/contexto-inicial');
+    const subdominio = this.detectarSubdominio();
+    const data = await this.api.get('/contexto-inicial', subdominio ? { subdominio } : {});
+    this.tenantDetectado = data.tenant_detectado || null;
     this.organizaciones = data.organizaciones || [];
     this.sucursales = data.sucursales || [];
     return data;
   }
 
-  async conectarOrganizacionSaaS({ email, password }) {
-    const data = await this.api.post('/auth/organizacion', {
-      email,
+  async iniciarSesionTenant({ usuario, password }) {
+    const subdominio = this.detectarSubdominio();
+    const res = await this.api.post('/auth/login-tenant', {
+      usuario,
       password,
-    });
-    if (data.organizacion) {
-      const idx = this.organizaciones.findIndex((o) => o.id === data.organizacion.id);
-      if (idx >= 0) {
-        this.organizaciones[idx] = data.organizacion;
-      } else {
-        this.organizaciones.unshift(data.organizacion);
-      }
-    }
-    if (Array.isArray(data.sucursales) && data.sucursales.length) {
-      this.sucursales = data.sucursales;
-    }
-    return data;
-  }
-
-  obtenerSucursalesPorOrganizacion(organizacionId) {
-    const org = this.organizaciones.find((o) => o.id === organizacionId);
-    if (org && Array.isArray(org.sucursales) && org.sucursales.length > 0) {
-      return org.sucursales;
-    }
-    return this.sucursales.filter((s) => s.organizacion_id === organizacionId);
-  }
-
-  async cargarUsuariosSucursal(sucursalId, organizacionId = '') {
-    if (!sucursalId) return [];
-    const data = await this.api.get(`/sucursales/${sucursalId}/usuarios`, {
-      organizacion_id: organizacionId,
-    });
-    this.usuariosSucursal = data.usuarios || [];
-    return this.usuariosSucursal;
-  }
-
-  async iniciarSesionPin({ organizacionId, sucursalId, usuarioId, pin }) {
-    const res = await this.api.post('/auth/login-pin', {
-      organizacion_id: organizacionId,
-      sucursal_id: sucursalId,
-      usuario_id: usuarioId,
-      pin,
+      subdominio: subdominio || undefined,
     });
 
-    const org = this.organizaciones.find((o) => o.id === organizacionId) || {};
-    const suc = this.sucursales.find((s) => s.id === sucursalId) || {};
+    const org = res.organizacion || {};
+    const suc = res.sucursal || {};
     const usr = res.usuario || {};
     const asistencia = res.asistencia || {};
 
     const sessionPayload = {
-      organizacion_id: organizacionId,
-      organizacion_nombre: org.nombre || 'Organización',
-      organizacion_plan: org.plan || 'Pro',
-      sucursal_id: sucursalId,
-      sucursal_nombre: suc.nombre || 'Sucursal',
-      usuario_id: usr.id || usuarioId,
-      usuario_nombre: usr.nombre || 'Usuario',
+      organizacion_id: res.organizacion_id || org.id,
+      organizacion_nombre: res.organizacion_nombre || org.nombre || 'Organización',
+      organizacion_plan: res.plan || org.plan || 'Pro',
+      sucursal_id: res.sucursal_id || suc.id,
+      sucursal_nombre: res.sucursal_nombre || suc.nombre || 'Sucursal Matriz',
+      usuario_id: usr.id,
+      usuario_nombre: usr.nombre || usuario,
       rol: usr.rol || 'Estilista',
       asistencia_id: asistencia.id || null,
       hora_entrada: asistencia.hora_entrada || new Date().toISOString(),
@@ -122,14 +100,18 @@ export class SessionManager {
     const session = this.getSession();
     if (!session) return null;
 
-    const res = await this.api.post('/checkout', {
-      asistencia_id: session.asistencia_id,
-      usuario_id: session.usuario_id,
-      monto_corte_caja: Number(montoCorteCaja || 0),
-    });
-
-    this.clearSession();
-    return res;
+    try {
+      const res = await this.api.post('/checkout', {
+        asistencia_id: session.asistencia_id,
+        usuario_id: session.usuario_id,
+        monto_corte_caja: Number(montoCorteCaja || 0),
+      });
+      this.clearSession();
+      return res;
+    } catch (err) {
+      this.clearSession();
+      throw err;
+    }
   }
 
   getAllowedTabs(rol = null) {
