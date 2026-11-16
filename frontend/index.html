@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <!-- Custom Styles -->
-  <link rel="stylesheet" href="./css/styles.css" />
+  <link rel="stylesheet" href="./css/styles.css?v=0.5.0" />
 </head>
 <body class="h-screen max-h-screen overflow-hidden antialiased selection:bg-blue-600 selection:text-white">
 
@@ -170,7 +170,7 @@
         <div class="flex flex-wrap items-center justify-between gap-2">
           <div>
             <h2 class="text-lg font-extrabold text-slate-900 leading-tight">Dashboard Operativo de Sucursal</h2>
-            <p class="text-[11px] text-slate-500">Arrastra cualquier bloque desde su título para ordenarlo o minimízalo con el botón (—).</p>
+            <p class="text-[11px] text-slate-500">Arrastra cualquier bloque desde su cabecera (⠿) para ordenarlo, minimízalo (—) o maximízalo a pantalla completa (⛶).</p>
           </div>
           <button id="btn-refresh-dashboard" type="button"
             class="px-3 py-1.5 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-xs font-semibold text-slate-700 shadow-sm transition">
@@ -181,10 +181,20 @@
         <div class="module-widgets-grid grid grid-cols-1 lg:grid-cols-12 gap-3.5 items-start" data-grid-id="dashboard">
           <!-- Bloque 1: Tarjetas KPI -->
           <div class="module-widget lg:col-span-12 bg-white rounded-2xl p-4 border border-slate-200 shadow-sm" data-widget-id="dash-kpis">
-            <div class="widget-header flex items-center justify-between gap-2 pb-2.5 border-b border-slate-100">
+            <div draggable="true" class="widget-header flex items-center justify-between gap-2 pb-2.5 border-b border-slate-100">
               <h3 class="widget-title text-xs font-bold text-slate-800 flex items-center">
-                <i class="fa-solid fa-gauge-high text-blue-600 mr-1.5"></i>Indicadores Clave de Sucursal (KPIs)
+                <span class="widget-drag-handle w-6 h-6 rounded-md bg-slate-100 hover:bg-blue-50 text-slate-400 hover:text-blue-600 mr-2 inline-flex items-center justify-center transition shrink-0" title="Arrastra desde aquí para mover y ordenar este bloque"><i class="fa-solid fa-grip-vertical text-xs"></i></span><i class="fa-solid fa-gauge-high text-blue-600 mr-1.5"></i>Indicadores Clave de Sucursal (KPIs)
               </h3>
+              <div class="widget-actions flex items-center gap-1.5 shrink-0 ml-auto">
+                <div class="widget-window-controls flex items-center gap-1 pl-1">
+                  <button type="button" class="widget-minimize-btn w-7 h-7 rounded-lg bg-slate-100 hover:bg-blue-100 text-slate-600 hover:text-blue-700 border border-slate-200/80 flex items-center justify-center transition shrink-0" title="Minimizar / Expandir bloque">
+                    <i class="fa-solid fa-minus text-xs pointer-events-none"></i>
+                  </button>
+                  <button type="button" class="widget-maximize-btn w-7 h-7 rounded-lg bg-slate-100 hover:bg-indigo-100 text-slate-600 hover:text-indigo-700 border border-slate-200/80 flex items-center justify-center transition shrink-0" title="Maximizar bloque a pantalla completa">
+                    <i class="fa-solid fa-expand text-xs pointer-events-none"></i>
+                  </button>
+                </div>
+              </div>
             </div>
             <div class="widget-body pt-3">
               <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -229,10 +239,20 @@
 
           <!-- Bloque 2: Gráfica Ingresos -->
           <div class="module-widget lg:col-span-6 bg-white rounded-2xl p-4 border border-slate-200 shadow-sm" data-widget-id="dash-chart-ingresos">
-            <div class="widget-header flex items-center justify-between gap-2 pb-2.5 border-b border-slate-100">
+            <div draggable="true" class="widget-header flex items-center justify-between gap-2 pb-2.5 border-b border-slate-100">
               <h3 class="widget-title text-xs font-bold text-slate-800 flex items-center">
-                <i class="fa-solid fa-chart-pie text-emerald-600 mr-1.5"></i>Ingresos por Método de Pago
+                <span class="widget-drag-handle w-6 h-6 rounded-md bg-slate-100 hover:bg-blue-50 text-slate-400 hover:text-blue-600 mr-2 inline-flex items-center justify-center transition shrink-0" title="Arrastra desde aquí para mover y ordenar este bloque"><i class="fa-solid fa-grip-vertical text-xs"></i></span><i class="fa-solid fa-chart-pie text-emerald-600 mr-1.5"></i>Ingresos por Método de Pago
               </h3>
+              <div class="widget-actions flex items-center gap-1.5 shrink-0 ml-auto">
+                <div class="widget-window-controls flex items-center gap-1 pl-1">
+                  <button type="button" class="widget-minimize-btn w-7 h-7 rounded-lg bg-slate-100 hover:bg-blue-100 text-slate-600 hover:text-blue-700 border border-slate-200/80 flex items-center justify-center transition shrink-0" title="Minimizar / Expandir bloque">
+                    <i class="fa-solid fa-minus text-xs pointer-events-none"></i>
+                  </button>
+                  <button type="button" class="widget-maximize-btn w-7 h-7 rounded-lg bg-slate-100 hover:bg-indigo-100 text-slate-600 hover:text-indigo-700 border border-slate-200/80 flex items-center justify-center transition shrink-0" title="Maximizar bloque a pantalla completa">
+                    <i class="fa-solid fa-expand text-xs pointer-events-none"></i>
+                  </button>
+                </div>
+              </div>
             </div>
             <div class="widget-body pt-3">
               <div class="h-44">
@@ -243,10 +263,20 @@
 
           <!-- Bloque 3: Gráfica Demanda -->
           <div class="module-widget lg:col-span-6 bg-white rounded-2xl p-4 border border-slate-200 shadow-sm" data-widget-id="dash-chart-demanda">
-            <div class="widget-header flex items-center justify-between gap-2 pb-2.5 border-b border-slate-100">
+            <div draggable="true" class="widget-header flex items-center justify-between gap-2 pb-2.5 border-b border-slate-100">
               <h3 class="widget-title text-xs font-bold text-slate-800 flex items-center">
-                <i class="fa-solid fa-chart-column text-blue-600 mr-1.5"></i>Demanda por Servicio
+                <span class="widget-drag-handle w-6 h-6 rounded-md bg-slate-100 hover:bg-blue-50 text-slate-400 hover:text-blue-600 mr-2 inline-flex items-center justify-center transition shrink-0" title="Arrastra desde aquí para mover y ordenar este bloque"><i class="fa-solid fa-grip-vertical text-xs"></i></span><i class="fa-solid fa-chart-column text-blue-600 mr-1.5"></i>Demanda por Servicio
               </h3>
+              <div class="widget-actions flex items-center gap-1.5 shrink-0 ml-auto">
+                <div class="widget-window-controls flex items-center gap-1 pl-1">
+                  <button type="button" class="widget-minimize-btn w-7 h-7 rounded-lg bg-slate-100 hover:bg-blue-100 text-slate-600 hover:text-blue-700 border border-slate-200/80 flex items-center justify-center transition shrink-0" title="Minimizar / Expandir bloque">
+                    <i class="fa-solid fa-minus text-xs pointer-events-none"></i>
+                  </button>
+                  <button type="button" class="widget-maximize-btn w-7 h-7 rounded-lg bg-slate-100 hover:bg-indigo-100 text-slate-600 hover:text-indigo-700 border border-slate-200/80 flex items-center justify-center transition shrink-0" title="Maximizar bloque a pantalla completa">
+                    <i class="fa-solid fa-expand text-xs pointer-events-none"></i>
+                  </button>
+                </div>
+              </div>
             </div>
             <div class="widget-body pt-3">
               <div class="h-44">
@@ -257,10 +287,20 @@
 
           <!-- Bloque 4: Alertas de Stock -->
           <div class="module-widget lg:col-span-6 bg-white rounded-2xl p-4 border border-slate-200 shadow-sm" data-widget-id="dash-alertas-stock">
-            <div class="widget-header flex items-center justify-between gap-2 pb-2.5 border-b border-slate-100">
+            <div draggable="true" class="widget-header flex items-center justify-between gap-2 pb-2.5 border-b border-slate-100">
               <h3 class="widget-title text-xs font-bold text-slate-800 flex items-center">
-                <i class="fa-solid fa-bell text-amber-500 mr-1.5"></i>Alertas de Reabastecimiento
+                <span class="widget-drag-handle w-6 h-6 rounded-md bg-slate-100 hover:bg-blue-50 text-slate-400 hover:text-blue-600 mr-2 inline-flex items-center justify-center transition shrink-0" title="Arrastra desde aquí para mover y ordenar este bloque"><i class="fa-solid fa-grip-vertical text-xs"></i></span><i class="fa-solid fa-bell text-amber-500 mr-1.5"></i>Alertas de Reabastecimiento
               </h3>
+              <div class="widget-actions flex items-center gap-1.5 shrink-0 ml-auto">
+                <div class="widget-window-controls flex items-center gap-1 pl-1">
+                  <button type="button" class="widget-minimize-btn w-7 h-7 rounded-lg bg-slate-100 hover:bg-blue-100 text-slate-600 hover:text-blue-700 border border-slate-200/80 flex items-center justify-center transition shrink-0" title="Minimizar / Expandir bloque">
+                    <i class="fa-solid fa-minus text-xs pointer-events-none"></i>
+                  </button>
+                  <button type="button" class="widget-maximize-btn w-7 h-7 rounded-lg bg-slate-100 hover:bg-indigo-100 text-slate-600 hover:text-indigo-700 border border-slate-200/80 flex items-center justify-center transition shrink-0" title="Maximizar bloque a pantalla completa">
+                    <i class="fa-solid fa-expand text-xs pointer-events-none"></i>
+                  </button>
+                </div>
+              </div>
             </div>
             <div class="widget-body pt-3">
               <div id="dashboard-alertas-stock" class="space-y-1.5 max-h-36 overflow-y-auto"></div>
@@ -269,10 +309,20 @@
 
           <!-- Bloque 5: Últimas Citas -->
           <div class="module-widget lg:col-span-6 bg-white rounded-2xl p-4 border border-slate-200 shadow-sm" data-widget-id="dash-ultimas-citas">
-            <div class="widget-header flex items-center justify-between gap-2 pb-2.5 border-b border-slate-100">
+            <div draggable="true" class="widget-header flex items-center justify-between gap-2 pb-2.5 border-b border-slate-100">
               <h3 class="widget-title text-xs font-bold text-slate-800 flex items-center">
-                <i class="fa-solid fa-clock-rotate-left text-indigo-600 mr-1.5"></i>Últimas Citas en Sucursal
+                <span class="widget-drag-handle w-6 h-6 rounded-md bg-slate-100 hover:bg-blue-50 text-slate-400 hover:text-blue-600 mr-2 inline-flex items-center justify-center transition shrink-0" title="Arrastra desde aquí para mover y ordenar este bloque"><i class="fa-solid fa-grip-vertical text-xs"></i></span><i class="fa-solid fa-clock-rotate-left text-indigo-600 mr-1.5"></i>Últimas Citas en Sucursal
               </h3>
+              <div class="widget-actions flex items-center gap-1.5 shrink-0 ml-auto">
+                <div class="widget-window-controls flex items-center gap-1 pl-1">
+                  <button type="button" class="widget-minimize-btn w-7 h-7 rounded-lg bg-slate-100 hover:bg-blue-100 text-slate-600 hover:text-blue-700 border border-slate-200/80 flex items-center justify-center transition shrink-0" title="Minimizar / Expandir bloque">
+                    <i class="fa-solid fa-minus text-xs pointer-events-none"></i>
+                  </button>
+                  <button type="button" class="widget-maximize-btn w-7 h-7 rounded-lg bg-slate-100 hover:bg-indigo-100 text-slate-600 hover:text-indigo-700 border border-slate-200/80 flex items-center justify-center transition shrink-0" title="Maximizar bloque a pantalla completa">
+                    <i class="fa-solid fa-expand text-xs pointer-events-none"></i>
+                  </button>
+                </div>
+              </div>
             </div>
             <div class="widget-body pt-3">
               <div class="overflow-x-auto max-h-36 overflow-y-auto">
@@ -305,10 +355,20 @@
         <div class="module-widgets-grid grid grid-cols-1 lg:grid-cols-12 gap-4 items-start" data-grid-id="agenda">
           <!-- Bloque 1: Nueva Cita + Motor de Disponibilidad -->
           <div class="module-widget lg:col-span-5 bg-white rounded-2xl p-5 border border-slate-200 shadow-sm" data-widget-id="agenda-nueva-cita">
-            <div class="widget-header flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
+            <div draggable="true" class="widget-header flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
               <h3 class="widget-title text-sm font-bold text-slate-800 flex items-center">
-                <i class="fa-solid fa-calendar-plus text-blue-600 mr-1.5"></i>Agendar Nueva Cita
+                <span class="widget-drag-handle w-6 h-6 rounded-md bg-slate-100 hover:bg-blue-50 text-slate-400 hover:text-blue-600 mr-2 inline-flex items-center justify-center transition shrink-0" title="Arrastra desde aquí para mover y ordenar este bloque"><i class="fa-solid fa-grip-vertical text-xs"></i></span><i class="fa-solid fa-calendar-plus text-blue-600 mr-1.5"></i>Agendar Nueva Cita
               </h3>
+              <div class="widget-actions flex items-center gap-1.5 shrink-0 ml-auto">
+                <div class="widget-window-controls flex items-center gap-1 pl-1">
+                  <button type="button" class="widget-minimize-btn w-7 h-7 rounded-lg bg-slate-100 hover:bg-blue-100 text-slate-600 hover:text-blue-700 border border-slate-200/80 flex items-center justify-center transition shrink-0" title="Minimizar / Expandir bloque">
+                    <i class="fa-solid fa-minus text-xs pointer-events-none"></i>
+                  </button>
+                  <button type="button" class="widget-maximize-btn w-7 h-7 rounded-lg bg-slate-100 hover:bg-indigo-100 text-slate-600 hover:text-indigo-700 border border-slate-200/80 flex items-center justify-center transition shrink-0" title="Maximizar bloque a pantalla completa">
+                    <i class="fa-solid fa-expand text-xs pointer-events-none"></i>
+                  </button>
+                </div>
+              </div>
             </div>
 
             <div class="widget-body pt-3.5 space-y-4">
@@ -387,15 +447,24 @@
 
           <!-- Bloque 2: Listado de Citas del Día -->
           <div class="module-widget lg:col-span-7 bg-white rounded-2xl p-5 border border-slate-200 shadow-sm" data-widget-id="agenda-citas-dia">
-            <div class="widget-header flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
+            <div draggable="true" class="widget-header flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
               <h3 class="widget-title text-sm font-bold text-slate-800 flex items-center">
-                <i class="fa-solid fa-list-check text-indigo-600 mr-1.5"></i>Citas Programadas en Sucursal
+                <span class="widget-drag-handle w-6 h-6 rounded-md bg-slate-100 hover:bg-blue-50 text-slate-400 hover:text-blue-600 mr-2 inline-flex items-center justify-center transition shrink-0" title="Arrastra desde aquí para mover y ordenar este bloque"><i class="fa-solid fa-grip-vertical text-xs"></i></span><i class="fa-solid fa-list-check text-indigo-600 mr-1.5"></i>Citas Programadas en Sucursal
               </h3>
               <div class="widget-actions flex items-center gap-1.5 shrink-0 ml-auto">
                 <input id="citas-filtro-fecha" type="date" class="rounded-xl border border-slate-300 px-2.5 py-1 text-xs" />
                 <button id="btn-filtrar-citas" type="button" class="px-3 py-1 rounded-xl bg-slate-800 text-white text-xs font-semibold">
                   Filtrar
                 </button>
+                <div class="widget-window-controls flex items-center gap-1 pl-1">
+                  <button type="button" class="widget-minimize-btn w-7 h-7 rounded-lg bg-slate-100 hover:bg-blue-100 text-slate-600 hover:text-blue-700 border border-slate-200/80 flex items-center justify-center transition shrink-0" title="Minimizar / Expandir bloque">
+                    <i class="fa-solid fa-minus text-xs pointer-events-none"></i>
+                  </button>
+                  <button type="button" class="widget-maximize-btn w-7 h-7 rounded-lg bg-slate-100 hover:bg-indigo-100 text-slate-600 hover:text-indigo-700 border border-slate-200/80 flex items-center justify-center transition shrink-0" title="Maximizar bloque a pantalla completa">
+                    <i class="fa-solid fa-expand text-xs pointer-events-none"></i>
+                  </button>
+                </div>
+              
               </div>
             </div>
 
@@ -432,10 +501,20 @@
         <div class="module-widgets-grid grid grid-cols-1 lg:grid-cols-12 gap-4 items-start" data-grid-id="clientes">
           <!-- Bloque 1: Buscador Privado -->
           <div class="module-widget lg:col-span-12 bg-white rounded-2xl p-5 border border-slate-200 shadow-sm" data-widget-id="cli-buscador">
-            <div class="widget-header flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
+            <div draggable="true" class="widget-header flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
               <h3 class="widget-title text-sm font-bold text-slate-800 flex items-center">
-                <i class="fa-solid fa-magnifying-glass text-blue-600 mr-1.5"></i>Buscador Privado de Expedientes y Tarjetas PET-
+                <span class="widget-drag-handle w-6 h-6 rounded-md bg-slate-100 hover:bg-blue-50 text-slate-400 hover:text-blue-600 mr-2 inline-flex items-center justify-center transition shrink-0" title="Arrastra desde aquí para mover y ordenar este bloque"><i class="fa-solid fa-grip-vertical text-xs"></i></span><i class="fa-solid fa-magnifying-glass text-blue-600 mr-1.5"></i>Buscador Privado de Expedientes y Tarjetas PET-
               </h3>
+              <div class="widget-actions flex items-center gap-1.5 shrink-0 ml-auto">
+                <div class="widget-window-controls flex items-center gap-1 pl-1">
+                  <button type="button" class="widget-minimize-btn w-7 h-7 rounded-lg bg-slate-100 hover:bg-blue-100 text-slate-600 hover:text-blue-700 border border-slate-200/80 flex items-center justify-center transition shrink-0" title="Minimizar / Expandir bloque">
+                    <i class="fa-solid fa-minus text-xs pointer-events-none"></i>
+                  </button>
+                  <button type="button" class="widget-maximize-btn w-7 h-7 rounded-lg bg-slate-100 hover:bg-indigo-100 text-slate-600 hover:text-indigo-700 border border-slate-200/80 flex items-center justify-center transition shrink-0" title="Maximizar bloque a pantalla completa">
+                    <i class="fa-solid fa-expand text-xs pointer-events-none"></i>
+                  </button>
+                </div>
+              </div>
             </div>
             <div class="widget-body pt-3.5 space-y-4">
               <form id="form-buscar-clientes" class="flex flex-col sm:flex-row gap-3">
@@ -460,10 +539,20 @@
 
           <!-- Bloque 2: Alta de Cliente -->
           <div class="module-widget lg:col-span-6 bg-white rounded-2xl p-5 border border-slate-200 shadow-sm" data-widget-id="cli-alta-cliente">
-            <div class="widget-header flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
+            <div draggable="true" class="widget-header flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
               <h3 class="widget-title text-sm font-bold text-slate-800 flex items-center">
-                <i class="fa-solid fa-user-plus text-blue-600 mr-1.5"></i>Registrar Nuevo Cliente
+                <span class="widget-drag-handle w-6 h-6 rounded-md bg-slate-100 hover:bg-blue-50 text-slate-400 hover:text-blue-600 mr-2 inline-flex items-center justify-center transition shrink-0" title="Arrastra desde aquí para mover y ordenar este bloque"><i class="fa-solid fa-grip-vertical text-xs"></i></span><i class="fa-solid fa-user-plus text-blue-600 mr-1.5"></i>Registrar Nuevo Cliente
               </h3>
+              <div class="widget-actions flex items-center gap-1.5 shrink-0 ml-auto">
+                <div class="widget-window-controls flex items-center gap-1 pl-1">
+                  <button type="button" class="widget-minimize-btn w-7 h-7 rounded-lg bg-slate-100 hover:bg-blue-100 text-slate-600 hover:text-blue-700 border border-slate-200/80 flex items-center justify-center transition shrink-0" title="Minimizar / Expandir bloque">
+                    <i class="fa-solid fa-minus text-xs pointer-events-none"></i>
+                  </button>
+                  <button type="button" class="widget-maximize-btn w-7 h-7 rounded-lg bg-slate-100 hover:bg-indigo-100 text-slate-600 hover:text-indigo-700 border border-slate-200/80 flex items-center justify-center transition shrink-0" title="Maximizar bloque a pantalla completa">
+                    <i class="fa-solid fa-expand text-xs pointer-events-none"></i>
+                  </button>
+                </div>
+              </div>
             </div>
             <div class="widget-body pt-3.5">
               <form id="form-crear-cliente" class="space-y-3">
@@ -500,12 +589,21 @@
 
           <!-- Bloque 3: Alta de Mascota -->
           <div class="module-widget lg:col-span-6 bg-white rounded-2xl p-5 border border-slate-200 shadow-sm" data-widget-id="cli-alta-mascota">
-            <div class="widget-header flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
+            <div draggable="true" class="widget-header flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
               <h3 class="widget-title text-sm font-bold text-slate-800 flex items-center">
-                <i class="fa-solid fa-paw text-emerald-600 mr-1.5"></i>Registrar Mascota y Generar Código PET-
+                <span class="widget-drag-handle w-6 h-6 rounded-md bg-slate-100 hover:bg-blue-50 text-slate-400 hover:text-blue-600 mr-2 inline-flex items-center justify-center transition shrink-0" title="Arrastra desde aquí para mover y ordenar este bloque"><i class="fa-solid fa-grip-vertical text-xs"></i></span><i class="fa-solid fa-paw text-emerald-600 mr-1.5"></i>Registrar Mascota y Generar Código PET-
               </h3>
               <div class="widget-actions flex items-center gap-1.5 shrink-0 ml-auto">
                 <span id="mascota-cliente-nombre-badge" class="hidden text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-700"></span>
+                <div class="widget-window-controls flex items-center gap-1 pl-1">
+                  <button type="button" class="widget-minimize-btn w-7 h-7 rounded-lg bg-slate-100 hover:bg-blue-100 text-slate-600 hover:text-blue-700 border border-slate-200/80 flex items-center justify-center transition shrink-0" title="Minimizar / Expandir bloque">
+                    <i class="fa-solid fa-minus text-xs pointer-events-none"></i>
+                  </button>
+                  <button type="button" class="widget-maximize-btn w-7 h-7 rounded-lg bg-slate-100 hover:bg-indigo-100 text-slate-600 hover:text-indigo-700 border border-slate-200/80 flex items-center justify-center transition shrink-0" title="Maximizar bloque a pantalla completa">
+                    <i class="fa-solid fa-expand text-xs pointer-events-none"></i>
+                  </button>
+                </div>
+              
               </div>
             </div>
 
@@ -591,10 +689,20 @@
         <div class="module-widgets-grid grid grid-cols-1 lg:grid-cols-12 gap-4 items-start" data-grid-id="inventario">
           <!-- Bloque 1: Escáner -->
           <div class="module-widget lg:col-span-5 bg-white rounded-2xl p-5 border border-slate-200 shadow-sm" data-widget-id="inv-escaner">
-            <div class="widget-header flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
+            <div draggable="true" class="widget-header flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
               <h3 class="widget-title text-sm font-bold text-slate-800 flex items-center">
-                <i class="fa-solid fa-barcode text-blue-600 mr-1.5"></i>Terminal de Escaneo Rápido
+                <span class="widget-drag-handle w-6 h-6 rounded-md bg-slate-100 hover:bg-blue-50 text-slate-400 hover:text-blue-600 mr-2 inline-flex items-center justify-center transition shrink-0" title="Arrastra desde aquí para mover y ordenar este bloque"><i class="fa-solid fa-grip-vertical text-xs"></i></span><i class="fa-solid fa-barcode text-blue-600 mr-1.5"></i>Terminal de Escaneo Rápido
               </h3>
+              <div class="widget-actions flex items-center gap-1.5 shrink-0 ml-auto">
+                <div class="widget-window-controls flex items-center gap-1 pl-1">
+                  <button type="button" class="widget-minimize-btn w-7 h-7 rounded-lg bg-slate-100 hover:bg-blue-100 text-slate-600 hover:text-blue-700 border border-slate-200/80 flex items-center justify-center transition shrink-0" title="Minimizar / Expandir bloque">
+                    <i class="fa-solid fa-minus text-xs pointer-events-none"></i>
+                  </button>
+                  <button type="button" class="widget-maximize-btn w-7 h-7 rounded-lg bg-slate-100 hover:bg-indigo-100 text-slate-600 hover:text-indigo-700 border border-slate-200/80 flex items-center justify-center transition shrink-0" title="Maximizar bloque a pantalla completa">
+                    <i class="fa-solid fa-expand text-xs pointer-events-none"></i>
+                  </button>
+                </div>
+              </div>
             </div>
             <div class="widget-body pt-3.5 space-y-3">
               <form id="form-escanear-codigo" class="space-y-3">
@@ -636,10 +744,20 @@
 
           <!-- Bloque 2: Tabla de Inventario -->
           <div class="module-widget lg:col-span-7 bg-white rounded-2xl p-5 border border-slate-200 shadow-sm" data-widget-id="inv-existencias">
-            <div class="widget-header flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
+            <div draggable="true" class="widget-header flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
               <h3 class="widget-title text-sm font-bold text-slate-800 flex items-center">
-                <i class="fa-solid fa-boxes-stacked text-indigo-600 mr-1.5"></i>Existencias en Sucursal
+                <span class="widget-drag-handle w-6 h-6 rounded-md bg-slate-100 hover:bg-blue-50 text-slate-400 hover:text-blue-600 mr-2 inline-flex items-center justify-center transition shrink-0" title="Arrastra desde aquí para mover y ordenar este bloque"><i class="fa-solid fa-grip-vertical text-xs"></i></span><i class="fa-solid fa-boxes-stacked text-indigo-600 mr-1.5"></i>Existencias en Sucursal
               </h3>
+              <div class="widget-actions flex items-center gap-1.5 shrink-0 ml-auto">
+                <div class="widget-window-controls flex items-center gap-1 pl-1">
+                  <button type="button" class="widget-minimize-btn w-7 h-7 rounded-lg bg-slate-100 hover:bg-blue-100 text-slate-600 hover:text-blue-700 border border-slate-200/80 flex items-center justify-center transition shrink-0" title="Minimizar / Expandir bloque">
+                    <i class="fa-solid fa-minus text-xs pointer-events-none"></i>
+                  </button>
+                  <button type="button" class="widget-maximize-btn w-7 h-7 rounded-lg bg-slate-100 hover:bg-indigo-100 text-slate-600 hover:text-indigo-700 border border-slate-200/80 flex items-center justify-center transition shrink-0" title="Maximizar bloque a pantalla completa">
+                    <i class="fa-solid fa-expand text-xs pointer-events-none"></i>
+                  </button>
+                </div>
+              </div>
             </div>
             <div class="widget-body pt-3.5">
               <div class="overflow-x-auto">
@@ -661,10 +779,20 @@
 
           <!-- Bloque 3: Alta Producto -->
           <div class="module-widget lg:col-span-5 bg-white rounded-2xl p-5 border border-slate-200 shadow-sm" data-widget-id="inv-alta-producto">
-            <div class="widget-header flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
+            <div draggable="true" class="widget-header flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
               <h3 class="widget-title text-sm font-bold text-slate-800 flex items-center">
-                <i class="fa-solid fa-box-open text-emerald-600 mr-1.5"></i>Nuevo Producto / Insumo
+                <span class="widget-drag-handle w-6 h-6 rounded-md bg-slate-100 hover:bg-blue-50 text-slate-400 hover:text-blue-600 mr-2 inline-flex items-center justify-center transition shrink-0" title="Arrastra desde aquí para mover y ordenar este bloque"><i class="fa-solid fa-grip-vertical text-xs"></i></span><i class="fa-solid fa-box-open text-emerald-600 mr-1.5"></i>Nuevo Producto / Insumo
               </h3>
+              <div class="widget-actions flex items-center gap-1.5 shrink-0 ml-auto">
+                <div class="widget-window-controls flex items-center gap-1 pl-1">
+                  <button type="button" class="widget-minimize-btn w-7 h-7 rounded-lg bg-slate-100 hover:bg-blue-100 text-slate-600 hover:text-blue-700 border border-slate-200/80 flex items-center justify-center transition shrink-0" title="Minimizar / Expandir bloque">
+                    <i class="fa-solid fa-minus text-xs pointer-events-none"></i>
+                  </button>
+                  <button type="button" class="widget-maximize-btn w-7 h-7 rounded-lg bg-slate-100 hover:bg-indigo-100 text-slate-600 hover:text-indigo-700 border border-slate-200/80 flex items-center justify-center transition shrink-0" title="Maximizar bloque a pantalla completa">
+                    <i class="fa-solid fa-expand text-xs pointer-events-none"></i>
+                  </button>
+                </div>
+              </div>
             </div>
             <div class="widget-body pt-3.5">
               <form id="form-crear-producto" class="space-y-3">
@@ -727,10 +855,20 @@
         <div class="module-widgets-grid grid grid-cols-1 lg:grid-cols-12 gap-4 items-start" data-grid-id="caja">
           <!-- Bloque 1: Registrar Ingreso Manual -->
           <div class="module-widget lg:col-span-4 bg-white rounded-2xl p-5 border border-slate-200 shadow-sm" data-widget-id="caja-ingreso-manual">
-            <div class="widget-header flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
+            <div draggable="true" class="widget-header flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
               <h3 class="widget-title text-sm font-bold text-slate-800 flex items-center">
-                <i class="fa-solid fa-cash-register text-emerald-600 mr-1.5"></i>Registrar Ingreso Manual
+                <span class="widget-drag-handle w-6 h-6 rounded-md bg-slate-100 hover:bg-blue-50 text-slate-400 hover:text-blue-600 mr-2 inline-flex items-center justify-center transition shrink-0" title="Arrastra desde aquí para mover y ordenar este bloque"><i class="fa-solid fa-grip-vertical text-xs"></i></span><i class="fa-solid fa-cash-register text-emerald-600 mr-1.5"></i>Registrar Ingreso Manual
               </h3>
+              <div class="widget-actions flex items-center gap-1.5 shrink-0 ml-auto">
+                <div class="widget-window-controls flex items-center gap-1 pl-1">
+                  <button type="button" class="widget-minimize-btn w-7 h-7 rounded-lg bg-slate-100 hover:bg-blue-100 text-slate-600 hover:text-blue-700 border border-slate-200/80 flex items-center justify-center transition shrink-0" title="Minimizar / Expandir bloque">
+                    <i class="fa-solid fa-minus text-xs pointer-events-none"></i>
+                  </button>
+                  <button type="button" class="widget-maximize-btn w-7 h-7 rounded-lg bg-slate-100 hover:bg-indigo-100 text-slate-600 hover:text-indigo-700 border border-slate-200/80 flex items-center justify-center transition shrink-0" title="Maximizar bloque a pantalla completa">
+                    <i class="fa-solid fa-expand text-xs pointer-events-none"></i>
+                  </button>
+                </div>
+              </div>
             </div>
             <div class="widget-body pt-3.5">
               <form id="form-crear-caja" class="space-y-3">
@@ -768,10 +906,20 @@
 
           <!-- Bloque 2: Historial de Movimientos de Caja -->
           <div class="module-widget lg:col-span-8 bg-white rounded-2xl p-5 border border-slate-200 shadow-sm" data-widget-id="caja-historial">
-            <div class="widget-header flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
+            <div draggable="true" class="widget-header flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
               <h3 class="widget-title text-sm font-bold text-slate-800 flex items-center">
-                <i class="fa-solid fa-receipt text-blue-600 mr-1.5"></i>Historial de Movimientos de Caja
+                <span class="widget-drag-handle w-6 h-6 rounded-md bg-slate-100 hover:bg-blue-50 text-slate-400 hover:text-blue-600 mr-2 inline-flex items-center justify-center transition shrink-0" title="Arrastra desde aquí para mover y ordenar este bloque"><i class="fa-solid fa-grip-vertical text-xs"></i></span><i class="fa-solid fa-receipt text-blue-600 mr-1.5"></i>Historial de Movimientos de Caja
               </h3>
+              <div class="widget-actions flex items-center gap-1.5 shrink-0 ml-auto">
+                <div class="widget-window-controls flex items-center gap-1 pl-1">
+                  <button type="button" class="widget-minimize-btn w-7 h-7 rounded-lg bg-slate-100 hover:bg-blue-100 text-slate-600 hover:text-blue-700 border border-slate-200/80 flex items-center justify-center transition shrink-0" title="Minimizar / Expandir bloque">
+                    <i class="fa-solid fa-minus text-xs pointer-events-none"></i>
+                  </button>
+                  <button type="button" class="widget-maximize-btn w-7 h-7 rounded-lg bg-slate-100 hover:bg-indigo-100 text-slate-600 hover:text-indigo-700 border border-slate-200/80 flex items-center justify-center transition shrink-0" title="Maximizar bloque a pantalla completa">
+                    <i class="fa-solid fa-expand text-xs pointer-events-none"></i>
+                  </button>
+                </div>
+              </div>
             </div>
             <div class="widget-body pt-3.5">
               <div class="overflow-x-auto">
@@ -799,15 +947,15 @@
       <section id="view-config" class="tab-view hidden space-y-4">
         <div>
           <h2 class="text-lg font-extrabold text-slate-900 leading-tight">Configuración de Sucursal, Personal y Auditoría</h2>
-          <p class="text-[11px] text-slate-500">Minimiza o arrastra cualquiera de los bloques para acomodar tu área de trabajo.</p>
+          <p class="text-[11px] text-slate-500">Arrastra cualquier bloque (⠿) para ordenarlo, minimízalo (—) o maximízalo a pantalla completa (⛶).</p>
         </div>
 
         <div class="module-widgets-grid grid grid-cols-1 lg:grid-cols-12 gap-4 items-start" data-grid-id="config">
           <!-- Bloque 1: Plantilla Semanal + Parámetros de Agenda -->
           <div class="module-widget lg:col-span-12 bg-white rounded-2xl p-5 border border-slate-200 shadow-sm" data-widget-id="cfg-plantilla">
-            <div class="widget-header flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
+            <div draggable="true" class="widget-header flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
               <h3 class="widget-title text-sm font-bold text-slate-800 flex items-center">
-                <i class="fa-solid fa-clock text-blue-600 mr-1.5"></i>Plantilla Semanal de Horarios y Capacidad
+                <span class="widget-drag-handle w-6 h-6 rounded-md bg-slate-100 hover:bg-blue-50 text-slate-400 hover:text-blue-600 mr-2 inline-flex items-center justify-center transition shrink-0" title="Arrastra desde aquí para mover y ordenar este bloque"><i class="fa-solid fa-grip-vertical text-xs"></i></span><i class="fa-solid fa-clock text-blue-600 mr-1.5"></i>Plantilla Semanal de Horarios y Capacidad
               </h3>
               <div class="widget-actions flex flex-wrap items-center gap-2 shrink-0 ml-auto">
                 <form id="form-agenda-config" class="widget-header-extra flex flex-wrap items-center gap-2 text-xs">
@@ -823,6 +971,15 @@
                     Guardar Config
                   </button>
                 </form>
+                <div class="widget-window-controls flex items-center gap-1 pl-1">
+                  <button type="button" class="widget-minimize-btn w-7 h-7 rounded-lg bg-slate-100 hover:bg-blue-100 text-slate-600 hover:text-blue-700 border border-slate-200/80 flex items-center justify-center transition shrink-0" title="Minimizar / Expandir bloque">
+                    <i class="fa-solid fa-minus text-xs pointer-events-none"></i>
+                  </button>
+                  <button type="button" class="widget-maximize-btn w-7 h-7 rounded-lg bg-slate-100 hover:bg-indigo-100 text-slate-600 hover:text-indigo-700 border border-slate-200/80 flex items-center justify-center transition shrink-0" title="Maximizar bloque a pantalla completa">
+                    <i class="fa-solid fa-expand text-xs pointer-events-none"></i>
+                  </button>
+                </div>
+              
               </div>
             </div>
 
@@ -856,10 +1013,20 @@
 
           <!-- Bloque 2: Catálogo de Servicios -->
           <div class="module-widget lg:col-span-6 bg-white rounded-2xl p-5 border border-slate-200 shadow-sm" data-widget-id="cfg-servicios">
-            <div class="widget-header flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
+            <div draggable="true" class="widget-header flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
               <h3 class="widget-title text-sm font-bold text-slate-800 flex items-center">
-                <i class="fa-solid fa-scissors text-blue-600 mr-1.5"></i>Catálogo de Servicios de Sucursal
+                <span class="widget-drag-handle w-6 h-6 rounded-md bg-slate-100 hover:bg-blue-50 text-slate-400 hover:text-blue-600 mr-2 inline-flex items-center justify-center transition shrink-0" title="Arrastra desde aquí para mover y ordenar este bloque"><i class="fa-solid fa-grip-vertical text-xs"></i></span><i class="fa-solid fa-scissors text-blue-600 mr-1.5"></i>Catálogo de Servicios de Sucursal
               </h3>
+              <div class="widget-actions flex items-center gap-1.5 shrink-0 ml-auto">
+                <div class="widget-window-controls flex items-center gap-1 pl-1">
+                  <button type="button" class="widget-minimize-btn w-7 h-7 rounded-lg bg-slate-100 hover:bg-blue-100 text-slate-600 hover:text-blue-700 border border-slate-200/80 flex items-center justify-center transition shrink-0" title="Minimizar / Expandir bloque">
+                    <i class="fa-solid fa-minus text-xs pointer-events-none"></i>
+                  </button>
+                  <button type="button" class="widget-maximize-btn w-7 h-7 rounded-lg bg-slate-100 hover:bg-indigo-100 text-slate-600 hover:text-indigo-700 border border-slate-200/80 flex items-center justify-center transition shrink-0" title="Maximizar bloque a pantalla completa">
+                    <i class="fa-solid fa-expand text-xs pointer-events-none"></i>
+                  </button>
+                </div>
+              </div>
             </div>
             <div class="widget-body pt-3.5 space-y-3">
               <form id="form-crear-servicio" class="grid grid-cols-1 sm:grid-cols-4 gap-2">
@@ -879,10 +1046,20 @@
 
           <!-- Bloque 3: Excepciones y Días Festivos -->
           <div class="module-widget lg:col-span-6 bg-white rounded-2xl p-5 border border-slate-200 shadow-sm" data-widget-id="cfg-excepciones">
-            <div class="widget-header flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
+            <div draggable="true" class="widget-header flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
               <h3 class="widget-title text-sm font-bold text-slate-800 flex items-center">
-                <i class="fa-solid fa-calendar-xmark text-amber-600 mr-1.5"></i>Excepciones y Días Festivos
+                <span class="widget-drag-handle w-6 h-6 rounded-md bg-slate-100 hover:bg-blue-50 text-slate-400 hover:text-blue-600 mr-2 inline-flex items-center justify-center transition shrink-0" title="Arrastra desde aquí para mover y ordenar este bloque"><i class="fa-solid fa-grip-vertical text-xs"></i></span><i class="fa-solid fa-calendar-xmark text-amber-600 mr-1.5"></i>Excepciones y Días Festivos
               </h3>
+              <div class="widget-actions flex items-center gap-1.5 shrink-0 ml-auto">
+                <div class="widget-window-controls flex items-center gap-1 pl-1">
+                  <button type="button" class="widget-minimize-btn w-7 h-7 rounded-lg bg-slate-100 hover:bg-blue-100 text-slate-600 hover:text-blue-700 border border-slate-200/80 flex items-center justify-center transition shrink-0" title="Minimizar / Expandir bloque">
+                    <i class="fa-solid fa-minus text-xs pointer-events-none"></i>
+                  </button>
+                  <button type="button" class="widget-maximize-btn w-7 h-7 rounded-lg bg-slate-100 hover:bg-indigo-100 text-slate-600 hover:text-indigo-700 border border-slate-200/80 flex items-center justify-center transition shrink-0" title="Maximizar bloque a pantalla completa">
+                    <i class="fa-solid fa-expand text-xs pointer-events-none"></i>
+                  </button>
+                </div>
+              </div>
             </div>
             <div class="widget-body pt-3.5 space-y-3">
               <form id="form-crear-excepcion" class="space-y-2 text-xs">
@@ -912,12 +1089,21 @@
 
           <!-- Bloque 4: Colaboradores, Perfiles y Accesos -->
           <div class="module-widget lg:col-span-6 bg-white rounded-2xl p-5 border border-slate-200 shadow-sm" data-widget-id="cfg-personal">
-            <div class="widget-header flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
+            <div draggable="true" class="widget-header flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
               <h3 class="widget-title text-sm font-bold text-slate-800 flex items-center">
-                <i class="fa-solid fa-users-gear text-indigo-600 mr-1.5"></i>Colaboradores, Perfiles y Accesos
+                <span class="widget-drag-handle w-6 h-6 rounded-md bg-slate-100 hover:bg-blue-50 text-slate-400 hover:text-blue-600 mr-2 inline-flex items-center justify-center transition shrink-0" title="Arrastra desde aquí para mover y ordenar este bloque"><i class="fa-solid fa-grip-vertical text-xs"></i></span><i class="fa-solid fa-users-gear text-indigo-600 mr-1.5"></i>Colaboradores, Perfiles y Accesos
               </h3>
               <div class="widget-actions flex items-center gap-1.5 shrink-0 ml-auto">
                 <span class="widget-header-extra text-[10px] text-slate-400 hidden sm:inline">El rol define la vista</span>
+                <div class="widget-window-controls flex items-center gap-1 pl-1">
+                  <button type="button" class="widget-minimize-btn w-7 h-7 rounded-lg bg-slate-100 hover:bg-blue-100 text-slate-600 hover:text-blue-700 border border-slate-200/80 flex items-center justify-center transition shrink-0" title="Minimizar / Expandir bloque">
+                    <i class="fa-solid fa-minus text-xs pointer-events-none"></i>
+                  </button>
+                  <button type="button" class="widget-maximize-btn w-7 h-7 rounded-lg bg-slate-100 hover:bg-indigo-100 text-slate-600 hover:text-indigo-700 border border-slate-200/80 flex items-center justify-center transition shrink-0" title="Maximizar bloque a pantalla completa">
+                    <i class="fa-solid fa-expand text-xs pointer-events-none"></i>
+                  </button>
+                </div>
+              
               </div>
             </div>
             <div class="widget-body pt-3.5 space-y-3">
@@ -956,10 +1142,20 @@
 
           <!-- Bloque 5: Bitácora de Auditoría -->
           <div class="module-widget lg:col-span-6 bg-white rounded-2xl p-5 border border-slate-200 shadow-sm" data-widget-id="cfg-bitacora">
-            <div class="widget-header flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
+            <div draggable="true" class="widget-header flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
               <h3 class="widget-title text-sm font-bold text-slate-800 flex items-center">
-                <i class="fa-solid fa-shield-halved text-emerald-600 mr-1.5"></i>Bitácora de Auditoría en Tiempo Real
+                <span class="widget-drag-handle w-6 h-6 rounded-md bg-slate-100 hover:bg-blue-50 text-slate-400 hover:text-blue-600 mr-2 inline-flex items-center justify-center transition shrink-0" title="Arrastra desde aquí para mover y ordenar este bloque"><i class="fa-solid fa-grip-vertical text-xs"></i></span><i class="fa-solid fa-shield-halved text-emerald-600 mr-1.5"></i>Bitácora de Auditoría en Tiempo Real
               </h3>
+              <div class="widget-actions flex items-center gap-1.5 shrink-0 ml-auto">
+                <div class="widget-window-controls flex items-center gap-1 pl-1">
+                  <button type="button" class="widget-minimize-btn w-7 h-7 rounded-lg bg-slate-100 hover:bg-blue-100 text-slate-600 hover:text-blue-700 border border-slate-200/80 flex items-center justify-center transition shrink-0" title="Minimizar / Expandir bloque">
+                    <i class="fa-solid fa-minus text-xs pointer-events-none"></i>
+                  </button>
+                  <button type="button" class="widget-maximize-btn w-7 h-7 rounded-lg bg-slate-100 hover:bg-indigo-100 text-slate-600 hover:text-indigo-700 border border-slate-200/80 flex items-center justify-center transition shrink-0" title="Maximizar bloque a pantalla completa">
+                    <i class="fa-solid fa-expand text-xs pointer-events-none"></i>
+                  </button>
+                </div>
+              </div>
             </div>
             <div class="widget-body pt-3.5">
               <div class="overflow-x-auto max-h-80">
@@ -1054,6 +1250,6 @@
   </div>
 
   <!-- Controlador Principal POO (ES Module) -->
-  <script type="module" src="./js/App.js"></script>
+  <script type="module" src="./js/App.js?v=0.5.0"></script>
 </body>
 </html>

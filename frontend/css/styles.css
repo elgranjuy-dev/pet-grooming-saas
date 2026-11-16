@@ -216,10 +216,19 @@ body {
 }
 
 /* =========================================================================
-   BLOQUES / WIDGETS MINIMIZABLES Y ORDENABLES (DRAG & DROP)
+   BLOQUES / WIDGETS MINIMIZABLES, MAXIMIZABLES Y ORDENABLES (DRAG & DROP)
    ========================================================================= */
 .module-widget {
   transition: box-shadow 0.18s ease, transform 0.18s ease, border-color 0.18s ease;
+}
+
+.module-widget > .widget-header {
+  cursor: grab;
+  user-select: none;
+}
+
+.module-widget > .widget-header:active {
+  cursor: grabbing;
 }
 
 .module-widget.widget-minimized > .widget-body {
@@ -245,4 +254,46 @@ body {
 .module-widget.widget-drop-target {
   box-shadow: 0 0 0 2px #2563eb, 0 8px 20px rgba(37, 99, 235, 0.16) !important;
 }
+
+/* Modo Maximizado a Pantalla Completa */
+.module-widget.widget-maximized {
+  position: fixed !important;
+  inset: 1rem !important;
+  z-index: 45 !important;
+  width: auto !important;
+  height: calc(100vh - 2rem) !important;
+  max-height: calc(100vh - 2rem) !important;
+  margin: 0 !important;
+  overflow-y: auto !important;
+  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.45) !important;
+  border-color: #6366f1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.module-widget.widget-maximized > .widget-header {
+  position: sticky;
+  top: 0;
+  background-color: #ffffff;
+  z-index: 10;
+  cursor: default;
+}
+
+.module-widget.widget-maximized > .widget-body {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.module-widget.widget-maximized .max-h-36,
+.module-widget.widget-maximized .max-h-40,
+.module-widget.widget-maximized .max-h-48,
+.module-widget.widget-maximized .max-h-80 {
+  max-height: none !important;
+}
+
+.module-widget.widget-maximized .h-44 {
+  height: calc(100vh - 11rem) !important;
+  min-height: 22rem !important;
+}
+
 

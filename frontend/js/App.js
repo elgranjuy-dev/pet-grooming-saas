@@ -5,14 +5,14 @@
  * el flujo de login por subdominio (Usuario + Contraseña), vistas dinámicas por rol,
  * barra lateral colapsable y Check-Out.
  */
-import { ApiClient } from './core/ApiClient.js';
-import { SessionManager } from './core/SessionManager.js';
-import { WidgetManager } from './core/WidgetManager.js';
-import { DashboardView } from './views/DashboardView.js';
-import { AgendaView } from './views/AgendaView.js';
-import { ClientesView } from './views/ClientesView.js';
-import { InventarioCajaView } from './views/InventarioCajaView.js';
-import { ConfigPersonalView } from './views/ConfigPersonalView.js';
+import { ApiClient } from './core/ApiClient.js?v=0.5.0';
+import { SessionManager } from './core/SessionManager.js?v=0.5.0';
+import { WidgetManager } from './core/WidgetManager.js?v=0.5.0';
+import { DashboardView } from './views/DashboardView.js?v=0.5.0';
+import { AgendaView } from './views/AgendaView.js?v=0.5.0';
+import { ClientesView } from './views/ClientesView.js?v=0.5.0';
+import { InventarioCajaView } from './views/InventarioCajaView.js?v=0.5.0';
+import { ConfigPersonalView } from './views/ConfigPersonalView.js?v=0.5.0';
 
 export class App {
   constructor() {
