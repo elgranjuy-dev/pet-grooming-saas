@@ -7,6 +7,7 @@
  */
 import { ApiClient } from './core/ApiClient.js';
 import { SessionManager } from './core/SessionManager.js';
+import { WidgetManager } from './core/WidgetManager.js';
 import { DashboardView } from './views/DashboardView.js';
 import { AgendaView } from './views/AgendaView.js';
 import { ClientesView } from './views/ClientesView.js';
@@ -20,6 +21,7 @@ export class App {
     this.api.setSessionManager(this.session);
 
     const notifyBound = this.notify.bind(this);
+    this.widgets = new WidgetManager(notifyBound);
     this.views = {
       dashboard: new DashboardView(this.api, notifyBound),
       agenda: new AgendaView(this.api, notifyBound),
@@ -33,6 +35,7 @@ export class App {
   }
 
   async init() {
+    this.widgets.init();
     this.views.dashboard.init();
     this.views.agenda.init();
     this.views.clientes.init();
@@ -183,6 +186,7 @@ export class App {
 
     document.querySelectorAll('[data-tab-target]').forEach((btn) => {
       const isTarget = btn.getAttribute('data-tab-target') === tabName;
+      btn.classList.toggle('active', isTarget);
       btn.classList.toggle('bg-blue-600', isTarget);
       btn.classList.toggle('text-white', isTarget);
       btn.classList.toggle('text-slate-300', !isTarget);

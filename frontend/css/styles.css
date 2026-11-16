@@ -214,3 +214,35 @@ body {
   background: #cbd5e1;
   border-radius: 9999px;
 }
+
+/* =========================================================================
+   BLOQUES / WIDGETS MINIMIZABLES Y ORDENABLES (DRAG & DROP)
+   ========================================================================= */
+.module-widget {
+  transition: box-shadow 0.18s ease, transform 0.18s ease, border-color 0.18s ease;
+}
+
+.module-widget.widget-minimized > .widget-body {
+  display: none !important;
+}
+
+.module-widget.widget-minimized > .widget-header {
+  border-bottom-color: transparent !important;
+  margin-bottom: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.module-widget.widget-minimized .widget-header-extra {
+  display: none !important;
+}
+
+.module-widget.widget-dragging {
+  opacity: 0.55;
+  transform: scale(0.99);
+  border: 2px dashed #3b82f6 !important;
+}
+
+.module-widget.widget-drop-target {
+  box-shadow: 0 0 0 2px #2563eb, 0 8px 20px rgba(37, 99, 235, 0.16) !important;
+}
+

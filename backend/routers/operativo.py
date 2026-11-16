@@ -1126,7 +1126,7 @@ def listar_personal(
     # Listar todos los colaboradores de la organización para que el Dueño/Admin gestione toda su plantilla
     personal_raw = (
         db.table("usuarios_crm")
-        .select("id, organizacion_id, sucursal_id, nombre, rol, activo, created_at")
+        .select("*")
         .eq("organizacion_id", org_id)
         .order("nombre")
         .execute()
@@ -1134,7 +1134,10 @@ def listar_personal(
         or []
     )
     personal = [
-        {**u, "sucursal_nombre": sucs_map.get(u.get("sucursal_id"), "Sucursal Matriz")}
+        {
+            **SecurityManager.normalizar_usuario_crm(u, ocultar_pin=True),
+            "sucursal_nombre": sucs_map.get(u.get("sucursal_id"), "Sucursal Matriz"),
+        }
         for u in personal_raw
     ]
 
@@ -1225,15 +1228,18 @@ def crear_usuario_personal(
             detail=f"Ya existe un colaborador con el usuario '{payload.nombre.strip()}'.",
         )
 
+    rol_db, pin_db = SecurityManager.codificar_rol_y_pin(payload.rol, payload.pin)
     usuarios_repo = BranchRepository(db, "usuarios_crm", org_id, suc_id)
     nuevo_usuario = usuarios_repo.insert(
         {
             "nombre": payload.nombre.strip(),
-            "rol": payload.rol,
-            "pin": payload.pin.strip(),
+            "rol": rol_db,
+            "pin": pin_db,
             "activo": payload.activo if payload.activo is not None else True,
         }
     )
+
+    usuario_seguro = SecurityManager.normalizar_usuario_crm(nuevo_usuario, ocultar_pin=True)
 
     SecurityManager.registrar_auditoria(
         db=db,
@@ -1242,10 +1248,9 @@ def crear_usuario_personal(
         usuario=payload.usuario_actual or "Sistema",
         rol=payload.rol_actual or "Operativo",
         accion="ALTA_PERSONAL",
-        detalle=f"Colaborador registrado: {nuevo_usuario.get('nombre')} ({nuevo_usuario.get('rol')})",
+        detalle=f"Colaborador registrado: {usuario_seguro.get('nombre')} ({usuario_seguro.get('rol')})",
     )
 
-    usuario_seguro = {k: v for k, v in nuevo_usuario.items() if k != "pin"}
     return {"usuario": usuario_seguro, "mensaje": "Colaborador registrado exitosamente."}
 
 
@@ -1282,12 +1287,13 @@ def actualizar_usuario_personal(
     )
     if not usr_res.data:
         raise HTTPException(status_code=404, detail="Colaborador no encontrado.")
-    actual = usr_res.data[0]
+    actual_raw = usr_res.data[0]
+    actual_norm = SecurityManager.normalizar_usuario_crm(actual_raw, ocultar_pin=False)
 
     cambios: Dict[str, Any] = {}
     if payload.nombre is not None and payload.nombre.strip():
         nuevo_nombre = payload.nombre.strip()
-        if nuevo_nombre.lower() != str(actual.get("nombre", "")).lower():
+        if nuevo_nombre.lower() != str(actual_norm.get("nombre", "")).lower():
             dup = (
                 db.table("usuarios_crm")
                 .select("id")
@@ -1305,16 +1311,26 @@ def actualizar_usuario_personal(
                 )
         cambios["nombre"] = nuevo_nombre
 
-    if payload.rol is not None and payload.rol.strip():
-        cambios["rol"] = payload.rol.strip()
-
+    rol_objetivo = (
+        payload.rol.strip()
+        if (payload.rol is not None and payload.rol.strip())
+        else actual_norm.get("rol", "Estilista")
+    )
+    pin_objetivo = actual_norm.get("pin", "1234")
     if payload.pin is not None and payload.pin.strip():
         if len(payload.pin.strip()) < 3:
             raise HTTPException(
                 status_code=400,
                 detail="La nueva contraseña o PIN debe tener al menos 3 caracteres.",
             )
-        cambios["pin"] = payload.pin.strip()
+        pin_objetivo = payload.pin.strip()
+
+    if (payload.rol is not None and payload.rol.strip()) or (
+        payload.pin is not None and payload.pin.strip()
+    ):
+        rol_db, pin_db = SecurityManager.codificar_rol_y_pin(rol_objetivo, pin_objetivo)
+        cambios["rol"] = rol_db
+        cambios["pin"] = pin_db
 
     if payload.activo is not None:
         cambios["activo"] = payload.activo
@@ -1323,7 +1339,7 @@ def actualizar_usuario_personal(
         cambios["sucursal_id"] = payload.nueva_sucursal_id
 
     if not cambios:
-        usuario_seguro = {k: v for k, v in actual.items() if k != "pin"}
+        usuario_seguro = SecurityManager.normalizar_usuario_crm(actual_raw, ocultar_pin=True)
         return {"usuario": usuario_seguro, "mensaje": "Sin cambios para aplicar."}
 
     upd = (
@@ -1333,7 +1349,8 @@ def actualizar_usuario_personal(
         .eq("organizacion_id", org_id)
         .execute()
     )
-    actualizado = upd.data[0] if upd.data else {**actual, **cambios}
+    actualizado_raw = upd.data[0] if upd.data else {**actual_raw, **cambios}
+    usuario_seguro = SecurityManager.normalizar_usuario_crm(actualizado_raw, ocultar_pin=True)
 
     SecurityManager.registrar_auditoria(
         db=db,
@@ -1342,13 +1359,12 @@ def actualizar_usuario_personal(
         usuario=payload.usuario_actual or "Administrador",
         rol=payload.rol_actual or "Dueño",
         accion="EDITAR_PERSONAL",
-        detalle=f"Perfil actualizado: {actualizado.get('nombre')} -> Rol: {actualizado.get('rol')} ({'Activo' if actualizado.get('activo') else 'Inactivo'})",
+        detalle=f"Perfil actualizado: {usuario_seguro.get('nombre')} -> Rol: {usuario_seguro.get('rol')} ({'Activo' if usuario_seguro.get('activo') else 'Inactivo'})",
     )
 
-    usuario_seguro = {k: v for k, v in actualizado.items() if k != "pin"}
     return {
         "usuario": usuario_seguro,
-        "mensaje": f"Perfil de '{actualizado.get('nombre')}' actualizado correctamente.",
+        "mensaje": f"Perfil de '{usuario_seguro.get('nombre')}' actualizado correctamente.",
     }
 
 

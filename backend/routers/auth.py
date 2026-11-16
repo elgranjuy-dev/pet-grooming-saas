@@ -142,6 +142,7 @@ def _construir_sesion_completa(
     Valida estado del tenant (Kill-Switch), resuelve sucursal activa,
     registra entrada en asistencias y bitácora, y devuelve el payload de sesión.
     """
+    usuario = SecurityManager.normalizar_usuario_crm(usuario, ocultar_pin=False)
     if str(org.get("estado", "Activa")).lower() != "activa":
         raise HTTPException(
             status_code=403,
@@ -267,6 +268,7 @@ def login_con_pin(
             detail="Usuario no encontrado o inactivo.",
         )
 
+    usuario = SecurityManager.normalizar_usuario_crm(usuario, ocultar_pin=False)
     if str(usuario.get("pin", "")).strip() != str(payload.pin).strip():
         SecurityManager.registrar_auditoria(
             db=db,
@@ -301,7 +303,7 @@ def login_unificado_tenant(
     """
     Login Unificado por Subdominio (Usuario + Contraseña):
     - Identifica el tenant por subdominio (o busca el usuario en las organizaciones).
-    - Autentica colaboradores de `usuarios_crm` (Dueño, Administrador, Cajero, Estilista)
+    - Autentica colaboradores de `usuarios_crm` (Dueño, Administrador, Cajero, Recepcionista, Estilista)
       o bien el correo corporativo `email_propietario` de `organizaciones`.
     - En función del usuario autenticado devuelve su rol para activar la vista correspondiente.
     """
@@ -361,7 +363,10 @@ def login_unificado_tenant(
     if org_subdominio:
         query_usr = query_usr.eq("organizacion_id", org_subdominio["id"])
 
-    usuarios_todos = query_usr.execute().data or []
+    usuarios_todos = [
+        SecurityManager.normalizar_usuario_crm(u, ocultar_pin=False)
+        for u in (query_usr.execute().data or [])
+    ]
     ident_lower = identificador.lower()
 
     # Primero buscar coincidencia exacta de nombre/usuario, luego coincidencia parcial
