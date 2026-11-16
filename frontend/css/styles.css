@@ -29,7 +29,8 @@ body {
 
 #app-shell:not(.menu-top) #sidebar.collapsed .sidebar-label,
 #app-shell:not(.menu-top) #sidebar.collapsed .sidebar-brand-text,
-#app-shell:not(.menu-top) #sidebar.collapsed .sidebar-shift-details {
+#app-shell:not(.menu-top) #sidebar.collapsed .sidebar-shift-details,
+#app-shell:not(.menu-top) #sidebar.collapsed .sidebar-search-container {
   display: none !important;
 }
 
@@ -71,6 +72,15 @@ body {
   gap: 0.85rem;
   flex: 1;
   min-width: 0;
+}
+
+#app-shell.menu-top .sidebar-search-container {
+  padding: 0 !important;
+  border-bottom: none !important;
+  padding-right: 0.75rem !important;
+  border-right: 1px solid #1e293b;
+  width: 15.5rem;
+  flex-shrink: 0;
 }
 
 #app-shell.menu-top .sidebar-header {

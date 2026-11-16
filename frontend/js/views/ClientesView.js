@@ -111,6 +111,92 @@ export class ClientesView {
     document.getElementById('modal-busqueda-clientes')?.classList.add('hidden');
   }
 
+  renderEstadoInicialModulo() {
+    const expView = document.getElementById('cliente-expediente-view');
+    if (!expView) return;
+    expView.innerHTML = `
+      <div class="p-6 text-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 text-xs text-slate-500">
+        <i class="fa-solid fa-magnifying-glass text-slate-400 text-base mb-1.5 block"></i>
+        Utiliza la barra de búsqueda en la parte superior del menú izquierdo para buscar un cliente y abrir su expediente.
+      </div>
+    `;
+  }
+
+  renderResultadosEnModulo(clientes) {
+    const expView = document.getElementById('cliente-expediente-view');
+    if (!expView) return;
+
+    if (!clientes || !clientes.length) {
+      expView.innerHTML = `
+        <div class="p-6 text-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 text-xs text-slate-500">
+          <i class="fa-solid fa-magnifying-glass text-slate-400 text-base mb-1.5 block"></i>
+          No hay coincidencias.
+        </div>
+      `;
+      return;
+    }
+
+    expView.innerHTML = `
+      <div class="space-y-2">
+        ${this.construirTarjetasCoincidenciasHtml(clientes)}
+      </div>
+    `;
+
+    expView.querySelectorAll('.card-coincidencia-cliente').forEach((card) => {
+      card.addEventListener('click', () => {
+        const cid = card.getAttribute('data-open-cliente-id');
+        if (cid) {
+          this.abrirExpedienteCliente(cid);
+        }
+      });
+    });
+  }
+
+  construirTarjetasCoincidenciasHtml(clientes) {
+    return clientes
+      .map((c) => {
+        const telMask = this.enmascararUltimos4(c.telefono, c.ultimos_4_telefono);
+        const mascotas = c.mascotas || [];
+        const chipsMascotas = mascotas.length
+          ? mascotas
+              .map(
+                (m) =>
+                  `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200/70 text-[10px] font-bold">
+                    <i class="fa-solid fa-paw text-[9px]"></i>${m.nombre} (${m.raza})
+                  </span>`
+              )
+              .join('')
+          : `<span class="text-[11px] text-slate-400 italic">Sin mascotas registradas</span>`;
+
+        return `
+          <div data-open-cliente-id="${c.id}"
+            class="card-coincidencia-cliente cursor-pointer rounded-xl border border-slate-200 hover:border-blue-500 bg-white hover:bg-blue-50/40 p-3.5 shadow-2xs transition flex items-center justify-between gap-3 group">
+            <div class="space-y-1.5 min-w-0">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="w-7 h-7 rounded-lg bg-slate-900 group-hover:bg-blue-600 text-white text-xs font-extrabold inline-flex items-center justify-center transition">
+                  ${(c.nombre || 'C').charAt(0).toUpperCase()}
+                </span>
+                <h4 class="font-extrabold text-slate-900 group-hover:text-blue-700 text-sm transition">${c.nombre}</h4>
+                <span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-mono text-xs font-bold">
+                  <i class="fa-solid fa-mobile-screen mr-1 text-slate-400"></i>${telMask}
+                </span>
+              </div>
+              <div class="flex flex-wrap items-center gap-1.5 pl-9">
+                ${chipsMascotas}
+              </div>
+            </div>
+            <div class="shrink-0">
+              <span class="px-3 py-1.5 rounded-xl bg-slate-100 group-hover:bg-blue-600 text-slate-700 group-hover:text-white text-xs font-bold transition inline-flex items-center gap-1.5">
+                <span>Abrir Perfil</span>
+                <i class="fa-solid fa-arrow-right text-[10px]"></i>
+              </span>
+            </div>
+          </div>
+        `;
+      })
+      .join('');
+  }
+
   mostrarVentanaSinCoincidencias() {
     const modal = document.getElementById('modal-busqueda-clientes');
     const body = document.getElementById('modal-busqueda-clientes-body');
@@ -145,7 +231,11 @@ export class ClientesView {
     if (!modal || !body) return;
 
     if (q.length < 2) {
+      this.clientesEncontrados = [];
       this.mostrarVentanaSinCoincidencias();
+      if (!this.expedienteActual) {
+        this.renderResultadosEnModulo([]);
+      }
       return;
     }
 
@@ -158,11 +248,18 @@ export class ClientesView {
 
       if (!this.clientesEncontrados.length) {
         this.mostrarVentanaSinCoincidencias();
+        if (!this.expedienteActual) {
+          this.renderResultadosEnModulo([]);
+        }
         return;
       }
 
       this.renderPopupCoincidencias(this.clientesEncontrados);
+      if (!this.expedienteActual) {
+        this.renderResultadosEnModulo(this.clientesEncontrados);
+      }
     } catch (_) {
+      this.clientesEncontrados = [];
       this.mostrarVentanaSinCoincidencias();
     }
   }
@@ -173,57 +270,19 @@ export class ClientesView {
 
     body.innerHTML = `
       <div class="space-y-2">
-        ${clientes
-          .map((c) => {
-            const telMask = this.enmascararUltimos4(c.telefono, c.ultimos_4_telefono);
-            const mascotas = c.mascotas || [];
-            const chipsMascotas = mascotas.length
-              ? mascotas
-                  .map(
-                    (m) =>
-                      `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200/70 text-[10px] font-bold">
-                        <i class="fa-solid fa-paw text-[9px]"></i>${m.nombre} (${m.raza})
-                      </span>`
-                  )
-                  .join('')
-              : `<span class="text-[11px] text-slate-400 italic">Sin mascotas registradas</span>`;
-
-            return `
-              <div data-open-cliente-id="${c.id}"
-                class="card-coincidencia-cliente cursor-pointer rounded-xl border border-slate-200 hover:border-blue-500 bg-white hover:bg-blue-50/40 p-3.5 shadow-2xs transition flex items-center justify-between gap-3 group">
-                <div class="space-y-1.5 min-w-0">
-                  <div class="flex flex-wrap items-center gap-2">
-                    <span class="w-7 h-7 rounded-lg bg-slate-900 group-hover:bg-blue-600 text-white text-xs font-extrabold inline-flex items-center justify-center transition">
-                      ${(c.nombre || 'C').charAt(0).toUpperCase()}
-                    </span>
-                    <h4 class="font-extrabold text-slate-900 group-hover:text-blue-700 text-sm transition">${c.nombre}</h4>
-                    <span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-mono text-xs font-bold">
-                      <i class="fa-solid fa-mobile-screen mr-1 text-slate-400"></i>${telMask}
-                    </span>
-                  </div>
-                  <div class="flex flex-wrap items-center gap-1.5 pl-9">
-                    ${chipsMascotas}
-                  </div>
-                </div>
-                <div class="shrink-0">
-                  <span class="px-3 py-1.5 rounded-xl bg-slate-100 group-hover:bg-blue-600 text-slate-700 group-hover:text-white text-xs font-bold transition inline-flex items-center gap-1.5">
-                    <span>Abrir Perfil</span>
-                    <i class="fa-solid fa-arrow-right text-[10px]"></i>
-                  </span>
-                </div>
-              </div>
-            `;
-          })
-          .join('')}
+        ${this.construirTarjetasCoincidenciasHtml(clientes)}
       </div>
     `;
 
     body.querySelectorAll('.card-coincidencia-cliente').forEach((card) => {
-      card.addEventListener('click', () => {
+      card.addEventListener('click', async () => {
         const cid = card.getAttribute('data-open-cliente-id');
         if (cid) {
           this.cerrarPopupBusqueda();
-          this.abrirExpedienteCliente(cid);
+          if (window.petGroomingApp && window.petGroomingApp.activeTab !== 'clientes') {
+            await window.petGroomingApp.switchTab('clientes');
+          }
+          await this.abrirExpedienteCliente(cid);
         }
       });
     });
@@ -668,9 +727,12 @@ export class ClientesView {
     const btnCerrarExp = document.getElementById('btn-cerrar-expediente-cliente');
     if (btnCerrarExp && widgetExp) {
       btnCerrarExp.addEventListener('click', () => {
-        widgetExp.classList.add('hidden');
-        expView.innerHTML = '';
         this.expedienteActual = null;
+        if (this.clientesEncontrados && this.clientesEncontrados.length) {
+          this.renderResultadosEnModulo(this.clientesEncontrados);
+        } else {
+          this.renderEstadoInicialModulo();
+        }
       });
     }
 
