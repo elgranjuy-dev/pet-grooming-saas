@@ -1,3 +1,4 @@
+import re
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, Header, HTTPException, Query
@@ -190,8 +191,29 @@ def obtener_dashboard(
 
 
 # -------------------------------------------------------------------------
-# 2. CLIENTES Y MASCOTAS (Búsqueda Privada y Creación con Hash de Lealtad)
+# 2. CLIENTES Y MASCOTAS (Búsqueda Privada, Expediente y Creación con Hash)
 # -------------------------------------------------------------------------
+def _enmascarar_telefono(telefono: Optional[str]) -> str:
+    """Devuelve únicamente los últimos 4 dígitos del celular por privacidad anti-robo de cartera."""
+    digitos = re.sub(r"\D", "", str(telefono or ""))
+    if len(digitos) >= 4:
+        return f"•••• ••{digitos[-4:]}"
+    return f"•••• {digitos}" if digitos else "••••"
+
+
+def _ultimos_4_telefono(telefono: Optional[str]) -> str:
+    digitos = re.sub(r"\D", "", str(telefono or ""))
+    return digitos[-4:] if len(digitos) >= 4 else digitos
+
+
+def _sanitizar_cliente_privado(cliente: Dict[str, Any]) -> Dict[str, Any]:
+    copia = dict(cliente or {})
+    raw_tel = copia.get("telefono", "")
+    copia["telefono"] = _enmascarar_telefono(raw_tel)
+    copia["ultimos_4_telefono"] = _ultimos_4_telefono(raw_tel)
+    return copia
+
+
 @router.get("/clientes/buscar")
 def buscar_clientes_privado(
     q: str = Query(default="", description="Término de búsqueda: teléfono, nombre, mascota o código PET-"),
@@ -201,7 +223,8 @@ def buscar_clientes_privado(
 ) -> Dict[str, Any]:
     """
     Búsqueda privada de clientes y sus mascotas por teléfono, nombre de cliente,
-    nombre de mascota o código de barras (PET-...), sin exponer el padrón completo.
+    nombre de mascota o código de barras (PET-...), sin exponer el padrón completo
+    y mostrando únicamente los últimos 4 dígitos del celular.
     """
     termino = (q or "").strip()
     if len(termino) < 2:
@@ -253,12 +276,136 @@ def buscar_clientes_privado(
             mascotas_repo.query("*").eq("cliente_id", cid).order("nombre").execute().data
             or []
         )
-        resultados.append({**cliente, "mascotas": mascotas_cliente})
+        cliente_seguro = _sanitizar_cliente_privado(cliente)
+        resultados.append(
+            {
+                **cliente_seguro,
+                "mascotas": mascotas_cliente,
+                "total_mascotas": len(mascotas_cliente),
+            }
+        )
 
     return {
         "resultados": resultados,
         "clientes": resultados,
         "total": len(resultados),
+    }
+
+
+@router.get("/clientes/{cliente_id}/expediente")
+def obtener_expediente_cliente(
+    cliente_id: str,
+    organizacion_id: Optional[str] = Query(default=None),
+    x_organizacion_id: Optional[str] = Header(default=None),
+    db: Client = Depends(get_db),
+) -> Dict[str, Any]:
+    """
+    Devuelve el expediente integral de un cliente (con celular enmascarado a los últimos 4 dígitos),
+    su resumen e historial de actividad con la estética a nivel cliente, y el listado de sus mascotas
+    con el expediente clínico e historial individual de cada mascota.
+    """
+    ctx = _resolver_contexto(
+        db,
+        organizacion_id=organizacion_id,
+        x_organizacion_id=x_organizacion_id,
+        requiere_sucursal=False,
+    )
+    org_id = ctx["organizacion_id"]
+
+    clientes_repo = OrganizationRepository(db, "clientes", org_id)
+    mascotas_repo = OrganizationRepository(db, "mascotas", org_id)
+    citas_org_repo = OrganizationRepository(db, "citas", org_id)
+
+    cliente = clientes_repo.get_by_id(cliente_id)
+    if not cliente:
+        raise HTTPException(
+            status_code=404, detail="Expediente de cliente no encontrado."
+        )
+
+    cliente_seguro = _sanitizar_cliente_privado(cliente)
+
+    mascotas_cliente = (
+        mascotas_repo.query("*").eq("cliente_id", cliente_id).order("nombre").execute().data
+        or []
+    )
+    mascota_ids = [m["id"] for m in mascotas_cliente if m.get("id")]
+    mascotas_por_id = {m["id"]: m for m in mascotas_cliente if m.get("id")}
+
+    citas_cliente: List[Dict[str, Any]] = []
+    if mascota_ids:
+        citas_res = (
+            citas_org_repo.query("*")
+            .in_("mascota_id", mascota_ids)
+            .order("fecha_hora", desc=True)
+            .execute()
+        )
+        citas_cliente = citas_res.data or []
+
+    # Enriquecer cada cita con datos de la mascota
+    historial_citas_cliente: List[Dict[str, Any]] = []
+    citas_por_mascota: Dict[str, List[Dict[str, Any]]] = {mid: [] for mid in mascota_ids}
+
+    for c in citas_cliente:
+        mid = c.get("mascota_id")
+        pet = mascotas_por_id.get(mid, {})
+        cita_enriquecida = {
+            **c,
+            "mascota_nombre": pet.get("nombre") or "Mascota",
+            "mascota_raza": pet.get("raza") or "",
+            "mascota_codigo": pet.get("codigo_barras") or "",
+        }
+        historial_citas_cliente.append(cita_enriquecida)
+        if mid in citas_por_mascota:
+            citas_por_mascota[mid].append(cita_enriquecida)
+
+    citas_completadas = [
+        c for c in historial_citas_cliente if str(c.get("estado", "")).lower() == "completada"
+    ]
+    citas_programadas = [
+        c for c in historial_citas_cliente if str(c.get("estado", "")).lower() == "programada"
+    ]
+    total_invertido = sum(float(c.get("precio") or 0) for c in citas_completadas)
+
+    ultima_visita = citas_completadas[0].get("fecha_hora") if citas_completadas else (
+        historial_citas_cliente[0].get("fecha_hora") if historial_citas_cliente else None
+    )
+    proxima_cita = citas_programadas[-1].get("fecha_hora") if citas_programadas else None
+
+    mascotas_detalladas: List[Dict[str, Any]] = []
+    for m in mascotas_cliente:
+        mid = m["id"]
+        hist_m = citas_por_mascota.get(mid, [])
+        comp_m = [
+            c for c in hist_m if str(c.get("estado", "")).lower() == "completada"
+        ]
+        gasto_m = sum(float(c.get("precio") or 0) for c in comp_m)
+        ultima_m = comp_m[0].get("fecha_hora") if comp_m else (
+            hist_m[0].get("fecha_hora") if hist_m else None
+        )
+        mascotas_detalladas.append(
+            {
+                **m,
+                "historial_citas": hist_m,
+                "total_citas": len(hist_m),
+                "citas_completadas": len(comp_m),
+                "total_invertido": round(gasto_m, 2),
+                "ultima_visita": ultima_m,
+            }
+        )
+
+    return {
+        "cliente": cliente_seguro,
+        "resumen_actividad": {
+            "total_mascotas": len(mascotas_detalladas),
+            "total_citas": len(historial_citas_cliente),
+            "citas_completadas": len(citas_completadas),
+            "citas_programadas": len(citas_programadas),
+            "total_invertido": round(total_invertido, 2),
+            "ultima_visita": ultima_visita,
+            "proxima_cita": proxima_cita,
+        },
+        "historial_citas_cliente": historial_citas_cliente,
+        "mascotas": mascotas_detalladas,
     }
 
 
@@ -300,10 +447,13 @@ def crear_cliente(
             usuario=payload.usuario_actual or "Sistema",
             rol=payload.rol_actual or "Operativo",
             accion="CREAR_CLIENTE",
-            detalle=f"Cliente registrado: {nuevo_cliente.get('nombre')} ({nuevo_cliente.get('telefono')})",
+            detalle=f"Cliente registrado: {nuevo_cliente.get('nombre')} ({_enmascarar_telefono(nuevo_cliente.get('telefono'))})",
         )
 
-    return {"cliente": nuevo_cliente, "mensaje": "Cliente registrado exitosamente."}
+    return {
+        "cliente": _sanitizar_cliente_privado(nuevo_cliente),
+        "mensaje": "Cliente registrado exitosamente.",
+    }
 
 
 @router.post("/mascotas")
@@ -692,7 +842,7 @@ def procesar_escaneo(
         return {
             "tipo": "mascota",
             "mascota": mascota,
-            "cliente": cliente,
+            "cliente": _sanitizar_cliente_privado(cliente) if cliente else None,
             "mensaje": f"Mascota identificada: {mascota.get('nombre')}",
         }
 
