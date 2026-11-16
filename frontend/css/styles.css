@@ -15,7 +15,7 @@ body {
   color: #0f172a;
 }
 
-/* Transiciones de barra lateral colapsable */
+/* Transiciones de barra lateral colapsable (modo lateral izquierdo) */
 #sidebar {
   width: var(--sidebar-width);
   height: 100vh;
@@ -23,43 +23,139 @@ body {
   transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-#sidebar.collapsed {
+#app-shell:not(.menu-top) #sidebar.collapsed {
   width: var(--sidebar-collapsed-width);
 }
 
-#sidebar.collapsed .sidebar-label,
-#sidebar.collapsed .sidebar-brand-text,
-#sidebar.collapsed .sidebar-shift-details {
+#app-shell:not(.menu-top) #sidebar.collapsed .sidebar-label,
+#app-shell:not(.menu-top) #sidebar.collapsed .sidebar-brand-text,
+#app-shell:not(.menu-top) #sidebar.collapsed .sidebar-shift-details {
   display: none !important;
 }
 
-#sidebar.collapsed .nav-btn {
+#app-shell:not(.menu-top) #sidebar.collapsed .nav-btn {
   justify-content: center;
   padding-left: 0.65rem;
   padding-right: 0.65rem;
 }
 
-#sidebar.collapsed .nav-btn i {
+#app-shell:not(.menu-top) #sidebar.collapsed .nav-btn i {
   margin-right: 0 !important;
   font-size: 1.1rem;
 }
 
-/* Ajuste automático en pantallas pequeñas */
+/* =========================================================================
+   MODO MENÚ SUPERIOR (TOPBAR) - Activable desde el botón dentro del menú
+   ========================================================================= */
+#app-shell.menu-top {
+  flex-direction: column !important;
+}
+
+#app-shell.menu-top #sidebar {
+  width: 100% !important;
+  height: auto !important;
+  max-height: none !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 0.45rem 1rem !important;
+  border-bottom: 1px solid #1e293b;
+  overflow-x: auto;
+  overflow-y: hidden;
+  gap: 0.75rem;
+}
+
+#app-shell.menu-top .sidebar-top-group {
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 0.85rem;
+  flex: 1;
+  min-width: 0;
+}
+
+#app-shell.menu-top .sidebar-header {
+  padding: 0 !important;
+  border-bottom: none !important;
+  padding-right: 0.75rem !important;
+  border-right: 1px solid #1e293b;
+  flex-shrink: 0;
+}
+
+#app-shell.menu-top #btn-toggle-sidebar {
+  display: none !important;
+}
+
+#app-shell.menu-top .sidebar-nav {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 0.35rem !important;
+  padding: 0 !important;
+  overflow-x: auto;
+}
+
+#app-shell.menu-top .sidebar-nav > * + * {
+  margin-top: 0 !important;
+}
+
+#app-shell.menu-top .nav-btn {
+  width: auto !important;
+  white-space: nowrap;
+  padding: 0.45rem 0.75rem !important;
+}
+
+#app-shell.menu-top .sidebar-footer {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  padding: 0 !important;
+  border-top: none !important;
+  flex-shrink: 0;
+}
+
+#app-shell.menu-top .sidebar-footer > * + * {
+  margin-top: 0 !important;
+}
+
+#app-shell.menu-top .sidebar-shift-details {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  padding: 0.35rem 0.65rem !important;
+  white-space: nowrap;
+}
+
+#app-shell.menu-top .sidebar-shift-details > * + * {
+  margin-top: 0 !important;
+}
+
+#app-shell.menu-top .sidebar-hora-row {
+  display: none !important;
+}
+
+#app-shell.menu-top #btn-checkout-turno {
+  width: auto !important;
+  white-space: nowrap;
+  padding: 0.45rem 0.75rem !important;
+}
+
+/* Ajuste automático en pantallas pequeñas cuando está en modo lateral */
 @media (max-width: 900px) {
-  #sidebar:not(.expanded-mobile) {
+  #app-shell:not(.menu-top) #sidebar:not(.expanded-mobile) {
     width: var(--sidebar-collapsed-width);
   }
-  #sidebar:not(.expanded-mobile) .sidebar-label,
-  #sidebar:not(.expanded-mobile) .sidebar-brand-text,
-  #sidebar:not(.expanded-mobile) .sidebar-shift-details {
+  #app-shell:not(.menu-top) #sidebar:not(.expanded-mobile) .sidebar-label,
+  #app-shell:not(.menu-top) #sidebar:not(.expanded-mobile) .sidebar-brand-text,
+  #app-shell:not(.menu-top) #sidebar:not(.expanded-mobile) .sidebar-shift-details {
     display: none !important;
   }
-  #sidebar:not(.expanded-mobile) .nav-btn {
+  #app-shell:not(.menu-top) #sidebar:not(.expanded-mobile) .nav-btn {
     justify-content: center;
     padding-left: 0.65rem;
     padding-right: 0.65rem;
   }
-  #sidebar:not(.expanded-mobile) .nav-btn i {
+  #app-shell:not(.menu-top) #sidebar:not(.expanded-mobile) .nav-btn i {
     margin-right: 0 !important;
   }
 }
@@ -116,8 +212,4 @@ body {
 ::-webkit-scrollbar-thumb {
   background: #cbd5e1;
   border-radius: 9999px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
 }

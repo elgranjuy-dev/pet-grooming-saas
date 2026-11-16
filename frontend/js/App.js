@@ -203,9 +203,56 @@ export class App {
     }
   }
 
+  aplicarPosicionMenu(pos) {
+    const appShell = document.getElementById('app-shell');
+    const sidebar = document.getElementById('sidebar');
+    const iconEl = document.getElementById('icon-toggle-menu-pos');
+    const labelEl = document.getElementById('label-toggle-menu-pos');
+    if (!appShell) return;
+
+    const esTop = pos === 'top';
+    appShell.classList.toggle('menu-top', esTop);
+    if (esTop && sidebar) {
+      sidebar.classList.remove('collapsed');
+    }
+
+    if (iconEl) {
+      iconEl.className = esTop
+        ? 'fa-solid fa-table-columns text-xs'
+        : 'fa-solid fa-arrow-up-from-bracket text-xs';
+    }
+    if (labelEl) {
+      labelEl.textContent = esTop ? 'Menú Izquierda' : 'Menú Arriba';
+    }
+    try {
+      localStorage.setItem('pet_grooming_menu_position', esTop ? 'top' : 'left');
+    } catch (_) {}
+  }
+
   bindSidebarAndCheckoutEvents() {
     const btnToggleSidebar = document.getElementById('btn-toggle-sidebar');
+    const btnToggleMenuPos = document.getElementById('btn-toggle-menu-pos');
     const sidebar = document.getElementById('sidebar');
+    const appShell = document.getElementById('app-shell');
+
+    // Restaurar preferencia guardada (izquierda por defecto)
+    try {
+      const savedPos = localStorage.getItem('pet_grooming_menu_position') || 'left';
+      this.aplicarPosicionMenu(savedPos);
+    } catch (_) {}
+
+    if (btnToggleMenuPos && appShell) {
+      btnToggleMenuPos.addEventListener('click', () => {
+        const nuevaPos = appShell.classList.contains('menu-top') ? 'left' : 'top';
+        this.aplicarPosicionMenu(nuevaPos);
+        this.notify(
+          nuevaPos === 'top'
+            ? 'Menú movido a la parte superior.'
+            : 'Menú movido a la parte izquierda.',
+          'info'
+        );
+      });
+    }
 
     if (btnToggleSidebar && sidebar) {
       btnToggleSidebar.addEventListener('click', () => {

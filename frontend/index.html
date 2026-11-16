@@ -73,11 +73,11 @@
   ====================================================================== -->
   <div id="app-shell" class="hidden h-screen max-h-screen w-screen overflow-hidden flex bg-slate-50">
 
-    <!-- BARRA LATERAL COLAPSABLE -->
+    <!-- MENÚ DE NAVEGACIÓN (LATERAL IZQUIERDO O SUPERIOR) -->
     <aside id="sidebar" class="bg-slate-900 text-slate-100 flex flex-col justify-between shrink-0 h-full overflow-y-auto select-none">
-      <div>
-        <!-- Cabecera de Marca + Botón Colapsar -->
-        <div class="p-3.5 flex items-center justify-between border-b border-slate-800">
+      <div class="sidebar-top-group flex flex-col">
+        <!-- Cabecera de Marca + Controles de Posición/Colapso -->
+        <div class="sidebar-header p-3.5 flex items-center justify-between border-b border-slate-800 gap-2">
           <div class="flex items-center gap-2.5 overflow-hidden">
             <div class="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white shrink-0">
               <i class="fa-solid fa-dog text-sm"></i>
@@ -87,14 +87,21 @@
               <p id="sidebar-sucursal-nombre" class="text-[11px] text-emerald-400 font-medium truncate">Sucursal Matriz</p>
             </div>
           </div>
-          <button id="btn-toggle-sidebar" type="button" title="Colapsar/Expandir menú"
-            class="w-7 h-7 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition">
-            <i class="fa-solid fa-bars text-sm"></i>
-          </button>
+          <div class="flex items-center gap-1 shrink-0">
+            <button id="btn-toggle-menu-pos" type="button" title="Cambiar posición del menú (Izquierda / Arriba)"
+              class="px-2 h-7 rounded-lg bg-slate-800/90 hover:bg-blue-600 text-slate-300 hover:text-white flex items-center justify-center gap-1.5 text-[11px] font-semibold transition">
+              <i id="icon-toggle-menu-pos" class="fa-solid fa-arrow-up-from-bracket text-xs"></i>
+              <span id="label-toggle-menu-pos" class="sidebar-label">Menú Arriba</span>
+            </button>
+            <button id="btn-toggle-sidebar" type="button" title="Colapsar/Expandir menú lateral"
+              class="w-7 h-7 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition">
+              <i class="fa-solid fa-bars text-sm"></i>
+            </button>
+          </div>
         </div>
 
         <!-- Menú de Navegación por Pestañas -->
-        <nav class="p-2.5 space-y-1">
+        <nav class="sidebar-nav p-2.5 space-y-1">
           <button type="button" data-tab-target="dashboard"
             class="nav-btn active w-full flex items-center px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition">
             <i class="fa-solid fa-chart-pie w-5 mr-2 text-center"></i>
@@ -133,15 +140,15 @@
         </nav>
       </div>
 
-      <!-- Tarjeta de Turno Activo + Check-Out siempre visible abajo -->
-      <div class="p-2.5 border-t border-slate-800 space-y-2 shrink-0">
+      <!-- Tarjeta de Turno Activo + Check-Out -->
+      <div class="sidebar-footer p-2.5 border-t border-slate-800 space-y-2 shrink-0">
         <div class="sidebar-shift-details bg-slate-800/80 rounded-xl p-2.5 text-xs space-y-0.5">
-          <div class="flex items-center justify-between">
+          <div class="flex items-center justify-between gap-2">
             <span class="text-slate-400 text-[11px]">En turno:</span>
             <span id="sidebar-usuario-rol" class="px-2 py-0.5 rounded bg-blue-600/30 text-blue-300 font-bold text-[10px]">Dueño</span>
           </div>
           <p id="sidebar-usuario-nombre" class="font-bold text-white text-xs truncate">Administrador</p>
-          <p class="text-[10px] text-slate-400">
+          <p class="sidebar-hora-row text-[10px] text-slate-400">
             Entrada: <span id="sidebar-hora-entrada" class="text-emerald-400 font-semibold">--:--</span>
           </p>
         </div>
