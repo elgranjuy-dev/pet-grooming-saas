@@ -120,7 +120,7 @@ def listar_usuarios_sucursal(
     """Lista los usuarios activos asignados a una sucursal específica."""
     query = (
         db.table("usuarios_crm")
-        .select("id, organizacion_id, sucursal_id, nombre, rol, activo, created_at")
+        .select("*")
         .eq("sucursal_id", sucursal_id)
         .eq("activo", True)
     )
@@ -128,7 +128,10 @@ def listar_usuarios_sucursal(
         query = query.eq("organizacion_id", organizacion_id)
 
     res = query.order("nombre").execute()
-    usuarios = res.data or []
+    usuarios = [
+        SecurityManager.normalizar_usuario_crm(u, ocultar_pin=True)
+        for u in (res.data or [])
+    ]
     return {"usuarios": usuarios, "total": len(usuarios)}
 
 
@@ -467,3 +470,57 @@ def login_unificado_tenant(
         status_code=404,
         detail="Usuario no encontrado. Verifica tu nombre de usuario o correo.",
     )
+
+
+@router.post("/auth/impersonate")
+def registrar_impersonate(
+    payload: Dict[str, Any] = Body(...),
+    db: Client = Depends(get_db),
+) -> Dict[str, Any]:
+    """
+    Permite a un Administrador o Dueño iniciar o finalizar la simulación (Impersonate)
+    de otro colaborador o rol del tenant, registrando el evento en la bitácora de auditoría.
+    """
+    accion = str(payload.get("accion") or "iniciar").lower()
+    org_id = payload.get("organizacion_id")
+    suc_id = payload.get("sucursal_id")
+    admin_nombre = payload.get("admin_nombre") or "Administrador"
+    admin_rol = payload.get("admin_rol") or "Dueño"
+    target_nombre = payload.get("target_nombre") or "Colaborador"
+    target_rol = payload.get("target_rol") or "Estilista"
+
+    if admin_rol not in ("Dueño", "Administrador"):
+        raise HTTPException(
+            status_code=403,
+            detail="Solo un Dueño o Administrador puede utilizar la función Impersonate.",
+        )
+
+    if org_id and suc_id:
+        if accion == "salir":
+            SecurityManager.registrar_auditoria(
+                db=db,
+                org_id=org_id,
+                suc_id=suc_id,
+                usuario=admin_nombre,
+                rol=admin_rol,
+                accion="IMPERSONATE_FIN",
+                detalle=f"Finalizó simulación (Impersonate) y regresó a perfil {admin_rol}",
+            )
+        else:
+            SecurityManager.registrar_auditoria(
+                db=db,
+                org_id=org_id,
+                suc_id=suc_id,
+                usuario=admin_nombre,
+                rol=admin_rol,
+                accion="IMPERSONATE_INICIO",
+                detalle=f"Inició modo Impersonate viendo como '{target_nombre}' ({target_rol})",
+            )
+
+    return {
+        "ok": True,
+        "accion": accion,
+        "target_nombre": target_nombre,
+        "target_rol": target_rol,
+    }
+

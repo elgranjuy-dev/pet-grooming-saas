@@ -1,12 +1,13 @@
 /**
  * SessionManager.js
  * Gestiona el flujo de login por subdominio (Usuario + Contraseña),
- * persiste la sesión en sessionStorage y aplica permisos visuales por rol.
+ * persiste la sesión en sessionStorage, aplica permisos visuales por rol
+ * y soporta modo "Impersonate" exclusivo para Dueño / Administrador.
  */
 export class SessionManager {
   static STORAGE_KEY = 'pet_grooming_saas_session_v1';
 
-  // Permisos de pestañas visibles según el rol del usuario
+  // Permisos de pestañas visibles según el rol del usuario activo (o simulado en Impersonate)
   static ROLE_PERMISSIONS = {
     'Dueño': ['dashboard', 'agenda', 'clientes', 'inventario', 'caja', 'config'],
     'Administrador': ['dashboard', 'agenda', 'clientes', 'inventario', 'caja', 'config'],
@@ -42,6 +43,119 @@ export class SessionManager {
   isAuthenticated() {
     const s = this.getSession();
     return Boolean(s && s.organizacion_id && s.sucursal_id && s.usuario_id);
+  }
+
+  canImpersonate() {
+    const s = this.getSession();
+    if (!s) return false;
+    if (s.is_impersonating && s.original_admin) {
+      return ['Dueño', 'Administrador'].includes(s.original_admin.rol);
+    }
+    return ['Dueño', 'Administrador'].includes(s.rol);
+  }
+
+  isImpersonating() {
+    const s = this.getSession();
+    return Boolean(s && s.is_impersonating && s.original_admin);
+  }
+
+  getOriginalAdmin() {
+    const s = this.getSession();
+    if (!s) return null;
+    if (s.is_impersonating && s.original_admin) {
+      return s.original_admin;
+    }
+    if (['Dueño', 'Administrador'].includes(s.rol)) {
+      return {
+        usuario_id: s.usuario_id,
+        usuario_nombre: s.usuario_nombre,
+        rol: s.rol,
+      };
+    }
+    return null;
+  }
+
+  async listarUsuariosSucursal() {
+    const s = this.getSession();
+    if (!s || !s.sucursal_id) return [];
+    const data = await this.api.get(`/sucursales/${s.sucursal_id}/usuarios`, {
+      organizacion_id: s.organizacion_id,
+    });
+    return data.usuarios || [];
+  }
+
+  async iniciarImpersonate(targetUser) {
+    const s = this.getSession();
+    if (!s || !this.canImpersonate()) {
+      throw new Error('Solo un Administrador o Dueño puede usar Impersonate.');
+    }
+
+    const originalAdmin = this.getOriginalAdmin();
+    // Si selecciona su propio usuario original de admin, equivale a salir de impersonate
+    if (
+      originalAdmin &&
+      targetUser.id === originalAdmin.usuario_id &&
+      targetUser.rol === originalAdmin.rol &&
+      !targetUser.es_rol_virtual
+    ) {
+      return await this.detenerImpersonate();
+    }
+
+    const updatedSession = {
+      ...s,
+      usuario_id: targetUser.id || originalAdmin.usuario_id,
+      usuario_nombre: targetUser.nombre,
+      rol: targetUser.rol,
+      is_impersonating: true,
+      original_admin: originalAdmin,
+    };
+
+    this.saveSession(updatedSession);
+
+    try {
+      await this.api.post('/auth/impersonate', {
+        accion: 'iniciar',
+        organizacion_id: s.organizacion_id,
+        sucursal_id: s.sucursal_id,
+        admin_nombre: originalAdmin.usuario_nombre,
+        admin_rol: originalAdmin.rol,
+        target_nombre: targetUser.nombre,
+        target_rol: targetUser.rol,
+      });
+    } catch (_) {}
+
+    return updatedSession;
+  }
+
+  async detenerImpersonate() {
+    const s = this.getSession();
+    if (!s || !s.is_impersonating || !s.original_admin) {
+      return s;
+    }
+
+    const originalAdmin = s.original_admin;
+    const restoredSession = {
+      ...s,
+      usuario_id: originalAdmin.usuario_id,
+      usuario_nombre: originalAdmin.usuario_nombre,
+      rol: originalAdmin.rol,
+      is_impersonating: false,
+      original_admin: null,
+    };
+
+    this.saveSession(restoredSession);
+
+    try {
+      await this.api.post('/auth/impersonate', {
+        accion: 'salir',
+        organizacion_id: s.organizacion_id,
+        sucursal_id: s.sucursal_id,
+        admin_nombre: originalAdmin.usuario_nombre,
+        admin_rol: originalAdmin.rol,
+      });
+    } catch (_) {}
+
+    return restoredSession;
   }
 
   detectarSubdominio() {
@@ -90,6 +204,8 @@ export class SessionManager {
       rol: usr.rol || 'Estilista',
       asistencia_id: asistencia.id || null,
       hora_entrada: asistencia.hora_entrada || new Date().toISOString(),
+      is_impersonating: false,
+      original_admin: null,
     };
 
     this.saveSession(sessionPayload);
@@ -100,10 +216,15 @@ export class SessionManager {
     const session = this.getSession();
     if (!session) return null;
 
+    const realUserId =
+      session.is_impersonating && session.original_admin
+        ? session.original_admin.usuario_id
+        : session.usuario_id;
+
     try {
       const res = await this.api.post('/checkout', {
         asistencia_id: session.asistencia_id,
-        usuario_id: session.usuario_id,
+        usuario_id: realUserId,
         monto_corte_caja: Number(montoCorteCaja || 0),
       });
       this.clearSession();
@@ -139,11 +260,18 @@ export class SessionManager {
       }
     });
 
+    // Los elementos exclusivos del rol activo se ocultan si el rol simulado no es Admin/Dueño
     const adminOnlyEls = document.querySelectorAll('[data-role-admin-only]');
     const isAdmin = ['Dueño', 'Administrador'].includes(session.rol);
     adminOnlyEls.forEach((el) => {
       el.classList.toggle('hidden', !isAdmin);
     });
+
+    // El botón de Impersonate en el menú lateral permanece visible si el usuario REAL es Dueño/Administrador
+    const btnImpersonate = document.getElementById('btn-open-impersonate');
+    if (btnImpersonate) {
+      btnImpersonate.classList.toggle('hidden', !this.canImpersonate());
+    }
 
     return allowedTabs;
   }

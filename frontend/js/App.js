@@ -1,18 +1,18 @@
 /**
  * App.js
  * Controlador principal POO del Frontend Operativo.
- * Inicializa ApiClient, SessionManager y las vistas modulares, gestionando
+ * Inicializa ApiClient, SessionManager, WidgetManager y las vistas modulares, gestionando
  * el flujo de login por subdominio (Usuario + Contraseña), vistas dinámicas por rol,
- * barra lateral colapsable y Check-Out.
+ * modo Impersonate para Administrador/Dueño, barra lateral colapsable y Check-Out.
  */
-import { ApiClient } from './core/ApiClient.js?v=0.5.0';
-import { SessionManager } from './core/SessionManager.js?v=0.5.0';
-import { WidgetManager } from './core/WidgetManager.js?v=0.5.0';
-import { DashboardView } from './views/DashboardView.js?v=0.5.0';
-import { AgendaView } from './views/AgendaView.js?v=0.5.0';
-import { ClientesView } from './views/ClientesView.js?v=0.5.0';
-import { InventarioCajaView } from './views/InventarioCajaView.js?v=0.5.0';
-import { ConfigPersonalView } from './views/ConfigPersonalView.js?v=0.5.0';
+import { ApiClient } from './core/ApiClient.js?v=0.6.0';
+import { SessionManager } from './core/SessionManager.js?v=0.6.0';
+import { WidgetManager } from './core/WidgetManager.js?v=0.6.0';
+import { DashboardView } from './views/DashboardView.js?v=0.6.0';
+import { AgendaView } from './views/AgendaView.js?v=0.6.0';
+import { ClientesView } from './views/ClientesView.js?v=0.6.0';
+import { InventarioCajaView } from './views/InventarioCajaView.js?v=0.6.0';
+import { ConfigPersonalView } from './views/ConfigPersonalView.js?v=0.6.0';
 
 export class App {
   constructor() {
@@ -45,6 +45,7 @@ export class App {
     this.bindLoginEvents();
     this.bindNavigationEvents();
     this.bindSidebarAndCheckoutEvents();
+    this.bindImpersonateEvents();
 
     if (this.session.isAuthenticated()) {
       this.mostrarPanelOperativo();
@@ -87,6 +88,7 @@ export class App {
   }
 
   async mostrarPantallaLogin() {
+    document.getElementById('impersonate-banner')?.classList.add('hidden');
     document.getElementById('login-screen')?.classList.remove('hidden');
     document.getElementById('app-shell')?.classList.add('hidden');
 
@@ -158,11 +160,243 @@ export class App {
         : '--:--'
     );
 
+    this.actualizarBannerImpersonate();
+
     const allowedTabs = this.session.aplicarPermisosVisuales();
-    const initialTab = allowedTabs.includes('dashboard')
+    const targetTab = allowedTabs.includes(this.activeTab)
+      ? this.activeTab
+      : allowedTabs.includes('dashboard')
       ? 'dashboard'
       : allowedTabs[0] || 'agenda';
-    this.switchTab(initialTab);
+    this.switchTab(targetTab);
+  }
+
+  actualizarBannerImpersonate() {
+    const s = this.session.getSession();
+    const banner = document.getElementById('impersonate-banner');
+    const targetNameEl = document.getElementById('impersonate-banner-target-name');
+    const targetRoleEl = document.getElementById('impersonate-banner-target-role');
+    const adminNameEl = document.getElementById('impersonate-banner-admin-name');
+    const btnOpenSidebar = document.getElementById('btn-open-impersonate');
+    const labelSidebar = document.getElementById('label-btn-impersonate');
+
+    const isImp = this.session.isImpersonating();
+
+    if (banner) {
+      banner.classList.toggle('hidden', !isImp);
+    }
+
+    if (isImp && s) {
+      if (targetNameEl) targetNameEl.textContent = s.usuario_nombre;
+      if (targetRoleEl) targetRoleEl.textContent = s.rol;
+      if (adminNameEl) {
+        adminNameEl.textContent = s.original_admin?.usuario_nombre || 'Administrador';
+      }
+      if (labelSidebar) {
+        labelSidebar.textContent = `Impersonating: ${s.rol}`;
+      }
+      if (btnOpenSidebar) {
+        btnOpenSidebar.className =
+          'w-full py-1.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-500 border border-blue-400 text-white text-xs font-extrabold transition flex items-center justify-center gap-2 shadow';
+      }
+    } else {
+      if (labelSidebar) {
+        labelSidebar.textContent = 'Impersonate';
+      }
+      if (btnOpenSidebar) {
+        btnOpenSidebar.className =
+          'w-full py-1.5 px-3 rounded-xl bg-blue-600/20 hover:bg-blue-600/35 border border-blue-500/40 text-blue-300 text-xs font-bold transition flex items-center justify-center gap-2';
+      }
+    }
+  }
+
+  bindImpersonateEvents() {
+    const btnOpenSidebar = document.getElementById('btn-open-impersonate');
+    const btnChangeTop = document.getElementById('btn-change-impersonate-top');
+    const btnExitTop = document.getElementById('btn-exit-impersonate-top');
+    const btnCloseModal = document.getElementById('btn-cerrar-modal-impersonate');
+    const btnRestoreModal = document.getElementById('btn-modal-restore-admin');
+    const modal = document.getElementById('modal-impersonate');
+
+    if (btnOpenSidebar) {
+      btnOpenSidebar.addEventListener('click', () => this.abrirModalImpersonate());
+    }
+    if (btnChangeTop) {
+      btnChangeTop.addEventListener('click', () => this.abrirModalImpersonate());
+    }
+    if (btnExitTop) {
+      btnExitTop.addEventListener('click', () => this.salirDeImpersonate());
+    }
+    if (btnRestoreModal) {
+      btnRestoreModal.addEventListener('click', () => this.salirDeImpersonate());
+    }
+    if (btnCloseModal && modal) {
+      btnCloseModal.addEventListener('click', () => modal.classList.add('hidden'));
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.classList.add('hidden');
+      });
+    }
+
+    document.querySelectorAll('[data-impersonate-role]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const rol = btn.getAttribute('data-impersonate-role');
+        if (!rol) return;
+        const orig = this.session.getOriginalAdmin();
+        await this.ejecutarImpersonate({
+          id: orig?.usuario_id,
+          nombre: `Perfil ${rol}`,
+          rol,
+          es_rol_virtual: true,
+        });
+      });
+    });
+  }
+
+  async abrirModalImpersonate() {
+    if (!this.session.canImpersonate()) {
+      this.notify('Solo un Administrador o Dueño puede usar Impersonate.', 'warning');
+      return;
+    }
+
+    const modal = document.getElementById('modal-impersonate');
+    const listContainer = document.getElementById('impersonate-users-list');
+    const activeBox = document.getElementById('modal-impersonate-active-box');
+    const activeDesc = document.getElementById('modal-impersonate-active-desc');
+
+    if (!modal || !listContainer) return;
+
+    const currentSession = this.session.getSession();
+    const isImp = this.session.isImpersonating();
+    const origAdmin = this.session.getOriginalAdmin();
+
+    if (activeBox) {
+      activeBox.classList.toggle('hidden', !isImp);
+      if (isImp && activeDesc && currentSession) {
+        activeDesc.textContent = `Viendo como: ${currentSession.usuario_nombre} (${currentSession.rol})`;
+      }
+    }
+
+    modal.classList.remove('hidden');
+    listContainer.innerHTML = `<div class="p-3 text-center text-slate-400">Cargando colaboradores de la sucursal...</div>`;
+
+    try {
+      const usuarios = await this.session.listarUsuariosSucursal();
+      if (!usuarios.length) {
+        listContainer.innerHTML = `<div class="p-3 text-center text-slate-400 bg-slate-50 rounded-xl">No hay otros colaboradores registrados aún. Puedes usar la simulación rápida por rol abajo.</div>`;
+        return;
+      }
+
+      const badgeColor = (rol) => {
+        const map = {
+          'Dueño': 'bg-purple-100 text-purple-800',
+          'Administrador': 'bg-indigo-100 text-indigo-800',
+          'Recepcionista': 'bg-amber-100 text-amber-800',
+          'Cajero': 'bg-emerald-100 text-emerald-800',
+          'Estilista': 'bg-blue-100 text-blue-800',
+        };
+        return map[rol] || 'bg-slate-100 text-slate-700';
+      };
+
+      listContainer.innerHTML = usuarios
+        .map((u) => {
+          const esAdminOriginal = origAdmin && u.id === origAdmin.usuario_id;
+          const esActivoActual =
+            currentSession &&
+            u.id === currentSession.usuario_id &&
+            u.nombre === currentSession.usuario_nombre &&
+            u.rol === currentSession.rol;
+
+          return `
+            <div class="flex items-center justify-between gap-3 p-3 rounded-xl border ${
+              esActivoActual
+                ? 'border-blue-500 bg-blue-50/70'
+                : 'border-slate-200 hover:border-slate-300 bg-white'
+            } transition">
+              <div class="flex items-center gap-2.5 min-w-0">
+                <div class="w-8 h-8 rounded-xl ${
+                  esActivoActual ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'
+                } flex items-center justify-center font-extrabold shrink-0">
+                  ${(u.nombre || 'U').charAt(0).toUpperCase()}
+                </div>
+                <div class="min-w-0">
+                  <p class="font-extrabold text-slate-900 truncate">
+                    ${u.nombre}
+                    ${
+                      esAdminOriginal
+                        ? '<span class="ml-1 text-[10px] font-bold text-slate-400">(Tu usuario Admin)</span>'
+                        : ''
+                    }
+                  </p>
+                  <span class="inline-block mt-0.5 px-2 py-0.5 rounded-full text-[10px] font-bold ${badgeColor(
+                    u.rol
+                  )}">${u.rol}</span>
+                </div>
+              </div>
+              <div class="shrink-0">
+                ${
+                  esActivoActual
+                    ? `<span class="px-2.5 py-1 rounded-lg bg-blue-600 text-white font-bold text-[11px] inline-flex items-center gap-1">
+                        <i class="fa-solid fa-check text-[10px]"></i> Activo
+                      </span>`
+                    : `<button type="button" data-impersonate-uid="${u.id}"
+                        class="btn-select-impersonate-user px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-blue-600 text-white font-bold text-[11px] transition inline-flex items-center gap-1.5">
+                        <i class="fa-solid fa-user-secret text-[10px]"></i>
+                        <span>${esAdminOriginal ? 'Volver a Admin' : 'Impersonate'}</span>
+                      </button>`
+                }
+              </div>
+            </div>
+          `;
+        })
+        .join('');
+
+      listContainer.querySelectorAll('.btn-select-impersonate-user').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const uid = btn.getAttribute('data-impersonate-uid');
+          const target = usuarios.find((x) => x.id === uid);
+          if (target) {
+            await this.ejecutarImpersonate(target);
+          }
+        });
+      });
+    } catch (err) {
+      listContainer.innerHTML = `<div class="p-3 text-center text-red-600 bg-red-50 rounded-xl">${
+        err.message || 'No se pudo cargar la lista de usuarios.'
+      }</div>`;
+    }
+  }
+
+  async ejecutarImpersonate(targetUser) {
+    try {
+      const updated = await this.session.iniciarImpersonate(targetUser);
+      document.getElementById('modal-impersonate')?.classList.add('hidden');
+      this.mostrarPanelOperativo();
+
+      if (updated.is_impersonating) {
+        this.notify(
+          `Modo Impersonate activo: viendo como ${updated.usuario_nombre} (${updated.rol})`,
+          'info'
+        );
+      } else {
+        this.notify(`Has regresado a tu sesión de ${updated.rol}.`, 'success');
+      }
+    } catch (err) {
+      this.notify(err.message || 'No fue posible activar Impersonate.', 'error');
+    }
+  }
+
+  async salirDeImpersonate() {
+    try {
+      const restored = await this.session.detenerImpersonate();
+      document.getElementById('modal-impersonate')?.classList.add('hidden');
+      this.mostrarPanelOperativo();
+      this.notify(
+        `Modo Impersonate finalizado. Sesión restaurada: ${restored.usuario_nombre} (${restored.rol})`,
+        'success'
+      );
+    } catch (err) {
+      this.notify(err.message || 'Error al salir de Impersonate.', 'error');
+    }
   }
 
   bindNavigationEvents() {
@@ -178,7 +412,7 @@ export class App {
   async switchTab(tabName) {
     const allowedTabs = this.session.getAllowedTabs();
     if (!allowedTabs.includes(tabName)) {
-      this.notify('Tu rol no tiene acceso a este módulo.', 'warning');
+      this.notify('El perfil actual no tiene acceso a este módulo.', 'warning');
       return;
     }
 
