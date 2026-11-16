@@ -2,6 +2,11 @@
 
 Todos los cambios notables en este proyecto serán documentados en este archivo.
 
+## [v0.3.1] - 2026-11-15 - Unificación de Servidor Local en Puerto 8000
+
+### Changed
+- `backend/main.py`: Montaje de `StaticFiles(directory="frontend", html=True)` en la raíz `/` después de las rutas `/api/*` para servir el frontend y la API desde el mismo puerto (`8000`).
+
 ## [v0.3.0] - 2026-11-15 - Frontend Modular POO Fase 1 - Panel Operativo completo
 
 ### Added
