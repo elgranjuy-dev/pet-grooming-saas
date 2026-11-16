@@ -1,6 +1,6 @@
 /**
  * AgendaView.js
- * Calendario Operativo Tipo Outlook (Vista Día Actual y Vista por Semanas)
+ * Calendario Operativo (Vista Día Actual y Vista por Semanas)
  * con bloques disponibles interactivos, tarjetas de cita con nombre de mascota en grande,
  * dueño/teléfono/servicio en chico, botones de Asistió (Efectivo/Tarjeta) y No Asistió,
  * y barra financiera superior en tiempo real.
@@ -135,7 +135,7 @@ export class AgendaView {
       btnFiltrar.addEventListener('click', () => this.cargarCitas());
     }
 
-    // Switch entre Vista Día Actual y Vista por Semanas (Outlook)
+    // Switch entre Vista Día Actual y Vista por Semanas
     const btnVistaDia = document.getElementById('btn-agenda-vista-dia');
     const btnVistaSemana = document.getElementById('btn-agenda-vista-semana');
     const btnSwitchToggle = document.getElementById('btn-agenda-switch-toggle');
@@ -256,7 +256,7 @@ export class AgendaView {
       filtroFechaEl.value = fechaSeleccionada;
     }
 
-    const container = document.getElementById('agenda-outlook-calendar-container');
+    const container = document.getElementById('agenda-calendar-container');
     const rangoLabel = document.getElementById('agenda-rango-label');
     if (!container) return;
 
@@ -264,7 +264,7 @@ export class AgendaView {
       container.innerHTML = `
         <div class="p-12 text-center text-slate-400 text-xs font-semibold">
           <i class="fa-solid fa-circle-notch fa-spin text-blue-600 text-lg mb-2 block"></i>
-          Cargando calendario Outlook y disponibilidad...
+          Cargando calendario y disponibilidad...
         </div>`;
 
       if (this.vistaModo === 'semana') {
@@ -286,7 +286,7 @@ export class AgendaView {
 
         this.citasActuales = citasData.citas || [];
         this._actualizarBarraFinanciera(citasData.resumen_financiero, this.citasActuales);
-        this._renderVistaSemanaOutlook(dispSemana, this.citasActuales, container);
+        this._renderVistaSemana(dispSemana, this.citasActuales, container);
       } else {
         const hoy = this._hoyLocalISO();
         if (rangoLabel) {
@@ -306,7 +306,7 @@ export class AgendaView {
 
         this.citasActuales = citasData.citas || [];
         this._actualizarBarraFinanciera(citasData.resumen_financiero, this.citasActuales);
-        this._renderVistaDiaOutlook(dispDia, this.citasActuales, container);
+        this._renderVistaDia(dispDia, this.citasActuales, container);
       }
     } catch (err) {
       container.innerHTML = `
@@ -406,7 +406,7 @@ export class AgendaView {
       `;
 
     if (modoCompacto) {
-      // Tarjeta optimizada para celda del calendario semanal Outlook
+      // Tarjeta optimizada para celda del calendario semanal
       return `
         <div class="rounded-xl border p-2.5 shadow-2xs transition ${cardStyle} space-y-1.5">
           <div class="flex items-start justify-between gap-1">
@@ -484,7 +484,7 @@ export class AgendaView {
     `;
   }
 
-  _renderVistaDiaOutlook(dispDia, citasDia, container) {
+  _renderVistaDia(dispDia, citasDia, container) {
     const fecha = dispDia.fecha || this._hoyLocalISO();
     const nombreDia = dispDia.nombre_dia || 'Día';
     const slots = dispDia.slots || [];
@@ -524,7 +524,7 @@ export class AgendaView {
           <p class="text-sm font-extrabold text-slate-700">
             ${dispDia.abierto === false ? `Sucursal cerrada: ${dispDia.motivo_cierre || 'Día inhábil'}` : 'Sin bloques horarios para este día'}
           </p>
-          <p class="text-xs text-slate-500">Cambia la fecha o usa el switch "Por Semanas (Outlook)" para explorar otros días.</p>
+          <p class="text-xs text-slate-500">Cambia la fecha o usa el switch "Por Semanas" para explorar otros días.</p>
         </div>`;
       return;
     }
@@ -581,7 +581,7 @@ export class AgendaView {
 
         return `
           <div class="flex flex-col sm:flex-row items-stretch border-b border-slate-200 last:border-b-0 hover:bg-slate-50/40 transition">
-            <!-- Columna de Hora estilo Outlook -->
+            <!-- Columna de Hora -->
             <div class="sm:w-28 shrink-0 px-3.5 py-3 bg-slate-50 border-b sm:border-b-0 sm:border-r border-slate-200 flex sm:flex-col items-center sm:items-start justify-between sm:justify-start gap-1">
               <div>
                 <span class="font-mono text-sm font-black text-slate-900 block">${hora}</span>
@@ -630,7 +630,7 @@ export class AgendaView {
     this._bindAccionesCalendario(container);
   }
 
-  _renderVistaSemanaOutlook(dispSemana, citasSemana, container) {
+  _renderVistaSemana(dispSemana, citasSemana, container) {
     const dias = dispSemana.dias || [];
     const hoy = this._hoyLocalISO();
     const fechaActiva =
@@ -761,7 +761,7 @@ export class AgendaView {
       <div class="bg-slate-900 text-white px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs">
         <div class="font-extrabold flex items-center gap-2">
           <i class="fa-solid fa-table-columns text-blue-400"></i>
-          <span>Calendario Semanal Tipo Outlook (${dispSemana.fecha_inicio_semana} al ${dispSemana.fecha_fin_semana})</span>
+          <span>Calendario Semanal (${dispSemana.fecha_inicio_semana} al ${dispSemana.fecha_fin_semana})</span>
         </div>
         <div class="text-[11px] text-slate-300">
           Haz clic en cualquier bloque <strong class="text-teal-300">+ Disponible</strong> para agendar o marca <strong class="text-emerald-300">Asistió / No Asistió</strong>

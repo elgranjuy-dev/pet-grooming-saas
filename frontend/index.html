@@ -403,14 +403,14 @@
       </section>
 
       <!-- =================================================================
-           VISTA 2: AGENDA Y TURNOS (CALENDARIO OUTLOOK DÍA / SEMANA + CORTE DEL DÍA)
+           VISTA 2: AGENDA Y TURNOS (CALENDARIO DÍA / SEMANA + CORTE DEL DÍA)
       ================================================================== -->
       <section id="view-agenda" class="tab-view hidden space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 class="text-lg font-extrabold text-slate-900 leading-tight flex items-center gap-2">
               <i class="fa-solid fa-calendar-days text-blue-600"></i>
-              <span>Agenda y Turnos — Calendario Operativo Outlook</span>
+              <span>Agenda y Turnos</span>
             </h2>
             <p class="text-[11px] text-slate-500">Vista completa del día actual o por semana con bloques disponibles interactivos, control de asistencia (Asistió / No Asistió) y arqueo en tiempo real.</p>
           </div>
@@ -424,7 +424,7 @@
         </div>
 
         <div class="module-widgets-grid grid grid-cols-1 lg:grid-cols-12 gap-4 items-start" data-grid-id="agenda">
-          <!-- Bloque Único a Pantalla Completa: Calendario Outlook + Finanzas del Día -->
+          <!-- Bloque Único a Pantalla Completa: Calendario + Finanzas del Día -->
           <div class="module-widget lg:col-span-12 bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-sm" data-widget-id="agenda-citas-dia">
             <div draggable="true" class="widget-header flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
               <div class="flex items-center gap-2">
@@ -455,7 +455,7 @@
                     class="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-600" />
                 </div>
 
-                <!-- Switch Vista Día Actual <-> Vista por Semanas (Outlook) -->
+                <!-- Switch Vista Día Actual <-> Vista por Semanas -->
                 <div class="inline-flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
                   <button id="btn-agenda-vista-dia" type="button"
                     class="px-3 py-1.5 rounded-lg text-xs font-extrabold transition flex items-center gap-1.5 bg-blue-600 text-white shadow-2xs">
@@ -463,7 +463,7 @@
                     <span>Día Actual</span>
                   </button>
 
-                  <button id="btn-agenda-switch-toggle" type="button" title="Cambiar entre Vista Día y Vista por Semanas tipo Outlook"
+                  <button id="btn-agenda-switch-toggle" type="button" title="Cambiar entre Vista Día y Vista por Semanas"
                     class="mx-1.5 w-9 h-5 rounded-full bg-blue-600/20 border border-blue-500/30 relative flex items-center px-0.5 transition cursor-pointer">
                     <span id="knob-agenda-switch-vista" class="w-3.5 h-3.5 rounded-full bg-blue-600 transition-transform duration-200 translate-x-0"></span>
                   </button>
@@ -471,7 +471,7 @@
                   <button id="btn-agenda-vista-semana" type="button"
                     class="px-3 py-1.5 rounded-lg text-xs font-extrabold transition flex items-center gap-1.5 text-slate-600 hover:text-slate-900">
                     <i class="fa-solid fa-table-columns text-[11px]"></i>
-                    <span>Por Semanas (Outlook)</span>
+                    <span>Por Semanas</span>
                   </button>
                 </div>
 
@@ -544,7 +544,7 @@
                 </div>
               </div>
 
-              <!-- Leyenda rápida del Calendario Outlook -->
+              <!-- Leyenda rápida del Calendario -->
               <div class="flex flex-wrap items-center justify-between gap-2 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200/80 text-[11px]">
                 <div class="flex flex-wrap items-center gap-3">
                   <span class="inline-flex items-center gap-1.5 font-bold text-slate-700">
@@ -565,8 +565,8 @@
                 </span>
               </div>
 
-              <!-- CONTENEDOR PRINCIPAL DEL CALENDARIO OUTLOOK (OCUPA TODO EL ESPACIO COMPLETO) -->
-              <div id="agenda-outlook-calendar-container" class="w-full overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-2xs min-h-[540px]"></div>
+              <!-- CONTENEDOR PRINCIPAL DEL CALENDARIO (OCUPA TODO EL ESPACIO COMPLETO) -->
+              <div id="agenda-calendar-container" class="w-full overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-2xs min-h-[540px]"></div>
             </div>
           </div>
         </div>
@@ -1533,7 +1533,7 @@
   </div>
 
   <!-- =====================================================================
-       POP-UP MODAL: AGREGAR CITA (DESDE MASCOTA O DESDE BLOQUE DE AGENDA OUTLOOK)
+       POP-UP MODAL: AGREGAR CITA (DESDE MASCOTA O DESDE BLOQUE DE AGENDA)
   ====================================================================== -->
   <div id="modal-agendar-cita-mascota" class="hidden fixed inset-0 z-[60] bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
     <div class="w-full max-w-4xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh]">
@@ -1543,7 +1543,7 @@
             <i class="fa-solid fa-calendar-plus text-sm"></i>
           </div>
           <div>
-            <h3 class="text-sm font-extrabold">Agendar Cita — Disponibilidad Tipo Outlook</h3>
+            <h3 class="text-sm font-extrabold">Agendar Cita — Disponibilidad de Horarios</h3>
             <p class="text-[11px] text-blue-100">Bloqueo automático de fechas y horarios pasados · Selecciona un bloque disponible del día o la semana completa</p>
           </div>
         </div>
@@ -1620,12 +1620,12 @@
             </div>
           </div>
 
-          <!-- SECCIÓN DE DISPONIBILIDAD TIPO OUTLOOK (DÍA SELECCIONADO / SEMANA COMPLETA) -->
+          <!-- SECCIÓN DE DISPONIBILIDAD (DÍA SELECCIONADO / SEMANA COMPLETA) -->
           <div class="space-y-2.5">
             <div class="flex flex-wrap items-center justify-between gap-2 bg-slate-900 text-white px-3.5 py-2.5 rounded-xl">
               <div class="flex items-center gap-2">
                 <i class="fa-solid fa-calendar-check text-blue-400"></i>
-                <span class="font-extrabold text-xs">Disponibilidad Outlook</span>
+                <span class="font-extrabold text-xs">Disponibilidad de Horarios</span>
                 <span id="modal-cita-seleccion-badge" class="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/30 text-[11px] font-extrabold">
                   Sin bloque seleccionado
                 </span>
@@ -1659,7 +1659,7 @@
               </div>
             </div>
 
-            <!-- Contenedor de bloques tipo Outlook (Vista Día o Vista Semana Completa) -->
+            <!-- Contenedor de bloques (Vista Día o Vista Semana Completa) -->
             <div id="modal-cita-slots-container" class="rounded-xl border border-slate-200 bg-white max-h-72 overflow-auto"></div>
           </div>
 
@@ -1686,6 +1686,6 @@
   </div>
 
   <!-- Controlador Principal POO (ES Module) -->
-  <script type="module" src="./js/App.js?v=0.9.0"></script>
+  <script type="module" src="./js/App.js?v=0.9.1"></script>
 </body>
 </html>

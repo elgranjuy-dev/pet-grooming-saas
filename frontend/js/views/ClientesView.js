@@ -1519,27 +1519,27 @@ export class ClientesView {
     const duracion_minutos = Number(durInput?.value || 60);
 
     try {
-      slotsContainer.innerHTML = `<div class="p-6 text-center text-xs text-slate-400">Calculando disponibilidad tipo Outlook...</div>`;
+      slotsContainer.innerHTML = `<div class="p-6 text-center text-xs text-slate-400">Calculando disponibilidad de horarios...</div>`;
 
       if (this.modalCitaVistaSemana) {
         const dataSemana = await this.api.get('/disponibilidad/semana', {
           fecha,
           duracion_minutos,
         });
-        this._renderOutlookSemanaEnModalCita(dataSemana, slotsContainer);
+        this._renderSemanaEnModalCita(dataSemana, slotsContainer);
       } else {
         const dataDia = await this.api.get('/disponibilidad', {
           fecha,
           duracion_minutos,
         });
-        this._renderOutlookDiaEnModalCita(dataDia, slotsContainer);
+        this._renderDiaEnModalCita(dataDia, slotsContainer);
       }
     } catch (err) {
       slotsContainer.innerHTML = `<div class="p-4 text-red-600 text-xs">Error al consultar disponibilidad: ${err.message}</div>`;
     }
   }
 
-  _renderOutlookDiaEnModalCita(dataDia, container) {
+  _renderDiaEnModalCita(dataDia, container) {
     const fecha = dataDia.fecha || '';
     const nombreDia = dataDia.nombre_dia || '';
 
@@ -1598,8 +1598,8 @@ export class ClientesView {
             <div class="flex-1 p-1.5">
               <button type="button"
                 ${disponible ? '' : 'disabled'}
-                data-outlook-modal-fecha="${fecha}"
-                data-outlook-modal-hora="${s.hora}"
+                data-modal-slot-fecha="${fecha}"
+                data-modal-slot-hora="${s.hora}"
                 class="w-full h-full rounded-xl border px-3 py-2 text-left flex flex-wrap items-center justify-between gap-2 transition ${blockClass}">
                 <div class="flex items-center gap-2">
                   <span class="font-extrabold text-xs">${s.hora} - ${s.hora_fin || ''}</span>
@@ -1619,16 +1619,16 @@ export class ClientesView {
 
     container.innerHTML = `
       <div class="bg-slate-100 px-3.5 py-2 border-b border-slate-200 flex items-center justify-between text-[11px] font-extrabold text-slate-700">
-        <span><i class="fa-regular fa-calendar mr-1 text-blue-600"></i>${nombreDia} ${fecha} — Vista Día Tipo Outlook</span>
+        <span><i class="fa-regular fa-calendar mr-1 text-blue-600"></i>${nombreDia} ${fecha} — Disponibilidad del Día</span>
         <span class="text-emerald-700">${(dataDia.horarios_disponibles || []).length} bloques con cupo disponible</span>
       </div>
       <div class="divide-y divide-slate-100">${rowsHtml}</div>
     `;
 
-    this._bindOutlookModalSlotClicks(container);
+    this._bindModalSlotClicks(container);
   }
 
-  _renderOutlookSemanaEnModalCita(dataSemana, container) {
+  _renderSemanaEnModalCita(dataSemana, container) {
     const dias = dataSemana.dias || [];
     const horasEje = dataSemana.horas_eje || [];
     const fechaSeleccionada = document.getElementById('modal-cita-fecha')?.value || '';
@@ -1677,8 +1677,8 @@ export class ClientesView {
               return `
                 <td class="p-1 border-l border-t border-slate-100">
                   <button type="button"
-                    data-outlook-modal-fecha="${d.fecha}"
-                    data-outlook-modal-hora="${hora}"
+                    data-modal-slot-fecha="${d.fecha}"
+                    data-modal-slot-hora="${hora}"
                     class="w-full rounded-lg bg-blue-600 text-white px-2 py-1.5 text-center shadow-xs ring-2 ring-blue-300 cursor-pointer">
                     <div class="font-extrabold text-[11px]"><i class="fa-solid fa-check mr-0.5"></i>${hora}</div>
                     <div class="text-[9px] text-blue-100">Seleccionado</div>
@@ -1690,8 +1690,8 @@ export class ClientesView {
               return `
                 <td class="p-1 border-l border-t border-slate-100">
                   <button type="button"
-                    data-outlook-modal-fecha="${d.fecha}"
-                    data-outlook-modal-hora="${hora}"
+                    data-modal-slot-fecha="${d.fecha}"
+                    data-modal-slot-hora="${hora}"
                     class="w-full rounded-lg bg-teal-50 hover:bg-blue-50 border border-teal-300 hover:border-blue-500 text-teal-900 px-2 py-1.5 text-center transition cursor-pointer">
                     <div class="font-extrabold text-[11px] text-emerald-800">Disponible</div>
                     <div class="text-[9px] font-semibold text-emerald-600">${slot.cupos_disponibles} cupo(s)</div>
@@ -1744,14 +1744,14 @@ export class ClientesView {
       </div>
     `;
 
-    this._bindOutlookModalSlotClicks(container);
+    this._bindModalSlotClicks(container);
   }
 
-  _bindOutlookModalSlotClicks(container) {
-    container.querySelectorAll('[data-outlook-modal-hora]:not(:disabled)').forEach((btn) => {
+  _bindModalSlotClicks(container) {
+    container.querySelectorAll('[data-modal-slot-hora]:not(:disabled)').forEach((btn) => {
       btn.addEventListener('click', () => {
-        const f = btn.getAttribute('data-outlook-modal-fecha');
-        const h = btn.getAttribute('data-outlook-modal-hora');
+        const f = btn.getAttribute('data-modal-slot-fecha');
+        const h = btn.getAttribute('data-modal-slot-hora');
         const fechaInput = document.getElementById('modal-cita-fecha');
         const horaInput = document.getElementById('modal-cita-hora-seleccionada');
 
