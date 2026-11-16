@@ -1,12 +1,17 @@
 /**
  * ClientesView.js
  * Vista POO para:
- * 1. Barra de búsqueda fija en la parte superior (sin leyendas, solo barra y botón Buscar).
- * 2. Al dar clic en Buscar, abre un Pop-up Modal con las coincidencias encontradas
- *    (mostrando únicamente los últimos 4 dígitos del celular) o una ventana indicando "No hay coincidencias".
- * 3. Al dar clic a un cliente en el pop-up, cierra el pop-up y abre su Perfil / Expediente
- *    con el detalle de su actividad en la estética, botón "+ Agregar Mascota" (con buscador de razas incluyendo "Mestiza")
- *    y clic en cada mascota para ver el detalle de la mascota.
+ * 1. Barra de búsqueda fija en la parte superior del menú lateral izquierdo:
+ *    - Al dar clic en Buscar, limpia inmediatamente la caja de búsqueda para dejarla lista.
+ *    - Abre un Pop-up con las coincidencias encontradas (mostrando solo los últimos 4 dígitos del celular)
+ *      o una ventana indicando "No hay coincidencias".
+ * 2. Botón "Registrar Nuevo Cliente" debajo de la barra de búsqueda en el menú izquierdo:
+ *    - Abre un Pop-up con el formulario de alta de cliente.
+ * 3. Al acceder al perfil de un cliente desde los resultados de búsqueda:
+ *    - NO envía ni cambia a otra sección; abre un Pop-up Grande (#modal-expediente-cliente)
+ *      con el perfil del cliente, actividad en la estética y sus mascotas.
+ * 4. Dentro de cada caja de mascota incluye un botón "+ Agregar Cita" que abre el Pop-up
+ *    de agendamiento directo para esa mascota.
  */
 export class ClientesView {
   static RAZAS_SUGERIDAS = [
@@ -59,9 +64,13 @@ export class ClientesView {
     this.clientesEncontrados = [];
     this.expedienteActual = null;
     this.mascotaSeleccionadaId = null;
+    this.serviciosCatalogo = [];
+    this.estilistasSucursal = [];
+    this.slotSeleccionadoModalCita = null;
   }
 
   init() {
+    // 1. Buscador en menú lateral izquierdo
     const formBuscar = document.getElementById('form-buscar-clientes');
     if (formBuscar) {
       formBuscar.addEventListener('submit', (e) => {
@@ -70,16 +79,40 @@ export class ClientesView {
       });
     }
 
+    // Cerrar pop-up de coincidencias de búsqueda
     const modalBusqueda = document.getElementById('modal-busqueda-clientes');
-    const btnCerrarModal = document.getElementById('btn-cerrar-modal-busqueda-clientes');
-    if (btnCerrarModal && modalBusqueda) {
-      btnCerrarModal.addEventListener('click', () => {
+    const btnCerrarModalBusqueda = document.getElementById('btn-cerrar-modal-busqueda-clientes');
+    if (btnCerrarModalBusqueda && modalBusqueda) {
+      btnCerrarModalBusqueda.addEventListener('click', () => {
         modalBusqueda.classList.add('hidden');
       });
       modalBusqueda.addEventListener('click', (e) => {
         if (e.target === modalBusqueda) {
           modalBusqueda.classList.add('hidden');
         }
+      });
+    }
+
+    // 2. Pop-up Registrar Nuevo Cliente (botón debajo del buscador en menú izquierdo)
+    const btnOpenNuevoCliente = document.getElementById('btn-open-modal-nuevo-cliente');
+    const modalNuevoCliente = document.getElementById('modal-nuevo-cliente');
+    const btnCerrarNuevoCliente = document.getElementById('btn-cerrar-modal-nuevo-cliente');
+    const btnCancelarNuevoCliente = document.getElementById('btn-cancelar-modal-nuevo-cliente');
+
+    if (btnOpenNuevoCliente && modalNuevoCliente) {
+      btnOpenNuevoCliente.addEventListener('click', () => {
+        modalNuevoCliente.classList.remove('hidden');
+        setTimeout(() => {
+          document.getElementById('cliente-nombre')?.focus();
+        }, 50);
+      });
+    }
+    const cerrarModalNuevo = () => modalNuevoCliente?.classList.add('hidden');
+    if (btnCerrarNuevoCliente) btnCerrarNuevoCliente.addEventListener('click', cerrarModalNuevo);
+    if (btnCancelarNuevoCliente) btnCancelarNuevoCliente.addEventListener('click', cerrarModalNuevo);
+    if (modalNuevoCliente) {
+      modalNuevoCliente.addEventListener('click', (e) => {
+        if (e.target === modalNuevoCliente) cerrarModalNuevo();
       });
     }
 
@@ -90,6 +123,23 @@ export class ClientesView {
         this.crearCliente();
       });
     }
+
+    // 3. Pop-up Grande de Perfil / Expediente del Cliente
+    const modalExpediente = document.getElementById('modal-expediente-cliente');
+    const btnCerrarExpedienteModal = document.getElementById('btn-cerrar-modal-expediente-cliente');
+    if (btnCerrarExpedienteModal && modalExpediente) {
+      btnCerrarExpedienteModal.addEventListener('click', () => {
+        modalExpediente.classList.add('hidden');
+      });
+      modalExpediente.addEventListener('click', (e) => {
+        if (e.target === modalExpediente) {
+          modalExpediente.classList.add('hidden');
+        }
+      });
+    }
+
+    // 4. Pop-up de Agregar Cita para Mascota
+    this.initModalAgendarCitaEvents();
   }
 
   async load() {
@@ -111,15 +161,8 @@ export class ClientesView {
     document.getElementById('modal-busqueda-clientes')?.classList.add('hidden');
   }
 
-  renderEstadoInicialModulo() {
-    const expView = document.getElementById('cliente-expediente-view');
-    if (!expView) return;
-    expView.innerHTML = `
-      <div class="p-6 text-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 text-xs text-slate-500">
-        <i class="fa-solid fa-magnifying-glass text-slate-400 text-base mb-1.5 block"></i>
-        Utiliza la barra de búsqueda en la parte superior del menú izquierdo para buscar un cliente y abrir su expediente.
-      </div>
-    `;
+  cerrarPopupExpediente() {
+    document.getElementById('modal-expediente-cliente')?.classList.add('hidden');
   }
 
   renderResultadosEnModulo(clientes) {
@@ -226,6 +269,12 @@ export class ClientesView {
   async buscarClientesEnPopup(terminoExplicito = null) {
     const input = document.getElementById('clientes-buscar-input');
     const q = (terminoExplicito !== null ? terminoExplicito : input?.value || '').trim();
+
+    // Limpiar inmediatamente la caja de búsqueda para dejarla vacía y lista para la siguiente búsqueda
+    if (input) {
+      input.value = '';
+    }
+
     const modal = document.getElementById('modal-busqueda-clientes');
     const body = document.getElementById('modal-busqueda-clientes-body');
     if (!modal || !body) return;
@@ -233,9 +282,7 @@ export class ClientesView {
     if (q.length < 2) {
       this.clientesEncontrados = [];
       this.mostrarVentanaSinCoincidencias();
-      if (!this.expedienteActual) {
-        this.renderResultadosEnModulo([]);
-      }
+      this.renderResultadosEnModulo([]);
       return;
     }
 
@@ -248,16 +295,12 @@ export class ClientesView {
 
       if (!this.clientesEncontrados.length) {
         this.mostrarVentanaSinCoincidencias();
-        if (!this.expedienteActual) {
-          this.renderResultadosEnModulo([]);
-        }
+        this.renderResultadosEnModulo([]);
         return;
       }
 
       this.renderPopupCoincidencias(this.clientesEncontrados);
-      if (!this.expedienteActual) {
-        this.renderResultadosEnModulo(this.clientesEncontrados);
-      }
+      this.renderResultadosEnModulo(this.clientesEncontrados);
     } catch (_) {
       this.clientesEncontrados = [];
       this.mostrarVentanaSinCoincidencias();
@@ -279,9 +322,7 @@ export class ClientesView {
         const cid = card.getAttribute('data-open-cliente-id');
         if (cid) {
           this.cerrarPopupBusqueda();
-          if (window.petGroomingApp && window.petGroomingApp.activeTab !== 'clientes') {
-            await window.petGroomingApp.switchTab('clientes');
-          }
+          // Abre directamente el Pop-up grande del perfil del cliente sin cambiar de sección
           await this.abrirExpedienteCliente(cid);
         }
       });
@@ -293,13 +334,13 @@ export class ClientesView {
     abrirFormularioMascota = false,
     mascotaIdPreseleccionada = null
   ) {
-    const widgetExp = document.getElementById('widget-cliente-expediente');
-    const expView = document.getElementById('cliente-expediente-view');
-    if (!expView || !widgetExp) return;
+    const modalExp = document.getElementById('modal-expediente-cliente');
+    const modalBody = document.getElementById('modal-expediente-cliente-body');
+    if (!modalExp || !modalBody) return;
 
     try {
-      widgetExp.classList.remove('hidden');
-      expView.innerHTML = `<div class="p-6 text-center text-xs text-slate-400">Cargando perfil y expediente del cliente...</div>`;
+      modalExp.classList.remove('hidden');
+      modalBody.innerHTML = `<div class="p-8 text-center text-xs text-slate-400">Cargando perfil y expediente del cliente...</div>`;
 
       const data = await this.api.get(`/clientes/${clienteId}/expediente`);
       this.expedienteActual = data;
@@ -340,8 +381,8 @@ export class ClientesView {
   }
 
   renderExpedienteCliente(data, mostrarFormMascota = false) {
-    const expView = document.getElementById('cliente-expediente-view');
-    if (!expView) return;
+    const modalBody = document.getElementById('modal-expediente-cliente-body');
+    if (!modalBody) return;
 
     const c = data.cliente || {};
     const res = data.resumen_actividad || {};
@@ -352,7 +393,7 @@ export class ClientesView {
     const mascotaActiva =
       mascotas.find((m) => m.id === this.mascotaSeleccionadaId) || mascotas[0] || null;
 
-    expView.innerHTML = `
+    modalBody.innerHTML = `
       <div class="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 space-y-4">
         <!-- Barra superior del Perfil del Dueño -->
         <div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-200">
@@ -377,7 +418,7 @@ export class ClientesView {
               <span>+ Agregar Mascota</span>
             </button>
             <button id="btn-cerrar-expediente-cliente" type="button" title="Cerrar perfil del cliente"
-              class="px-2.5 py-2 rounded-xl bg-white hover:bg-slate-100 border border-slate-200 text-slate-600 text-xs font-bold transition">
+              class="px-3 py-2 rounded-xl bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-bold transition">
               Cerrar Perfil
             </button>
           </div>
@@ -500,7 +541,7 @@ export class ClientesView {
           </form>
         </div>
 
-        <!-- Sección de Mascotas del Cliente (Clickeables para ver detalle de cada mascota) -->
+        <!-- Sección de Mascotas del Cliente (Cada caja incluye botón para Agregar Cita) -->
         <div class="space-y-2.5">
           <div class="flex items-center justify-between">
             <h5 class="text-xs font-extrabold text-slate-800 uppercase tracking-wider">
@@ -515,32 +556,57 @@ export class ClientesView {
                     .map((m) => {
                       const isSel = mascotaActiva && m.id === mascotaActiva.id;
                       return `
-                        <button type="button" data-select-pet-id="${m.id}"
-                          class="btn-ver-detalle-mascota text-left p-3 rounded-xl border transition flex items-center justify-between gap-2 ${
-                            isSel
-                              ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
-                              : 'bg-white hover:bg-blue-50/50 text-slate-800 border-slate-200 hover:border-blue-400'
-                          }">
-                          <div class="min-w-0">
-                            <p class="font-extrabold text-xs truncate flex items-center gap-1.5">
-                              <i class="fa-solid fa-paw ${isSel ? 'text-blue-200' : 'text-blue-600'}"></i>
-                              <span>${m.nombre}</span>
-                            </p>
-                            <p class="text-[11px] ${isSel ? 'text-blue-100' : 'text-slate-500'} truncate">
-                              ${m.raza} · ${m.peso_kg || 0} kg
-                            </p>
+                        <div class="rounded-xl border transition p-3 flex flex-col justify-between gap-2.5 ${
+                          isSel
+                            ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                            : 'bg-white hover:bg-blue-50/40 text-slate-800 border-slate-200 hover:border-blue-400'
+                        }">
+                          <div data-select-pet-id="${m.id}" class="btn-ver-detalle-mascota cursor-pointer flex items-center justify-between gap-2">
+                            <div class="min-w-0">
+                              <p class="font-extrabold text-xs truncate flex items-center gap-1.5">
+                                <i class="fa-solid fa-paw ${isSel ? 'text-blue-200' : 'text-blue-600'}"></i>
+                                <span>${m.nombre}</span>
+                              </p>
+                              <p class="text-[11px] ${isSel ? 'text-blue-100' : 'text-slate-500'} truncate">
+                                ${m.raza} · ${m.peso_kg || 0} kg
+                              </p>
+                            </div>
+                            <div class="text-right shrink-0">
+                              <span class="font-mono text-[10px] font-bold px-2 py-0.5 rounded ${
+                                isSel ? 'bg-blue-900/60 text-emerald-300' : 'bg-slate-900 text-emerald-400'
+                              } block">
+                                ${m.codigo_barras || 'PET-'}
+                              </span>
+                              <span class="text-[10px] ${isSel ? 'text-blue-100' : 'text-slate-400'}">
+                                ${m.total_citas || 0} citas
+                              </span>
+                            </div>
                           </div>
-                          <div class="text-right shrink-0">
-                            <span class="font-mono text-[10px] font-bold px-2 py-0.5 rounded ${
-                              isSel ? 'bg-blue-900/60 text-emerald-300' : 'bg-slate-900 text-emerald-400'
-                            } block">
-                              ${m.codigo_barras || 'PET-'}
-                            </span>
-                            <span class="text-[10px] ${isSel ? 'text-blue-100' : 'text-slate-400'}">
-                              ${m.total_citas || 0} citas
-                            </span>
+
+                          <div class="pt-2 border-t ${
+                            isSel ? 'border-blue-500/60' : 'border-slate-100'
+                          } flex items-center justify-between gap-2">
+                            <button type="button" data-select-pet-id="${m.id}"
+                              class="btn-ver-detalle-mascota text-[11px] font-semibold ${
+                                isSel ? 'text-blue-100 hover:text-white' : 'text-slate-500 hover:text-blue-600'
+                              } transition">
+                              Ver detalle
+                            </button>
+                            <button type="button"
+                              data-agendar-pet-id="${m.id}"
+                              data-agendar-pet-nombre="${m.nombre}"
+                              data-agendar-pet-raza="${m.raza}"
+                              data-agendar-cliente-nombre="${c.nombre}"
+                              class="btn-agendar-cita-mascota px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition inline-flex items-center gap-1 ${
+                                isSel
+                                  ? 'bg-white text-blue-700 hover:bg-blue-50 shadow-2xs'
+                                  : 'bg-blue-600 text-white hover:bg-blue-700 shadow-2xs'
+                              }">
+                              <i class="fa-solid fa-calendar-plus text-[10px]"></i>
+                              <span>Agregar Cita</span>
+                            </button>
                           </div>
-                        </button>
+                        </div>
                       `;
                     })
                     .join('')}
@@ -552,7 +618,7 @@ export class ClientesView {
 
           <!-- Panel de Detalle Clínico e Historial de la Mascota Seleccionada -->
           <div id="expediente-detalle-mascota-box">
-            ${mascotaActiva ? this.renderDetalleMascotaHtml(mascotaActiva) : ''}
+            ${mascotaActiva ? this.renderDetalleMascotaHtml(mascotaActiva, c.nombre) : ''}
           </div>
         </div>
 
@@ -619,7 +685,7 @@ export class ClientesView {
     this.bindExpedienteEvents(data);
   }
 
-  renderDetalleMascotaHtml(m) {
+  renderDetalleMascotaHtml(m, clienteNombre = '') {
     const visitas = Number(m.visitas_acumuladas || m.citas_completadas || 0);
     const meta = Number(m.meta_lealtad || 5);
     const pct = Math.min(100, Math.round(((visitas % meta) / meta) * 100));
@@ -650,11 +716,22 @@ export class ClientesView {
             </div>
           </div>
 
-          <div class="bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 text-right">
-            <span class="text-[10px] font-bold uppercase text-slate-400 block">Tarjeta de Lealtad</span>
-            <span class="text-xs font-extrabold text-blue-700">${visitas} visitas acumuladas (Meta: ${meta})</span>
-            <div class="w-28 h-1.5 bg-slate-200 rounded-full overflow-hidden mt-1 ml-auto">
-              <div class="h-full bg-emerald-500 rounded-full" style="width: ${pct}%"></div>
+          <div class="flex flex-wrap items-center gap-2">
+            <button type="button"
+              data-agendar-pet-id="${m.id}"
+              data-agendar-pet-nombre="${m.nombre}"
+              data-agendar-pet-raza="${m.raza}"
+              data-agendar-cliente-nombre="${clienteNombre}"
+              class="btn-agendar-cita-mascota px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-extrabold shadow-xs transition inline-flex items-center gap-1.5">
+              <i class="fa-solid fa-calendar-plus"></i>
+              <span>Agregar Cita</span>
+            </button>
+            <div class="bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 text-right">
+              <span class="text-[10px] font-bold uppercase text-slate-400 block">Tarjeta de Lealtad</span>
+              <span class="text-xs font-extrabold text-blue-700">${visitas} visitas acumuladas (Meta: ${meta})</span>
+              <div class="w-28 h-1.5 bg-slate-200 rounded-full overflow-hidden mt-1 ml-auto">
+                <div class="h-full bg-emerald-500 rounded-full" style="width: ${pct}%"></div>
+              </div>
             </div>
           </div>
         </div>
@@ -720,19 +797,13 @@ export class ClientesView {
   }
 
   bindExpedienteEvents(data) {
-    const widgetExp = document.getElementById('widget-cliente-expediente');
-    const expView = document.getElementById('cliente-expediente-view');
-    if (!expView) return;
+    const modalBody = document.getElementById('modal-expediente-cliente-body');
+    if (!modalBody) return;
 
     const btnCerrarExp = document.getElementById('btn-cerrar-expediente-cliente');
-    if (btnCerrarExp && widgetExp) {
+    if (btnCerrarExp) {
       btnCerrarExp.addEventListener('click', () => {
-        this.expedienteActual = null;
-        if (this.clientesEncontrados && this.clientesEncontrados.length) {
-          this.renderResultadosEnModulo(this.clientesEncontrados);
-        } else {
-          this.renderEstadoInicialModulo();
-        }
+        this.cerrarPopupExpediente();
       });
     }
 
@@ -768,7 +839,7 @@ export class ClientesView {
     }
 
     // Selección de mascota para ver su detalle clínico
-    expView.querySelectorAll('.btn-ver-detalle-mascota').forEach((btn) => {
+    modalBody.querySelectorAll('.btn-ver-detalle-mascota').forEach((btn) => {
       btn.addEventListener('click', () => {
         const pid = btn.getAttribute('data-select-pet-id');
         if (pid) {
@@ -777,6 +848,256 @@ export class ClientesView {
         }
       });
     });
+
+    // Botón "+ Agregar Cita" dentro de cada caja de mascota
+    modalBody.querySelectorAll('.btn-agendar-cita-mascota').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const petId = btn.getAttribute('data-agendar-pet-id');
+        const petNombre = btn.getAttribute('data-agendar-pet-nombre') || 'Mascota';
+        const petRaza = btn.getAttribute('data-agendar-pet-raza') || '';
+        const cliNombre = btn.getAttribute('data-agendar-cliente-nombre') || '';
+        if (petId) {
+          this.abrirModalAgendarCitaMascota({
+            id: petId,
+            nombre: petNombre,
+            raza: petRaza,
+            cliente_nombre: cliNombre,
+          });
+        }
+      });
+    });
+  }
+
+  initModalAgendarCitaEvents() {
+    const modal = document.getElementById('modal-agendar-cita-mascota');
+    const btnCerrar = document.getElementById('btn-cerrar-modal-agendar-cita-mascota');
+    const btnCancelar = document.getElementById('btn-cancelar-modal-cita-mascota');
+    const btnRecalcular = document.getElementById('btn-modal-cita-recalcular');
+    const selectServicio = document.getElementById('modal-cita-servicio-select');
+    const inputFecha = document.getElementById('modal-cita-fecha');
+    const formCita = document.getElementById('form-modal-cita-mascota');
+
+    const cerrar = () => modal?.classList.add('hidden');
+    if (btnCerrar) btnCerrar.addEventListener('click', cerrar);
+    if (btnCancelar) btnCancelar.addEventListener('click', cerrar);
+    if (modal) {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) cerrar();
+      });
+    }
+
+    if (btnRecalcular) {
+      btnRecalcular.addEventListener('click', () => this.consultarDisponibilidadModalCita());
+    }
+    if (inputFecha) {
+      inputFecha.addEventListener('change', () => this.consultarDisponibilidadModalCita());
+    }
+    if (selectServicio) {
+      selectServicio.addEventListener('change', (e) => {
+        const srv = this.serviciosCatalogo.find((s) => s.nombre === e.target.value);
+        if (srv) {
+          const durEl = document.getElementById('modal-cita-duracion');
+          const precioEl = document.getElementById('modal-cita-precio');
+          if (durEl) durEl.value = srv.duracion_minutos || 60;
+          if (precioEl) precioEl.value = srv.precio_base || 0;
+          this.consultarDisponibilidadModalCita();
+        }
+      });
+    }
+    if (formCita) {
+      formCita.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.guardarCitaDesdeModalMascota();
+      });
+    }
+  }
+
+  async abrirModalAgendarCitaMascota(mascotaInfo) {
+    const modal = document.getElementById('modal-agendar-cita-mascota');
+    const idInput = document.getElementById('modal-cita-mascota-id');
+    const labelEl = document.getElementById('modal-cita-mascota-label');
+    const fechaInput = document.getElementById('modal-cita-fecha');
+    const horaInput = document.getElementById('modal-cita-hora-seleccionada');
+    const notasInput = document.getElementById('modal-cita-notas');
+    if (!modal || !idInput) return;
+
+    this.slotSeleccionadoModalCita = null;
+    idInput.value = mascotaInfo.id;
+    if (horaInput) horaInput.value = '';
+    if (notasInput) notasInput.value = '';
+    if (labelEl) {
+      labelEl.textContent = `${mascotaInfo.nombre} (${mascotaInfo.raza}) · Dueño: ${mascotaInfo.cliente_nombre}`;
+    }
+
+    const today = new Date().toISOString().slice(0, 10);
+    if (fechaInput && !fechaInput.value) {
+      fechaInput.value = today;
+    }
+
+    modal.classList.remove('hidden');
+
+    await this.cargarCatalogosParaModalCita();
+    await this.consultarDisponibilidadModalCita();
+  }
+
+  async cargarCatalogosParaModalCita() {
+    try {
+      const [agendaCfg, personalData] = await Promise.all([
+        this.api.get('/agenda-config'),
+        this.api.get('/personal'),
+      ]);
+
+      this.serviciosCatalogo = (agendaCfg.servicios_catalogo || []).filter(
+        (s) => s.activo !== false
+      );
+      this.estilistasSucursal = (personalData.personal || []).filter(
+        (u) => u.activo !== false
+      );
+
+      const selectServicio = document.getElementById('modal-cita-servicio-select');
+      if (selectServicio && this.serviciosCatalogo.length) {
+        selectServicio.innerHTML = this.serviciosCatalogo
+          .map(
+            (s) =>
+              `<option value="${s.nombre}">${s.nombre} (${s.duracion_minutos} min - $${s.precio_base})</option>`
+          )
+          .join('');
+        const first = this.serviciosCatalogo[0];
+        const durEl = document.getElementById('modal-cita-duracion');
+        const precioEl = document.getElementById('modal-cita-precio');
+        if (durEl) durEl.value = first.duracion_minutos || 60;
+        if (precioEl) precioEl.value = first.precio_base || 0;
+      }
+
+      const selectEstilista = document.getElementById('modal-cita-estilista');
+      if (selectEstilista) {
+        selectEstilista.innerHTML = [
+          '<option value="Por asignar">Por asignar (Automático)</option>',
+          ...this.estilistasSucursal.map(
+            (u) => `<option value="${u.nombre}">${u.nombre} (${u.rol})</option>`
+          ),
+        ].join('');
+      }
+    } catch (_) {}
+  }
+
+  async consultarDisponibilidadModalCita() {
+    const fechaInput = document.getElementById('modal-cita-fecha');
+    const durInput = document.getElementById('modal-cita-duracion');
+    const slotsContainer = document.getElementById('modal-cita-slots-container');
+    if (!fechaInput || !slotsContainer) return;
+
+    const fecha = fechaInput.value || new Date().toISOString().slice(0, 10);
+    const duracion_minutos = Number(durInput?.value || 60);
+
+    try {
+      slotsContainer.innerHTML = `<div class="col-span-full text-center py-3 text-slate-400">Calculando horarios...</div>`;
+      const data = await this.api.get('/disponibilidad', {
+        fecha,
+        duracion_minutos,
+      });
+
+      if (!data.abierto) {
+        slotsContainer.innerHTML = `
+          <div class="col-span-full p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs">
+            <strong>Sucursal cerrada:</strong> ${data.motivo_cierre || 'Día inhábil'}
+          </div>`;
+        return;
+      }
+
+      const slots = data.slots || [];
+      if (!slots.length) {
+        slotsContainer.innerHTML = `<div class="col-span-full p-3 text-slate-500 text-xs">No hay horarios disponibles.</div>`;
+        return;
+      }
+
+      slotsContainer.innerHTML = slots
+        .map((s) => {
+          const disabled = !s.disponible ? 'disabled' : '';
+          const classes = s.disponible
+            ? 'bg-white border-slate-200 text-slate-800 hover:border-blue-500 cursor-pointer'
+            : 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed opacity-60';
+          return `
+            <button type="button" ${disabled}
+              data-hora="${s.hora}"
+              class="slot-chip border rounded-lg p-2 text-center ${classes}">
+              <div class="font-bold text-xs">${s.hora}</div>
+              <div class="text-[10px] ${s.disponible ? 'text-emerald-600' : 'text-red-500'}">
+                ${s.disponible ? `${s.cupos_disponibles} cupo(s)` : 'Agotado'}
+              </div>
+            </button>`;
+        })
+        .join('');
+
+      slotsContainer.querySelectorAll('.slot-chip:not(:disabled)').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          slotsContainer
+            .querySelectorAll('.slot-chip')
+            .forEach((b) => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          this.slotSeleccionadoModalCita = btn.getAttribute('data-hora');
+          const horaInput = document.getElementById('modal-cita-hora-seleccionada');
+          if (horaInput) horaInput.value = this.slotSeleccionadoModalCita;
+        });
+      });
+    } catch (err) {
+      slotsContainer.innerHTML = `<div class="col-span-full text-red-600 text-xs">Error al consultar disponibilidad: ${err.message}</div>`;
+    }
+  }
+
+  async guardarCitaDesdeModalMascota() {
+    const mascotaId = document.getElementById('modal-cita-mascota-id')?.value;
+    const fecha = document.getElementById('modal-cita-fecha')?.value;
+    const hora =
+      document.getElementById('modal-cita-hora-seleccionada')?.value ||
+      this.slotSeleccionadoModalCita;
+    const servicio =
+      document.getElementById('modal-cita-servicio-select')?.value || 'Baño Básico';
+    const duracion = Number(document.getElementById('modal-cita-duracion')?.value || 60);
+    const precio = Number(document.getElementById('modal-cita-precio')?.value || 0);
+    const estilista =
+      document.getElementById('modal-cita-estilista')?.value || 'Por asignar';
+    const notas = document.getElementById('modal-cita-notas')?.value || '';
+
+    if (!mascotaId) {
+      this.notify('Mascota no identificada.', 'warning');
+      return;
+    }
+    if (!fecha || !hora) {
+      this.notify('Selecciona una fecha y un horario disponible.', 'warning');
+      return;
+    }
+
+    try {
+      const fecha_hora = `${fecha}T${hora}:00`;
+      await this.api.post('/citas', {
+        mascota_id: mascotaId,
+        fecha_hora,
+        servicio,
+        duracion_minutos: duracion,
+        precio,
+        estilista,
+        notas_servicio: notas,
+      });
+
+      this.notify('Cita agendada exitosamente para la mascota.', 'success');
+      document.getElementById('modal-agendar-cita-mascota')?.classList.add('hidden');
+
+      if (this.expedienteActual?.cliente?.id) {
+        await this.abrirExpedienteCliente(
+          this.expedienteActual.cliente.id,
+          false,
+          mascotaId
+        );
+      }
+
+      if (window.petGroomingApp?.views?.agenda) {
+        await window.petGroomingApp.views.agenda.cargarCitas();
+      }
+    } catch (err) {
+      this.notify(`No se pudo agendar la cita: ${err.message}`, 'error');
+    }
   }
 
   initRazaSearchableDropdown() {
@@ -881,6 +1202,7 @@ export class ClientesView {
       const nuevo = res.cliente;
       this.notify(`Cliente ${nuevo.nombre} registrado exitosamente.`, 'success');
       document.getElementById('form-crear-cliente')?.reset();
+      document.getElementById('modal-nuevo-cliente')?.classList.add('hidden');
 
       if (nuevo?.id) {
         await this.abrirExpedienteCliente(nuevo.id, true);
