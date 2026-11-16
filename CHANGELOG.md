@@ -2,6 +2,17 @@
 
 Todos los cambios notables en este proyecto serán documentados en este archivo.
 
+## [v0.4.0] - 2026-11-16 - Consola Maestra Super Admin SaaS y Onboarding 1-Click (Fase 2)
+
+### Added
+- `backend/schemas/superadmin.py`: Esquemas Pydantic para login maestro, alta integral de cliente SaaS (`TenantOnboardingCreate`), edición de suscripción/cuotas (`TenantUpdate`) y alta de sucursales adicionales (`SucursalTenantCreate`).
+- `backend/routers/superadmin.py`: Endpoints `/api/superadmin/login`, `/api/superadmin/dashboard` (métricas MRR/ARR, clientes activos/suspendidos, consumo de cuotas y bitácora global), `/api/superadmin/organizaciones` (Onboarding 1-Click que aprovisiona Organización, Sucursal Matriz, usuario Dueño con PIN, configuración de agenda, plantilla semanal de 7 días y catálogo base de servicios), `/api/superadmin/organizaciones/{org_id}`, `/api/superadmin/organizaciones/{org_id}/toggle-estado` (Kill-Switch) y `/api/superadmin/organizaciones/{org_id}/sucursales`.
+- `frontend/superadmin.html` y `frontend/js/SuperAdminApp.js`: Consola Maestra del Dueño del SaaS responsiva (`100vh`) con tablero financiero MRR/ARR, wizard de Onboarding 1-Click con Kit de Bienvenida copiable, gestión de planes/cuotas/sucursales, Kill-Switch en tiempo real y auditoría global.
+
+### Changed
+- `backend/routers/auth.py`: Validación de estado de suscripción (`Activa` vs `Suspendida`) durante el inicio de turno con PIN (Kill-Switch SaaS).
+- `frontend/index.html`: Enlace rápido hacia la Consola Dueño del SaaS (`./superadmin.html`) y diseño responsivo ajustado a `100vh`.
+
 ## [v0.3.1] - 2026-11-15 - Unificación de Servidor Local en Puerto 8000
 
 ### Changed

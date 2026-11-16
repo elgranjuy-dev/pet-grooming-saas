@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pet Grooming SaaS — Consola Maestra Super Admin</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <!-- FontAwesome CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+  <!-- Google Fonts Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./css/styles.css" />
+</head>
+<body class="h-screen max-h-screen overflow-hidden antialiased selection:bg-indigo-600 selection:text-white bg-slate-950">
+
+  <!-- Contenedor de Notificaciones Toast -->
+  <div id="sa-toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-sm"></div>
+
+  <!-- =====================================================================
+       LOGIN MAESTRO DEL DUEÑO DEL SAAS (SUPER ADMIN)
+  ====================================================================== -->
+  <section id="sa-login-screen" class="h-screen max-h-screen overflow-y-auto flex items-center justify-center bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 p-4">
+    <div class="w-full max-w-md bg-slate-900 text-white rounded-2xl shadow-2xl border border-indigo-500/30 overflow-hidden my-auto">
+      <div class="bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-700 p-5 text-center">
+        <div class="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center mx-auto mb-2 text-xl">
+          <i class="fa-solid fa-crown text-amber-300"></i>
+        </div>
+        <h1 class="text-lg font-extrabold tracking-tight">Consola Maestra Super Admin</h1>
+        <p class="text-xs text-indigo-100 mt-0.5">Gobierno Global de Clientes SaaS, Planes, MRR y Sucursales</p>
+      </div>
+
+      <form id="form-sa-login" class="p-6 space-y-4">
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
+            Correo Maestro del Dueño del SaaS
+          </label>
+          <input id="sa-login-email" type="email" required value="elgranjuy@gmail.com"
+            class="w-full rounded-xl bg-slate-800 border border-slate-700 text-white px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
+            Contraseña Maestra
+          </label>
+          <input id="sa-login-password" type="password" required value="superadmin1234"
+            class="w-full rounded-xl bg-slate-800 border border-slate-700 text-white px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          <p class="text-[11px] text-slate-400 mt-1">
+            Credenciales por defecto: <span class="font-mono text-indigo-300">elgranjuy@gmail.com</span> / <span class="font-mono text-indigo-300">superadmin1234</span>
+          </p>
+        </div>
+
+        <button type="submit"
+          class="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-lg shadow-indigo-600/30 transition flex items-center justify-center gap-2">
+          <i class="fa-solid fa-shield-halved"></i>
+          <span>Entrar al CRM del Dueño del SaaS</span>
+        </button>
+
+        <div class="pt-2 border-t border-slate-800 text-center">
+          <a href="./index.html" class="text-xs text-slate-400 hover:text-white transition">
+            <i class="fa-solid fa-arrow-left mr-1"></i>Ir al Panel Operativo de Sucursales
+          </a>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <!-- =====================================================================
+       SHELL PRINCIPAL DE LA CONSOLA SUPER ADMIN (100vh)
+  ====================================================================== -->
+  <div id="sa-app-shell" class="hidden h-screen max-h-screen w-screen overflow-hidden flex bg-slate-100 text-slate-900">
+
+    <!-- BARRA LATERAL EJECUTIVA -->
+    <aside id="sidebar" class="bg-slate-950 text-slate-100 flex flex-col justify-between shrink-0 h-full overflow-y-auto select-none border-r border-slate-800">
+      <div>
+        <div class="p-3.5 flex items-center justify-between border-b border-slate-800">
+          <div class="flex items-center gap-2.5 overflow-hidden">
+            <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-amber-300 shrink-0">
+              <i class="fa-solid fa-crown text-sm"></i>
+            </div>
+            <div class="sidebar-brand-text leading-tight">
+              <p class="font-extrabold text-xs text-white truncate">SaaS HQ Control</p>
+              <p class="text-[11px] text-indigo-400 font-medium truncate">Super Admin</p>
+            </div>
+          </div>
+          <button id="btn-sa-toggle-sidebar" type="button" title="Colapsar/Expandir menú"
+            class="w-7 h-7 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition">
+            <i class="fa-solid fa-bars text-sm"></i>
+          </button>
+        </div>
+
+        <nav class="p-2.5 space-y-1">
+          <button type="button" data-sa-tab="overview"
+            class="nav-btn active w-full flex items-center px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition">
+            <i class="fa-solid fa-chart-line w-5 mr-2 text-center"></i>
+            <span class="sidebar-label">MRR &amp; Clientes SaaS</span>
+          </button>
+
+          <button type="button" data-sa-tab="onboarding"
+            class="nav-btn w-full flex items-center px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition">
+            <i class="fa-solid fa-rocket w-5 mr-2 text-center"></i>
+            <span class="sidebar-label">Alta Cliente 1-Click</span>
+          </button>
+
+          <button type="button" data-sa-tab="tenants"
+            class="nav-btn w-full flex items-center px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition">
+            <i class="fa-solid fa-building-user w-5 mr-2 text-center"></i>
+            <span class="sidebar-label">Planes y Sucursales</span>
+          </button>
+
+          <button type="button" data-sa-tab="auditoria"
+            class="nav-btn w-full flex items-center px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition">
+            <i class="fa-solid fa-fingerprint w-5 mr-2 text-center"></i>
+            <span class="sidebar-label">Auditoría Global</span>
+          </button>
+        </nav>
+      </div>
+
+      <div class="p-2.5 border-t border-slate-800 space-y-2 shrink-0">
+        <a href="./index.html"
+          class="w-full py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition flex items-center justify-center gap-2">
+          <i class="fa-solid fa-store"></i>
+          <span class="sidebar-label">Ir a Panel Operativo</span>
+        </a>
+
+        <button id="btn-sa-logout" type="button"
+          class="w-full py-2 px-3 rounded-xl bg-red-600/90 hover:bg-red-600 text-white text-xs font-bold transition flex items-center justify-center gap-2">
+          <i class="fa-solid fa-power-off"></i>
+          <span class="sidebar-label">Cerrar Sesión SaaS</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- CONTENIDO PRINCIPAL CON SCROLL INDEPENDIENTE -->
+    <main class="flex-1 h-full overflow-y-auto p-3.5 md:p-5 space-y-4">
+
+      <!-- =================================================================
+           VISTA 1: OVERVIEW GLOBAL, MRR Y TABLA DE CLIENTES SAAS (KILL-SWITCH)
+      ================================================================== -->
+      <section id="sa-view-overview" class="sa-tab-view space-y-3.5">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h2 class="text-lg font-extrabold text-slate-900 leading-tight">Gobierno Global del SaaS &amp; Métricas MRR</h2>
+            <p class="text-[11px] text-slate-500">Monitoreo en tiempo real de todas las estéticas suscritas, cuotas consumidas y estado de servicio.</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button id="btn-sa-ir-onboarding" type="button"
+              class="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm transition">
+              <i class="fa-solid fa-plus mr-1"></i>Nuevo Cliente SaaS
+            </button>
+            <button id="btn-sa-refresh" type="button"
+              class="px-3 py-1.5 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-xs font-semibold text-slate-700 shadow-sm transition">
+              <i class="fa-solid fa-rotate mr-1"></i>Actualizar
+            </button>
+          </div>
+        </div>
+
+        <!-- KPIs Globales -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div class="bg-white rounded-xl p-3 border border-slate-200 shadow-sm">
+            <div class="flex items-center justify-between text-[11px] font-semibold text-slate-500">
+              <span>MRR Mensual Estimado</span>
+              <i class="fa-solid fa-sack-dollar text-emerald-600 text-sm"></i>
+            </div>
+            <p id="sa-kpi-mrr" class="text-xl font-extrabold text-slate-900 mt-1">$0.00</p>
+            <p id="sa-kpi-arr" class="text-[11px] text-emerald-600 font-medium">ARR Anual: $0.00</p>
+          </div>
+
+          <div class="bg-white rounded-xl p-3 border border-slate-200 shadow-sm">
+            <div class="flex items-center justify-between text-[11px] font-semibold text-slate-500">
+              <span>Empresas (Tenants)</span>
+              <i class="fa-solid fa-building text-indigo-600 text-sm"></i>
+            </div>
+            <p id="sa-kpi-orgs-total" class="text-xl font-extrabold text-slate-900 mt-1">0</p>
+            <p id="sa-kpi-orgs-detalle" class="text-[11px] text-slate-500">0 activas · 0 suspendidas</p>
+          </div>
+
+          <div class="bg-white rounded-xl p-3 border border-slate-200 shadow-sm">
+            <div class="flex items-center justify-between text-[11px] font-semibold text-slate-500">
+              <span>Sucursales y Usuarios</span>
+              <i class="fa-solid fa-store text-blue-600 text-sm"></i>
+            </div>
+            <p id="sa-kpi-sucursales" class="text-xl font-extrabold text-slate-900 mt-1">0</p>
+            <p id="sa-kpi-usuarios" class="text-[11px] text-slate-500">0 colaboradores activos</p>
+          </div>
+
+          <div class="bg-white rounded-xl p-3 border border-slate-200 shadow-sm">
+            <div class="flex items-center justify-between text-[11px] font-semibold text-slate-500">
+              <span>Volumen Plataforma</span>
+              <i class="fa-solid fa-paw text-amber-500 text-sm"></i>
+            </div>
+            <p id="sa-kpi-mascotas" class="text-xl font-extrabold text-slate-900 mt-1">0</p>
+            <p id="sa-kpi-citas" class="text-[11px] text-slate-500">0 clientes · 0 citas</p>
+          </div>
+        </div>
+
+        <!-- Gráficas + Tabla de Tenants -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-3.5">
+          <!-- Gráficas -->
+          <div class="lg:col-span-4 bg-white rounded-xl p-3.5 border border-slate-200 shadow-sm flex flex-col justify-between">
+            <h3 class="text-xs font-bold text-slate-800 mb-2">MRR por Plan de Suscripción ($ MXN)</h3>
+            <div class="h-44">
+              <canvas id="sa-chart-mrr-plan"></canvas>
+            </div>
+          </div>
+
+          <!-- Tabla Maestra de Clientes SaaS (Tenants) -->
+          <div class="lg:col-span-8 bg-white rounded-xl p-3.5 border border-slate-200 shadow-sm space-y-2.5">
+            <div class="flex items-center justify-between">
+              <h3 class="text-xs font-bold text-slate-800">Directorio de Clientes SaaS (Organizaciones)</h3>
+              <span class="text-[11px] text-slate-400">Kill-Switch instantáneo y control de cuotas</span>
+            </div>
+
+            <div class="overflow-x-auto max-h-60 overflow-y-auto">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="border-b border-slate-200 text-[10px] uppercase text-slate-400">
+                    <th class="py-1.5 px-2">Organización / Propietario</th>
+                    <th class="py-1.5 px-2">Plan / MRR</th>
+                    <th class="py-1.5 px-2">Cuotas (Suc / Usr / Cli)</th>
+                    <th class="py-1.5 px-2">Estado</th>
+                    <th class="py-1.5 px-2 text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="sa-orgs-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           VISTA 2: ONBOARDING 1-CLICK (ALTA DE NUEVO CLIENTE SAAS)
+      ================================================================== -->
+      <section id="sa-view-onboarding" class="sa-tab-view hidden space-y-4">
+        <div>
+          <h2 class="text-lg font-extrabold text-slate-900 leading-tight">Onboarding 1-Click: Alta de Nuevo Cliente SaaS</h2>
+          <p class="text-[11px] text-slate-500">Crea en un solo paso la Organización, su Sucursal Matriz, el Usuario Dueño con PIN, la Plantilla Semanal de 7 días y el Catálogo Base de Servicios.</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+          <form id="form-sa-onboarding" class="lg:col-span-8 bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div class="sm:col-span-2">
+                <label class="block text-xs font-bold text-slate-700 mb-1">Nombre Comercial de la Estética / Veterinaria *</label>
+                <input id="ob-nombre" type="text" required placeholder="Ej. Royal Paws Grooming Spa"
+                  class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-600 focus:outline-none" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Plan Contratado *</label>
+                <select id="ob-plan" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold">
+                  <option value="Básico">Básico ($499/mes — 1 Sucursal)</option>
+                  <option value="Pro" selected>Pro ($999/mes — 5 Sucursales)</option>
+                  <option value="Enterprise">Enterprise ($2,499/mes — 20 Sucursales)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Límites del Plan -->
+            <div class="grid grid-cols-3 gap-3 p-3 rounded-xl bg-indigo-50/60 border border-indigo-100">
+              <div>
+                <label class="block text-[11px] font-bold text-indigo-900 mb-1">Máx. Sucursales</label>
+                <input id="ob-max-suc" type="number" min="1" value="5"
+                  class="w-full rounded-lg border border-indigo-200 bg-white px-2.5 py-1.5 text-xs font-bold text-indigo-900" />
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold text-indigo-900 mb-1">Máx. Usuarios</label>
+                <input id="ob-max-usr" type="number" min="1" value="25"
+                  class="w-full rounded-lg border border-indigo-200 bg-white px-2.5 py-1.5 text-xs font-bold text-indigo-900" />
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold text-indigo-900 mb-1">Máx. Clientes</label>
+                <input id="ob-max-cli" type="number" min="50" value="5000"
+                  class="w-full rounded-lg border border-indigo-200 bg-white px-2.5 py-1.5 text-xs font-bold text-indigo-900" />
+              </div>
+            </div>
+
+            <!-- Credenciales Corporativas y Primera Sucursal -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Correo Corporativo del Propietario *</label>
+                <input id="ob-email" type="email" required placeholder="dueno@royalpaws.mx"
+                  class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Contraseña Corporativa Inicial *</label>
+                <input id="ob-password" type="text" required value="admin1234"
+                  class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs font-mono" />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Nombre 1ra Sucursal *</label>
+                <input id="ob-sucursal-nombre" type="text" required value="Sucursal Matriz"
+                  class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Dirección Sucursal</label>
+                <input id="ob-sucursal-dir" type="text" placeholder="Av. Principal 123"
+                  class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Teléfono Sucursal</label>
+                <input id="ob-sucursal-tel" type="text" placeholder="5512345678"
+                  class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs" />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Nombre del Usuario Dueño Inicial *</label>
+                <input id="ob-dueno-nombre" type="text" required value="Administrador Principal"
+                  class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">PIN de Seguridad Operativo Inicial *</label>
+                <input id="ob-dueno-pin" type="text" inputmode="numeric" minlength="4" maxlength="8" required value="1234"
+                  class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs font-mono font-bold" />
+              </div>
+            </div>
+
+            <button type="submit"
+              class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-lg shadow-indigo-600/25 transition flex items-center justify-center gap-2">
+              <i class="fa-solid fa-wand-magic-sparkles"></i>
+              <span>Ejecutar Onboarding 1-Click y Aprovisionar Cliente SaaS</span>
+            </button>
+          </form>
+
+          <!-- Tarjeta de Resultado / Ficha de Credenciales para Entregar al Cliente -->
+          <div class="lg:col-span-4 bg-slate-900 text-white rounded-2xl p-5 border border-slate-800 shadow-sm flex flex-col justify-between space-y-4">
+            <div>
+              <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-indigo-500/20 text-indigo-300">
+                Kit de Bienvenida del Cliente
+              </span>
+              <h3 class="text-sm font-bold mt-2">Ficha de Acceso Generada</h3>
+              <p class="text-xs text-slate-400 mt-1">
+                Al dar de alta un cliente, aquí aparecerán sus credenciales listas para enviárselas por WhatsApp o correo.
+              </p>
+            </div>
+
+            <div id="ob-credenciales-box" class="bg-slate-800/90 rounded-xl p-4 border border-slate-700 text-xs space-y-2 font-mono">
+              <p class="text-slate-400 italic">Completa el formulario de la izquierda para generar un nuevo cliente SaaS...</p>
+            </div>
+
+            <a href="./index.html"
+              class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs text-center transition block">
+              <i class="fa-solid fa-up-right-from-square mr-1"></i>Probar Acceso en Panel Operativo
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           VISTA 3: GESTIÓN DE PLANES, LÍMITES Y EXPANSIÓN DE SUCURSALES
+      ================================================================== -->
+      <section id="sa-view-tenants" class="sa-tab-view hidden space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h2 class="text-lg font-extrabold text-slate-900 leading-tight">Gestión de Suscripción, Cuotas y Sucursales por Cliente</h2>
+            <p class="text-[11px] text-slate-500">Modifica el plan contratado, amplía límites o agrega nuevas sucursales a un cliente existente.</p>
+          </div>
+          <select id="tenant-manage-select"
+            class="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-800 shadow-sm">
+            <option value="">Selecciona una organización...</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+          <!-- Editar Plan y Cuotas -->
+          <form id="form-sa-editar-tenant" class="lg:col-span-6 bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-3">
+            <h3 class="text-xs font-bold text-slate-800 border-b border-slate-100 pb-2">
+              <i class="fa-solid fa-Sliders text-indigo-600 mr-1"></i>Editar Plan, Límites y Credenciales Corporativas
+            </h3>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1">Nombre Organización</label>
+                <input id="edit-org-nombre" type="text" required class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1">Estado de Cuenta</label>
+                <select id="edit-org-estado" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs font-bold">
+                  <option value="Activa">Activa</option>
+                  <option value="Suspendida">Suspendida (Kill-Switch)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-4 gap-2">
+              <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1">Plan</label>
+                <select id="edit-org-plan" class="w-full rounded-xl border border-slate-300 px-2 py-2 text-xs font-semibold">
+                  <option value="Básico">Básico</option>
+                  <option value="Pro">Pro</option>
+                  <option value="Enterprise">Enterprise</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1">Máx. Suc.</label>
+                <input id="edit-org-max-suc" type="number" min="1" class="w-full rounded-xl border border-slate-300 px-2.5 py-2 text-xs" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1">Máx. Usr.</label>
+                <input id="edit-org-max-usr" type="number" min="1" class="w-full rounded-xl border border-slate-300 px-2.5 py-2 text-xs" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1">Máx. Cli.</label>
+                <input id="edit-org-max-cli" type="number" min="10" class="w-full rounded-xl border border-slate-300 px-2.5 py-2 text-xs" />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1">Correo del Propietario</label>
+                <input id="edit-org-email" type="email" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1">Nueva Contraseña (opcional)</label>
+                <input id="edit-org-password" type="password" placeholder="Dejar vacío para no cambiar"
+                  class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs" />
+              </div>
+            </div>
+
+            <button type="submit" class="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition">
+              Guardar Cambios de Suscripción
+            </button>
+          </form>
+
+          <!-- Agregar Nueva Sucursal al Tenant -->
+          <div class="lg:col-span-6 bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-3">
+            <h3 class="text-xs font-bold text-slate-800 border-b border-slate-100 pb-2">
+              <i class="fa-solid fa-store text-emerald-600 mr-1"></i>Expandir y Agregar Nueva Sucursal al Cliente
+            </h3>
+
+            <form id="form-sa-nueva-sucursal" class="space-y-2.5 text-xs">
+              <div class="grid grid-cols-3 gap-2">
+                <input id="add-suc-nombre" type="text" required placeholder="Nombre (Ej. Sucursal Norte)"
+                  class="rounded-xl border border-slate-300 px-2.5 py-2" />
+                <input id="add-suc-dir" type="text" placeholder="Dirección"
+                  class="rounded-xl border border-slate-300 px-2.5 py-2" />
+                <input id="add-suc-tel" type="text" placeholder="Teléfono"
+                  class="rounded-xl border border-slate-300 px-2.5 py-2" />
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <input id="add-suc-encargado" type="text" value="Encargado Sucursal" placeholder="Nombre encargado inicial"
+                  class="rounded-xl border border-slate-300 px-2.5 py-2" />
+                <input id="add-suc-pin" type="text" value="1234" placeholder="PIN inicial (Ej. 1234)"
+                  class="rounded-xl border border-slate-300 px-2.5 py-2 font-mono" />
+              </div>
+              <button type="submit" class="w-full py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold">
+                <i class="fa-solid fa-plus mr-1"></i>Crear Sucursal con Agenda y Catálogo Base
+              </button>
+            </form>
+
+            <div class="pt-2">
+              <p class="text-[11px] font-bold uppercase text-slate-400 mb-1.5">Sucursales Activas de este Cliente</p>
+              <div id="tenant-sucursales-lista" class="space-y-1.5 max-h-40 overflow-y-auto"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           VISTA 4: AUDITORÍA GLOBAL DEL SAAS
+      ================================================================== -->
+      <section id="sa-view-auditoria" class="sa-tab-view hidden space-y-3.5">
+        <div>
+          <h2 class="text-lg font-extrabold text-slate-900 leading-tight">Bitácora de Auditoría Global Multi-Tenant</h2>
+          <p class="text-[11px] text-slate-500">Registro transversal de eventos críticos en todas las organizaciones y sucursales de la plataforma.</p>
+        </div>
+
+        <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
+          <div class="overflow-x-auto max-h-[70vh] overflow-y-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="border-b border-slate-200 text-[10px] uppercase text-slate-400">
+                  <th class="py-2 px-3">Fecha / Hora</th>
+                  <th class="py-2 px-3">Usuario / Rol</th>
+                  <th class="py-2 px-3">Acción</th>
+                  <th class="py-2 px-3">Detalle</th>
+                </tr>
+              </thead>
+              <tbody id="sa-auditoria-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script type="module" src="./js/SuperAdminApp.js"></script>
+</body>
+</html>

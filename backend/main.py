@@ -9,12 +9,12 @@ if str(_root_dir) not in sys.path:
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from backend.routers import auth, operativo
+from backend.routers import auth, operativo, superadmin
 
 app = FastAPI(
     title="Pet Grooming SaaS API",
-    description="Backend POO Multi-Tenant y Multi-Sucursal para gestión de estéticas caninas",
-    version="0.3.1",
+    description="Backend POO Multi-Tenant, Multi-Sucursal y Consola Super Admin para gestión de estéticas caninas",
+    version="0.4.0",
 )
 
 app.add_middleware(
@@ -27,6 +27,7 @@ app.add_middleware(
 
 app.include_router(auth.router)
 app.include_router(operativo.router)
+app.include_router(superadmin.router)
 
 
 @app.get("/api/health", tags=["Health"])
@@ -34,7 +35,7 @@ def healthcheck():
     """Endpoint de verificación de estado del servicio."""
     return {
         "status": "ok",
-        "version": "0.3.1",
+        "version": "0.4.0",
         "service": "pet-grooming-saas-backend",
     }
 

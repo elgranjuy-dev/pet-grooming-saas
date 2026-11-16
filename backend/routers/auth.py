@@ -88,6 +88,19 @@ def login_con_pin(
     Valida el PIN del usuario en la sucursal seleccionada,
     registra su entrada en la tabla asistencias y guarda evento en bitácora de auditoría.
     """
+    org_check = (
+        db.table("organizaciones")
+        .select("id, nombre, estado")
+        .eq("id", payload.organizacion_id)
+        .limit(1)
+        .execute()
+    )
+    if org_check.data and str(org_check.data[0].get("estado", "Activa")).lower() != "activa":
+        raise HTTPException(
+            status_code=403,
+            detail=f"La cuenta de '{org_check.data[0].get('nombre')}' se encuentra suspendida. Contacta al soporte del SaaS.",
+        )
+
     usuarios_repo = BranchRepository(
         db, "usuarios_crm", payload.organizacion_id, payload.sucursal_id
     )
