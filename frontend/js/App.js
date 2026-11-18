@@ -5,14 +5,14 @@
  * el flujo de login por subdominio (Usuario + Contraseña), vistas dinámicas por rol,
  * modo Impersonate para Administrador/Dueño, barra lateral colapsable y Check-Out.
  */
-import { ApiClient } from './core/ApiClient.js?v=0.9.2';
-import { SessionManager } from './core/SessionManager.js?v=0.9.2';
-import { WidgetManager } from './core/WidgetManager.js?v=0.9.2';
-import { DashboardView } from './views/DashboardView.js?v=0.9.2';
-import { AgendaView } from './views/AgendaView.js?v=0.9.2';
-import { ClientesView } from './views/ClientesView.js?v=0.9.2';
-import { InventarioCajaView } from './views/InventarioCajaView.js?v=0.9.2';
-import { ConfigPersonalView } from './views/ConfigPersonalView.js?v=0.9.2';
+import { ApiClient } from './core/ApiClient.js?v=0.9.3';
+import { SessionManager } from './core/SessionManager.js?v=0.9.3';
+import { WidgetManager } from './core/WidgetManager.js?v=0.9.3';
+import { DashboardView } from './views/DashboardView.js?v=0.9.3';
+import { AgendaView } from './views/AgendaView.js?v=0.9.3';
+import { ClientesView } from './views/ClientesView.js?v=0.9.3';
+import { InventarioCajaView } from './views/InventarioCajaView.js?v=0.9.3';
+import { ConfigPersonalView } from './views/ConfigPersonalView.js?v=0.9.3';
 
 export class App {
   constructor() {

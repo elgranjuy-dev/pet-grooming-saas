@@ -16,6 +16,7 @@ from backend.schemas.operativo import (
     EscaneoRequest,
     ExcepcionCreate,
     MascotaCreate,
+    MatrizPerfilesBatchInput,
     PerfilPermisosInput,
     PlantillaDiaUpdate,
     ProductoCreate,
@@ -26,6 +27,8 @@ from backend.schemas.operativo import (
 from backend.services.disponibilidad import AvailabilityEngine
 from backend.services.perfiles_permisos import (
     CATALOGO_PERMISOS,
+    MODULOS_MATRIZ,
+    NIVELES_ACCESO,
     PERFILES_BASE_SISTEMA,
     PerfilesPermisosService,
 )
@@ -1658,6 +1661,8 @@ def listar_personal(
         "bitacora": bitacora,
         "perfiles": perfiles,
         "catalogo_permisos": CATALOGO_PERMISOS,
+        "modulos_matriz": MODULOS_MATRIZ,
+        "niveles_acceso": NIVELES_ACCESO,
         "total": len(personal),
     }
 
@@ -1684,7 +1689,7 @@ def listar_bitacora(
 
 
 # -------------------------------------------------------------------------
-# 7B. GESTIÓN DE PERFILES Y PERMISOS (ROLES CONFIGURABLES CON CASILLAS)
+# 7B. MATRIZ DE PERFILES Y PERMISOS POR MÓDULO (TABLA PERFILES X ACTIVIDADES)
 # -------------------------------------------------------------------------
 @router.get("/perfiles")
 def obtener_perfiles_permisos(
@@ -1694,7 +1699,7 @@ def obtener_perfiles_permisos(
     x_sucursal_id: Optional[str] = Header(default=None),
     db: Client = Depends(get_db),
 ) -> Dict[str, Any]:
-    """Devuelve todos los perfiles de la organización y el catálogo de casillas de permisos (ver/hacer)."""
+    """Devuelve todos los perfiles, los módulos con sus columnas de actividades y los niveles de acceso."""
     ctx = _resolver_contexto(
         db,
         organizacion_id,
@@ -1708,7 +1713,69 @@ def obtener_perfiles_permisos(
     return {
         "perfiles": perfiles,
         "catalogo_permisos": CATALOGO_PERMISOS,
+        "modulos_matriz": MODULOS_MATRIZ,
+        "niveles_acceso": NIVELES_ACCESO,
         "total": len(perfiles),
+    }
+
+
+@router.put("/perfiles-matriz")
+def guardar_matriz_perfiles_completa(
+    payload: MatrizPerfilesBatchInput,
+    organizacion_id: Optional[str] = Query(default=None),
+    sucursal_id: Optional[str] = Query(default=None),
+    x_organizacion_id: Optional[str] = Header(default=None),
+    x_sucursal_id: Optional[str] = Header(default=None),
+    db: Client = Depends(get_db),
+) -> Dict[str, Any]:
+    """Guarda en lote toda la tabla matriz de perfiles y sus niveles por actividad en todos los módulos."""
+    ctx = _resolver_contexto(
+        db,
+        organizacion_id or payload.organizacion_id,
+        sucursal_id or payload.sucursal_id,
+        x_organizacion_id,
+        x_sucursal_id,
+    )
+    org_id, suc_id = ctx["organizacion_id"], ctx["sucursal_id"]
+
+    actuales = PerfilesPermisosService.obtener_perfiles(db, org_id)
+    mapa_actual = {p["nombre"].lower(): p for p in actuales}
+
+    nuevos_perfiles: List[Dict[str, Any]] = []
+    vistos = set()
+
+    for p_in in payload.perfiles or []:
+        nom = str(p_in.get("nombre") or "").strip()
+        if not nom or nom.lower() in vistos:
+            continue
+        vistos.add(nom.lower())
+        base_prev = mapa_actual.get(nom.lower())
+        norm = PerfilesPermisosService.normalizar_perfil_completo(p_in, base_prev)
+        nuevos_perfiles.append(norm)
+
+    # Conservar perfiles que no venían en el payload por seguridad
+    for p_act in actuales:
+        if p_act["nombre"].lower() not in vistos:
+            nuevos_perfiles.append(p_act)
+
+    PerfilesPermisosService.guardar_perfiles(db, org_id, suc_id, nuevos_perfiles)
+
+    SecurityManager.registrar_auditoria(
+        db=db,
+        org_id=org_id,
+        suc_id=suc_id,
+        usuario=payload.usuario_actual or "Administrador",
+        rol=payload.rol_actual or "Dueño",
+        accion="GUARDAR_MATRIZ_PERFILES",
+        detalle=f"Matriz de permisos actualizada para {len(nuevos_perfiles)} perfiles.",
+    )
+
+    return {
+        "perfiles": nuevos_perfiles,
+        "catalogo_permisos": CATALOGO_PERMISOS,
+        "modulos_matriz": MODULOS_MATRIZ,
+        "niveles_acceso": NIVELES_ACCESO,
+        "mensaje": "Matriz de permisos de todos los perfiles guardada correctamente.",
     }
 
 
@@ -1721,7 +1788,7 @@ def crear_o_actualizar_perfil(
     x_sucursal_id: Optional[str] = Header(default=None),
     db: Client = Depends(get_db),
 ) -> Dict[str, Any]:
-    """Crea un nuevo perfil o actualiza los permisos de un perfil existente."""
+    """Crea un nuevo perfil o actualiza los niveles/permisos de un perfil existente."""
     ctx = _resolver_contexto(
         db,
         organizacion_id or payload.organizacion_id,
@@ -1743,20 +1810,20 @@ def crear_o_actualizar_perfil(
         (i for i, p in enumerate(perfiles) if p["nombre"].lower() == nombre_limpio.lower()),
         None,
     )
+    base_existente = perfiles[existente_idx] if existente_idx is not None else None
 
-    es_dueno = nombre_limpio.lower() == "dueño"
-    es_base = any(b.lower() == nombre_limpio.lower() for b in PERFILES_BASE_SISTEMA)
-
-    permisos_norm = PerfilesPermisosService._normalizar_permisos(
-        payload.permisos,
-        perfiles[existente_idx]["permisos"] if existente_idx is not None else None,
+    perfil_obj = PerfilesPermisosService.normalizar_perfil_completo(
+        {
+            "nombre": nombre_limpio,
+            "descripcion": payload.descripcion,
+            "niveles": payload.niveles,
+            "permisos": payload.permisos,
+        },
+        base_existente,
     )
-    if es_dueno:
-        permisos_norm["ver_config"] = True
-        permisos_norm["editar_configuracion"] = True
 
     if not any(
-        permisos_norm.get(k)
+        perfil_obj["permisos"].get(k)
         for k in (
             "ver_dashboard",
             "ver_agenda",
@@ -1766,23 +1833,9 @@ def crear_o_actualizar_perfil(
             "ver_config",
         )
     ):
-        raise HTTPException(
-            status_code=400,
-            detail="El perfil debe tener al menos un módulo visible ('Ver módulo...') seleccionado.",
-        )
-
-    perfil_obj = {
-        "nombre": perfiles[existente_idx]["nombre"] if existente_idx is not None else nombre_limpio,
-        "descripcion": (payload.descripcion or "").strip()
-        or (
-            perfiles[existente_idx].get("descripcion")
-            if existente_idx is not None
-            else "Perfil personalizado de la organización."
-        ),
-        "es_sistema": es_base,
-        "protegido": es_dueno,
-        "permisos": permisos_norm,
-    }
+        # Si ningún módulo quedó con visibilidad, habilitar al menos Agenda en lectura
+        perfil_obj["niveles"]["agenda_acceso_modulo"] = "lectura"
+        perfil_obj["permisos"]["ver_agenda"] = True
 
     accion_audit = "CREAR_PERFIL"
     if existente_idx is not None:
@@ -1793,7 +1846,7 @@ def crear_o_actualizar_perfil(
 
     PerfilesPermisosService.guardar_perfiles(db, org_id, suc_id, perfiles)
 
-    activos_count = sum(1 for v in permisos_norm.values() if v)
+    activos_count = sum(1 for v in perfil_obj["niveles"].values() if v != "sin_acceso")
     SecurityManager.registrar_auditoria(
         db=db,
         org_id=org_id,
@@ -1801,14 +1854,16 @@ def crear_o_actualizar_perfil(
         usuario=payload.usuario_actual or "Administrador",
         rol=payload.rol_actual or "Dueño",
         accion=accion_audit,
-        detalle=f"Perfil '{perfil_obj['nombre']}' guardado ({activos_count} permisos habilitados)",
+        detalle=f"Perfil '{perfil_obj['nombre']}' guardado ({activos_count} actividades con acceso)",
     )
 
     return {
         "perfil": perfil_obj,
         "perfiles": perfiles,
         "catalogo_permisos": CATALOGO_PERMISOS,
-        "mensaje": f"Permisos del perfil '{perfil_obj['nombre']}' guardados correctamente.",
+        "modulos_matriz": MODULOS_MATRIZ,
+        "niveles_acceso": NIVELES_ACCESO,
+        "mensaje": f"Perfil '{perfil_obj['nombre']}' guardado correctamente.",
     }
 
 
@@ -1822,7 +1877,7 @@ def editar_perfil_existente(
     x_sucursal_id: Optional[str] = Header(default=None),
     db: Client = Depends(get_db),
 ) -> Dict[str, Any]:
-    """Actualiza las casillas de permisos, descripción o nombre de un perfil."""
+    """Actualiza los niveles de acceso por actividad, descripción o nombre de un perfil."""
     ctx = _resolver_contexto(
         db,
         organizacion_id or payload.organizacion_id,
@@ -1845,7 +1900,6 @@ def editar_perfil_existente(
     actual = perfiles[target_idx]
     nuevo_nom = (payload.nuevo_nombre or payload.nombre or actual["nombre"]).strip()
 
-    # Si es perfil del sistema, su nombre se mantiene fijo pero sus permisos sí son editables
     if actual.get("es_sistema"):
         nuevo_nom = actual["nombre"]
     elif nuevo_nom.lower() != actual["nombre"].lower():
@@ -1858,16 +1912,19 @@ def editar_perfil_existente(
                 detail=f"Ya existe otro perfil llamado '{nuevo_nom}'.",
             )
 
-    es_dueno = actual["nombre"].lower() == "dueño"
-    permisos_norm = PerfilesPermisosService._normalizar_permisos(
-        payload.permisos, actual.get("permisos")
+    actualizado = PerfilesPermisosService.normalizar_perfil_completo(
+        {
+            "nombre": nuevo_nom,
+            "descripcion": payload.descripcion or actual.get("descripcion", ""),
+            "niveles": payload.niveles,
+            "permisos": payload.permisos,
+        },
+        actual,
     )
-    if es_dueno:
-        permisos_norm["ver_config"] = True
-        permisos_norm["editar_configuracion"] = True
+    actualizado["nombre"] = nuevo_nom
 
     if not any(
-        permisos_norm.get(k)
+        actualizado["permisos"].get(k)
         for k in (
             "ver_dashboard",
             "ver_agenda",
@@ -1877,21 +1934,13 @@ def editar_perfil_existente(
             "ver_config",
         )
     ):
-        raise HTTPException(
-            status_code=400,
-            detail="El perfil debe tener al menos un módulo visible ('Ver módulo...') seleccionado.",
-        )
+        actualizado["niveles"]["agenda_acceso_modulo"] = "lectura"
+        actualizado["permisos"]["ver_agenda"] = True
 
-    actualizado = {
-        **actual,
-        "nombre": nuevo_nom,
-        "descripcion": (payload.descripcion or "").strip() or actual.get("descripcion", ""),
-        "permisos": permisos_norm,
-    }
     perfiles[target_idx] = actualizado
     PerfilesPermisosService.guardar_perfiles(db, org_id, suc_id, perfiles)
 
-    activos_count = sum(1 for v in permisos_norm.values() if v)
+    activos_count = sum(1 for v in actualizado["niveles"].values() if v != "sin_acceso")
     SecurityManager.registrar_auditoria(
         db=db,
         org_id=org_id,
@@ -1899,13 +1948,15 @@ def editar_perfil_existente(
         usuario=payload.usuario_actual or "Administrador",
         rol=payload.rol_actual or "Dueño",
         accion="EDITAR_PERFIL_PERMISOS",
-        detalle=f"Permisos actualizados para perfil '{actualizado['nombre']}' ({activos_count} permisos activos)",
+        detalle=f"Permisos actualizados para perfil '{actualizado['nombre']}' ({activos_count} actividades con acceso)",
     )
 
     return {
         "perfil": actualizado,
         "perfiles": perfiles,
         "catalogo_permisos": CATALOGO_PERMISOS,
+        "modulos_matriz": MODULOS_MATRIZ,
+        "niveles_acceso": NIVELES_ACCESO,
         "mensaje": f"Permisos del perfil '{actualizado['nombre']}' actualizados correctamente.",
     }
 
@@ -1942,10 +1993,9 @@ def eliminar_perfil_personalizado(
     ):
         raise HTTPException(
             status_code=400,
-            detail=f"El perfil '{target['nombre']}' es un perfil base del sistema. Puedes editar sus casillas de permisos, pero no eliminarlo.",
+            detail=f"El perfil '{target['nombre']}' es un perfil base del sistema. Puedes editar sus niveles en la tabla, pero no eliminarlo.",
         )
 
-    # Verificar si algún colaborador tiene asignado este perfil
     personal_raw = (
         db.table("usuarios_crm")
         .select("*")
@@ -1986,6 +2036,8 @@ def eliminar_perfil_personalizado(
         "nombre": target["nombre"],
         "perfiles": nuevos_perfiles,
         "catalogo_permisos": CATALOGO_PERMISOS,
+        "modulos_matriz": MODULOS_MATRIZ,
+        "niveles_acceso": NIVELES_ACCESO,
         "mensaje": f"Perfil '{target['nombre']}' eliminado correctamente.",
     }
 

@@ -1,94 +1,195 @@
 /**
  * ConfigPersonalView.js
  * Vista POO para Configuración de Agenda (intervalo, plantilla semanal, catálogo de servicios,
- * excepciones/bloqueos), Gestión de Perfiles y Permisos (casillas de selección ver/hacer por perfil),
- * gestión de Personal (alta, edición de perfil/rol/contraseña y eliminación) y Bitácora de Auditoría.
+ * excepciones/bloqueos), Matriz de Perfiles y Permisos por Módulo (tabla donde los encabezados son
+ * las actividades específicas del módulo seleccionado y los renglones son los perfiles con niveles
+ * de acceso y casillas de selección), gestión de Personal y Bitácora de Auditoría.
  */
 export class ConfigPersonalView {
-  static DEFAULT_CATALOGO_PERMISOS = [
+  static DEFAULT_MODULOS_MATRIZ = [
     {
-      key: 'ver_dashboard',
-      grupo: 'ver',
-      titulo: 'Ver módulo Dashboard',
-      descripcion: 'Acceso a KPIs financieros, gráficas e indicadores de la sucursal.',
+      id: 'agenda',
+      nombre: 'Agenda, Turnos y Citas',
+      icono: 'fa-calendar-days',
+      descripcion: 'Calendario diario y semanal, bloques de horario, asistencia de mascotas y cobro de citas.',
+      actividades: [
+        {
+          key: 'agenda_acceso_modulo',
+          titulo: 'Acceso al Calendario de Agenda',
+          subtitulo: 'Ver pestaña Agenda (Día / Semana) y citas programadas',
+          es_acceso_modulo: true,
+        },
+        {
+          key: 'agenda_kpis_cobro_dia',
+          titulo: 'KPIs Financieros del Día',
+          subtitulo: 'Ver cuánto se va a cobrar, cobrado real, efectivo y tarjeta',
+        },
+        {
+          key: 'agenda_crear_citas',
+          titulo: 'Agendar Nuevas Citas',
+          subtitulo: 'Seleccionar bloques disponibles y registrar turnos futuros',
+        },
+        {
+          key: 'agenda_asistencia_cobro',
+          titulo: 'Marcar Asistió / No Asistió y Cobrar',
+          subtitulo: 'Confirmar asistencia en tarjeta de mascota y registrar pago',
+        },
+        {
+          key: 'agenda_cancelar_editar',
+          titulo: 'Editar Citas, Precios y Notas',
+          subtitulo: 'Modificar precio pactado, estilista asignado o cancelar cita',
+        },
+      ],
     },
     {
-      key: 'ver_agenda',
-      grupo: 'ver',
-      titulo: 'Ver módulo Agenda y Turnos',
-      descripcion: 'Acceso al calendario diario/semanal, bloques de horario y tarjetas de citas.',
+      id: 'clientes',
+      nombre: 'Clientes, Mascotas y Expedientes',
+      icono: 'fa-dog',
+      descripcion: 'Buscador lateral privado, expediente clínico de mascotas y base de datos completa.',
+      actividades: [
+        {
+          key: 'cli_acceso_padron_completo',
+          titulo: 'Módulo Base de Datos Completa',
+          subtitulo: 'Ver tabla general de Clientes y Mascotas con filtros por columna',
+          es_acceso_modulo: true,
+        },
+        {
+          key: 'cli_buscador_lateral',
+          titulo: 'Buscador Lateral de Cuentas',
+          subtitulo: 'Buscar clientes por nombre, código PET- o últimos 4 dígitos',
+        },
+        {
+          key: 'cli_expediente_perfil',
+          titulo: 'Expediente y Perfil de Cliente',
+          subtitulo: 'Abrir pop-up de perfil, historial de servicios y ficha técnica',
+        },
+        {
+          key: 'cli_alta_edicion_clientes',
+          titulo: 'Alta y Edición de Clientes (Dueños)',
+          subtitulo: 'Botón Registrar Nuevo Cliente y edición de datos del dueño',
+        },
+        {
+          key: 'cli_alta_edicion_mascotas',
+          titulo: 'Alta y Ficha Clínica de Mascotas',
+          subtitulo: 'Agregar mascotas al dueño, raza, alergias, navaja y shampoo',
+        },
+      ],
     },
     {
-      key: 'ver_clientes',
-      grupo: 'ver',
-      titulo: 'Ver módulo Clientes y Expedientes (Base de Datos)',
-      descripcion: 'Acceso a la tabla completa de clientes y mascotas con filtros por columna.',
+      id: 'dashboard',
+      nombre: 'Dashboard e Indicadores',
+      icono: 'fa-chart-pie',
+      descripcion: 'Métricas ejecutivas, ingresos acumulados, gráficas de desempeño y alertas.',
+      actividades: [
+        {
+          key: 'dash_acceso_modulo',
+          titulo: 'Acceso al Módulo Dashboard',
+          subtitulo: 'Ver pestaña Dashboard en el menú principal',
+          es_acceso_modulo: true,
+        },
+        {
+          key: 'dash_kpis_financieros',
+          titulo: 'KPIs de Ingresos y Ticket Promedio',
+          subtitulo: 'Consultar ingresos históricos, ingresos de hoy y métricas de caja',
+        },
+        {
+          key: 'dash_graficas_operativas',
+          titulo: 'Gráficas por Servicio y Estilista',
+          subtitulo: 'Visualizar distribución de citas, métodos de pago y productividad',
+        },
+        {
+          key: 'dash_alertas_stock',
+          titulo: 'Alertas de Inventario y Turnos',
+          subtitulo: 'Monitorear productos en stock crítico y próximas citas',
+        },
+      ],
     },
     {
-      key: 'ver_inventario',
-      grupo: 'ver',
-      titulo: 'Ver módulo Inventario y Escáner',
-      descripcion: 'Acceso al catálogo de productos, existencias y terminal de códigos de barras.',
+      id: 'inventario',
+      nombre: 'Inventario y Terminal Escáner',
+      icono: 'fa-boxes-stacked',
+      descripcion: 'Catálogo de insumos y productos comerciales, control de existencias y lector de barras.',
+      actividades: [
+        {
+          key: 'inv_acceso_modulo',
+          titulo: 'Acceso al Módulo Inventario',
+          subtitulo: 'Ver pestaña Inventario y tabla de existencias',
+          es_acceso_modulo: true,
+        },
+        {
+          key: 'inv_catalogo_productos',
+          titulo: 'Alta y Edición de Productos',
+          subtitulo: 'Registrar nuevos productos, categorías, stock mínimo y precios',
+        },
+        {
+          key: 'inv_escaner_descuento',
+          titulo: 'Escáner: Consumo de Insumos',
+          subtitulo: 'Descontar shampoo o material interno mediante código de barras',
+        },
+        {
+          key: 'inv_escaner_venta',
+          titulo: 'Escáner: Venta de Productos',
+          subtitulo: 'Vender accesorios/alimento con código y registrar cobro automático',
+        },
+      ],
     },
     {
-      key: 'ver_caja',
-      grupo: 'ver',
-      titulo: 'Ver módulo Caja y Cobros',
-      descripcion: 'Acceso al registro de ingresos del día, cobros por método y movimientos.',
+      id: 'caja',
+      nombre: 'Caja, Cobros y Cortes',
+      icono: 'fa-cash-register',
+      descripcion: 'Flujo de efectivo, pagos con tarjeta/transferencia, ingresos manuales y cierre de turno.',
+      actividades: [
+        {
+          key: 'caja_acceso_modulo',
+          titulo: 'Acceso al Módulo Caja y Cobros',
+          subtitulo: 'Ver pestaña Caja y bitácora de transacciones financieras',
+          es_acceso_modulo: true,
+        },
+        {
+          key: 'caja_movimientos_manuales',
+          titulo: 'Registrar Ingresos Manuales',
+          subtitulo: 'Capturar cobros directos, propinas o conceptos adicionales',
+        },
+        {
+          key: 'caja_corte_turno',
+          titulo: 'Corte de Caja y Arqueo',
+          subtitulo: 'Declarar efectivo al cerrar turno y auditar totales por método',
+        },
+      ],
     },
     {
-      key: 'ver_config',
-      grupo: 'ver',
-      titulo: 'Ver módulo Configuración y Personal',
-      descripcion: 'Acceso a horarios, catálogo de servicios, personal, perfiles y bitácora.',
-    },
-    {
-      key: 'buscar_clientes',
-      grupo: 'hacer',
-      titulo: 'Buscar clientes y consultar expedientes',
-      descripcion: 'Usar la barra de búsqueda del menú lateral para abrir perfiles de clientes y mascotas.',
-    },
-    {
-      key: 'crear_clientes_mascotas',
-      grupo: 'hacer',
-      titulo: 'Registrar nuevos clientes y agregar mascotas',
-      descripcion: 'Dar de alta dueños desde el menú lateral y agregar mascotas dentro de su perfil.',
-    },
-    {
-      key: 'agendar_citas',
-      grupo: 'hacer',
-      titulo: 'Agendar nuevas citas',
-      descripcion: 'Crear citas haciendo clic en bloques disponibles o desde la ficha de una mascota.',
-    },
-    {
-      key: 'gestionar_asistencia_citas',
-      grupo: 'hacer',
-      titulo: 'Marcar Asistió / No Asistió y cobrar citas',
-      descripcion: 'Confirmar asistencia de mascotas en la agenda, registrar cobro o marcar inasistencia.',
-    },
-    {
-      key: 'gestionar_inventario',
-      grupo: 'hacer',
-      titulo: 'Agregar productos y operar escáner de inventario',
-      descripcion: 'Registrar nuevos productos/insumos y descontar o vender con código de barras.',
-    },
-    {
-      key: 'registrar_caja',
-      grupo: 'hacer',
-      titulo: 'Registrar ingresos manuales en Caja',
-      descripcion: 'Capturar cobros manuales y conceptos adicionales en el módulo de Caja.',
-    },
-    {
-      key: 'editar_configuracion',
-      grupo: 'hacer',
-      titulo: 'Modificar configuración, personal y perfiles',
-      descripcion: 'Editar horarios, servicios, excepciones, colaboradores y permisos de perfiles.',
-    },
-    {
-      key: 'usar_impersonate',
-      grupo: 'hacer',
-      titulo: 'Usar Modo Impersonate (Simular perfiles/usuarios)',
-      descripcion: 'Cambiar temporalmente de vista para auditar cómo opera otro perfil o colaborador.',
+      id: 'config',
+      nombre: 'Configuración, Personal y Perfiles',
+      icono: 'fa-sliders',
+      descripcion: 'Reglas de agenda, horarios semanales, catálogo de servicios, plantilla y matriz de permisos.',
+      actividades: [
+        {
+          key: 'cfg_acceso_modulo',
+          titulo: 'Acceso a Configuración y Personal',
+          subtitulo: 'Ver pestaña Configuración y Personal en el menú',
+          es_acceso_modulo: true,
+        },
+        {
+          key: 'cfg_horarios_plantilla',
+          titulo: 'Horarios, Capacidad y Excepciones',
+          subtitulo: 'Editar apertura/cierre, estilistas activos y bloqueos de calendario',
+        },
+        {
+          key: 'cfg_catalogo_servicios',
+          titulo: 'Catálogo de Servicios y Precios',
+          subtitulo: 'Crear y actualizar servicios de estética, tiempos y tarifas base',
+        },
+        {
+          key: 'cfg_gestion_personal',
+          titulo: 'Administración de Colaboradores',
+          subtitulo: 'Dar de alta usuarios, asignar perfil, cambiar contraseña o eliminar',
+        },
+        {
+          key: 'cfg_perfiles_permisos',
+          titulo: 'Matriz de Perfiles e Impersonate',
+          subtitulo: 'Crear/editar perfiles, configurar esta tabla y simular vistas (Impersonate)',
+        },
+      ],
     },
   ];
 
@@ -99,8 +200,8 @@ export class ConfigPersonalView {
     this.personalActual = [];
     this.sucursalesOrg = [];
     this.perfiles = [];
-    this.catalogoPermisos = ConfigPersonalView.DEFAULT_CATALOGO_PERMISOS;
-    this.perfilSeleccionadoNombre = 'Recepcionista';
+    this.modulosMatriz = ConfigPersonalView.DEFAULT_MODULOS_MATRIZ;
+    this.moduloActivoId = 'agenda';
   }
 
   init() {
@@ -159,10 +260,18 @@ export class ConfigPersonalView {
       }
     });
 
-    this.initEventosPerfilesPermisos();
+    this.initEventosMatrizPerfiles();
   }
 
-  initEventosPerfilesPermisos() {
+  initEventosMatrizPerfiles() {
+    const selectModulo = document.getElementById('perfiles-modulo-select');
+    if (selectModulo) {
+      selectModulo.addEventListener('change', () => {
+        this.moduloActivoId = selectModulo.value || 'agenda';
+        this.renderMatrizPerfilesPorModulo();
+      });
+    }
+
     const btnMostrarCrear = document.getElementById('btn-mostrar-crear-perfil');
     const btnCancelarCrear = document.getElementById('btn-cancelar-crear-perfil');
     const formCrearPerfil = document.getElementById('form-crear-nuevo-perfil');
@@ -186,31 +295,14 @@ export class ConfigPersonalView {
     if (formCrearPerfil) {
       formCrearPerfil.addEventListener('submit', async (e) => {
         e.preventDefault();
-        await this.crearNuevoPerfil();
+        await this.crearNuevoPerfilEnMatriz();
       });
     }
 
-    const btnMarcarTodo = document.getElementById('btn-perfil-marcar-todo');
-    if (btnMarcarTodo) {
-      btnMarcarTodo.addEventListener('click', () => this.marcarCasillasPerfilActual(true));
-    }
-
-    const btnDesmarcarTodo = document.getElementById('btn-perfil-desmarcar-todo');
-    if (btnDesmarcarTodo) {
-      btnDesmarcarTodo.addEventListener('click', () => this.marcarCasillasPerfilActual(false));
-    }
-
-    const btnGuardarPermisos = document.getElementById('btn-guardar-permisos-perfil');
-    if (btnGuardarPermisos) {
-      btnGuardarPermisos.addEventListener('click', async () => {
-        await this.guardarPermisosPerfilSeleccionado();
-      });
-    }
-
-    const btnEliminarPerfil = document.getElementById('btn-perfil-eliminar');
-    if (btnEliminarPerfil) {
-      btnEliminarPerfil.addEventListener('click', async () => {
-        await this.eliminarPerfilSeleccionado();
+    const btnGuardarMatriz = document.getElementById('btn-guardar-permisos-perfil');
+    if (btnGuardarMatriz) {
+      btnGuardarMatriz.addEventListener('click', async () => {
+        await this.guardarMatrizCompleta();
       });
     }
   }
@@ -483,8 +575,8 @@ export class ConfigPersonalView {
       this.personalActual = data.personal || [];
       this.sucursalesOrg = data.sucursales || [];
 
-      if (Array.isArray(data.catalogo_permisos) && data.catalogo_permisos.length) {
-        this.catalogoPermisos = data.catalogo_permisos;
+      if (Array.isArray(data.modulos_matriz) && data.modulos_matriz.length) {
+        this.modulosMatriz = data.modulos_matriz;
       }
 
       if (Array.isArray(data.perfiles) && data.perfiles.length) {
@@ -492,18 +584,18 @@ export class ConfigPersonalView {
       } else {
         const resPerfiles = await this.api.get('/perfiles');
         this.perfiles = resPerfiles.perfiles || [];
-        if (Array.isArray(resPerfiles.catalogo_permisos) && resPerfiles.catalogo_permisos.length) {
-          this.catalogoPermisos = resPerfiles.catalogo_permisos;
+        if (Array.isArray(resPerfiles.modulos_matriz) && resPerfiles.modulos_matriz.length) {
+          this.modulosMatriz = resPerfiles.modulos_matriz;
         }
       }
 
       this.sincronizarPerfilesConApp();
-      this.renderPerfilesYPermisos();
+      this.renderMatrizPerfilesPorModulo();
       this.renderSelectoresDePerfiles();
       this.renderPersonal(this.personalActual);
       this.renderBitacora(data.bitacora || []);
     } catch (err) {
-      this.notify(`Error al cargar personal y perfiles: ${err.message}`, 'error');
+      this.notify(`Error al cargar personal y matriz de perfiles: ${err.message}`, 'error');
     }
   }
 
@@ -519,25 +611,154 @@ export class ConfigPersonalView {
   }
 
   // =========================================================================
-  // MÓDULO DE GESTIÓN DE PERFILES Y PERMISOS (CASILLAS DE SELECCIÓN)
+  // MATRIZ DE PERFILES Y PERMISOS POR MÓDULO (RENGLONES = PERFILES | COLUMNAS = ACTIVIDADES)
   // =========================================================================
-  getPerfilSeleccionado() {
-    if (!this.perfiles.length) return null;
-    const found = this.perfiles.find(
-      (p) => String(p.nombre || '').toLowerCase() === String(this.perfilSeleccionadoNombre || '').toLowerCase()
+  getModuloActivo() {
+    return (
+      this.modulosMatriz.find((m) => m.id === this.moduloActivoId) ||
+      this.modulosMatriz[0]
     );
-    if (found) return found;
-    this.perfilSeleccionadoNombre = this.perfiles[0].nombre;
-    return this.perfiles[0];
   }
 
-  renderPerfilesYPermisos() {
-    const listaEl = document.getElementById('cfg-perfiles-lista');
-    if (!listaEl) return;
+  recalcularPermisosBooleanosDePerfil(perfil) {
+    const niv = perfil.niveles || {};
+    const esDueno = String(perfil.nombre || '').toLowerCase() === 'dueño';
+    const tieneVisibilidad = (k) =>
+      ['lectura', 'operacion', 'edicion_total'].includes(niv[k] || 'sin_acceso');
+    const tieneOperacion = (k) =>
+      ['operacion', 'edicion_total'].includes(niv[k] || 'sin_acceso');
 
-    const perfilActivo = this.getPerfilSeleccionado();
-    const totalCatalogo = this.catalogoPermisos.length || 14;
+    perfil.permisos = {
+      ver_dashboard: tieneVisibilidad('dash_acceso_modulo'),
+      ver_agenda: tieneVisibilidad('agenda_acceso_modulo'),
+      ver_clientes: tieneVisibilidad('cli_acceso_padron_completo'),
+      ver_inventario: tieneVisibilidad('inv_acceso_modulo'),
+      ver_caja: tieneVisibilidad('caja_acceso_modulo'),
+      ver_config: esDueno ? true : tieneVisibilidad('cfg_acceso_modulo'),
+      buscar_clientes:
+        tieneVisibilidad('cli_buscador_lateral') ||
+        tieneVisibilidad('cli_expediente_perfil'),
+      crear_clientes_mascotas:
+        tieneOperacion('cli_alta_edicion_clientes') ||
+        tieneOperacion('cli_alta_edicion_mascotas'),
+      agendar_citas: tieneOperacion('agenda_crear_citas'),
+      gestionar_asistencia_citas: tieneOperacion('agenda_asistencia_cobro'),
+      gestionar_inventario:
+        tieneOperacion('inv_catalogo_productos') ||
+        tieneOperacion('inv_escaner_descuento') ||
+        tieneOperacion('inv_escaner_venta'),
+      registrar_caja: tieneOperacion('caja_movimientos_manuales'),
+      editar_configuracion: esDueno
+        ? true
+        : tieneOperacion('cfg_horarios_plantilla') ||
+          tieneOperacion('cfg_catalogo_servicios') ||
+          tieneOperacion('cfg_gestion_personal') ||
+          tieneOperacion('cfg_perfiles_permisos'),
+      usar_impersonate: esDueno ? true : tieneOperacion('cfg_perfiles_permisos'),
+    };
+  }
 
+  renderMatrizPerfilesPorModulo() {
+    const selectEl = document.getElementById('perfiles-modulo-select');
+    const tabsEl = document.getElementById('perfiles-modulo-tabs');
+    const tituloModEl = document.getElementById('matriz-modulo-titulo-activo');
+    const descModEl = document.getElementById('matriz-modulo-desc-activa');
+    const theadEl = document.getElementById('matriz-perfiles-thead');
+    const tbodyEl = document.getElementById('matriz-perfiles-tbody');
+
+    if (!theadEl || !tbodyEl) return;
+
+    const moduloActivo = this.getModuloActivo();
+    if (!moduloActivo) return;
+
+    // 1. Actualizar selector desplegable superior
+    if (selectEl) {
+      selectEl.innerHTML = this.modulosMatriz
+        .map(
+          (m) =>
+            `<option value="${m.id}" ${
+              m.id === moduloActivo.id ? 'selected' : ''
+            }>${m.nombre} (${(m.actividades || []).length} actividades)</option>`
+        )
+        .join('');
+    }
+
+    // 2. Actualizar pestañas rápidas de módulos arriba de la tabla
+    if (tabsEl) {
+      tabsEl.innerHTML = this.modulosMatriz
+        .map((m) => {
+          const isAct = m.id === moduloActivo.id;
+          return `
+            <button type="button" data-modulo-tab="${m.id}"
+              class="px-2.5 py-1.5 rounded-xl font-extrabold text-[11px] transition flex items-center gap-1.5 cursor-pointer ${
+                isAct
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
+              }">
+              <i class="fa-solid ${m.icono || 'fa-cube'} text-[10px]"></i>
+              <span>${m.nombre.split(',')[0]}</span>
+            </button>
+          `;
+        })
+        .join('');
+
+      tabsEl.querySelectorAll('[data-modulo-tab]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const mid = btn.getAttribute('data-modulo-tab');
+          if (mid) {
+            this.moduloActivoId = mid;
+            this.renderMatrizPerfilesPorModulo();
+          }
+        });
+      });
+    }
+
+    if (tituloModEl) {
+      tituloModEl.innerHTML = `<i class="fa-solid ${
+        moduloActivo.icono || 'fa-layer-group'
+      } text-blue-600 mr-1"></i>Módulo Activo: ${moduloActivo.nombre}`;
+    }
+    if (descModEl) {
+      descModEl.textContent = `— ${moduloActivo.descripcion || ''}`;
+    }
+
+    const actividades = moduloActivo.actividades || [];
+
+    // 3. Renderizar Encabezados de la Tabla (Columnas = Actividades del Módulo)
+    theadEl.innerHTML = `
+      <tr>
+        <th class="py-3.5 px-4 bg-slate-950 text-left w-72 min-w-[260px] border-r border-slate-800 align-top">
+          <div class="flex items-center gap-1.5 text-blue-400 font-extrabold uppercase tracking-wider text-[10px]">
+            <i class="fa-solid fa-id-badge"></i>
+            <span>Perfiles / Roles (Renglones)</span>
+          </div>
+          <p class="text-[10px] text-slate-400 font-normal mt-0.5">
+            Define el nivel o marca las casillas de cada actividad para cada perfil
+          </p>
+        </th>
+        ${actividades
+          .map(
+            (act) => `
+            <th class="py-3 px-3.5 border-r border-slate-800/80 last:border-r-0 align-top min-w-[185px]">
+              <div class="flex items-start justify-between gap-1.5">
+                <span class="font-extrabold text-white text-xs leading-snug">${act.titulo}</span>
+                ${
+                  act.es_acceso_modulo
+                    ? '<span class="px-1.5 py-0.5 rounded bg-blue-500/25 border border-blue-400/40 text-blue-200 text-[9px] font-extrabold shrink-0">Pestaña Menú</span>'
+                    : ''
+                }
+              </div>
+              <p class="text-[10px] text-slate-300/80 font-normal leading-tight mt-1">
+                ${act.subtitulo || ''}
+              </p>
+            </th>
+          `
+          )
+          .join('')}
+      </tr>
+    `;
+
+    // 4. Renderizar Renglones de la Tabla (Cada renglón = Un Perfil)
     const iconPorPerfil = (nombre) => {
       const n = String(nombre || '').toLowerCase();
       if (n === 'dueño') return 'fa-crown text-purple-600';
@@ -545,184 +766,310 @@ export class ConfigPersonalView {
       if (n === 'recepcionista') return 'fa-headset text-amber-600';
       if (n === 'cajero') return 'fa-cash-register text-emerald-600';
       if (n === 'estilista') return 'fa-scissors text-blue-600';
-      return 'fa-id-badge text-slate-600';
+      return 'fa-user-tag text-slate-600';
     };
 
-    listaEl.innerHTML = this.perfiles
-      .map((p) => {
-        const esSeleccionado =
-          perfilActivo && String(p.nombre).toLowerCase() === String(perfilActivo.nombre).toLowerCase();
-        const activosCount = Object.values(p.permisos || {}).filter(Boolean).length;
+    const estiloCeldaPorNivel = (nivel) => {
+      switch (nivel) {
+        case 'edicion_total':
+          return {
+            bg: 'bg-indigo-50/55',
+            selectBg: 'bg-indigo-100 text-indigo-900 border-indigo-300',
+          };
+        case 'operacion':
+          return {
+            bg: 'bg-emerald-50/55',
+            selectBg: 'bg-emerald-100 text-emerald-900 border-emerald-300',
+          };
+        case 'lectura':
+          return {
+            bg: 'bg-blue-50/55',
+            selectBg: 'bg-blue-100 text-blue-900 border-blue-300',
+          };
+        default:
+          return {
+            bg: 'bg-slate-50/70',
+            selectBg: 'bg-slate-100 text-slate-600 border-slate-300',
+          };
+      }
+    };
+
+    tbodyEl.innerHTML = this.perfiles
+      .map((perfil, pIdx) => {
+        const esDueno = String(perfil.nombre || '').toLowerCase() === 'dueño';
+        const nivelesPerfil = perfil.niveles || {};
 
         return `
-          <button type="button" data-select-perfil="${p.nombre}"
-            class="w-full text-left p-3 rounded-xl border transition flex items-start justify-between gap-2 cursor-pointer ${
-              esSeleccionado
-                ? 'border-blue-600 bg-blue-50/70 shadow-xs ring-1 ring-blue-500/40'
-                : 'border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50/60'
-            }">
-            <div class="min-w-0 flex-1">
-              <div class="flex items-center gap-1.5">
-                <i class="fa-solid ${iconPorPerfil(p.nombre)} text-xs"></i>
-                <span class="font-extrabold text-slate-900 truncate">${p.nombre}</span>
-                <span class="px-1.5 py-0.5 rounded text-[9px] font-bold ${
-                  p.es_sistema
-                    ? 'bg-slate-100 text-slate-600'
-                    : 'bg-indigo-100 text-indigo-700'
-                }">${p.es_sistema ? 'Sistema' : 'Personalizado'}</span>
+          <tr class="hover:bg-slate-50/40 transition align-top" data-perfil-row="${pIdx}">
+            <!-- Primera columna: Datos del Perfil y Acciones Rápidas de Renglón -->
+            <td class="p-3.5 bg-white border-r border-slate-200 align-top">
+              <div class="flex items-center justify-between gap-1.5">
+                <div class="flex items-center gap-1.5 min-w-0">
+                  <span class="w-6 h-6 rounded-lg bg-slate-100 flex items-center justify-center shrink-0">
+                    <i class="fa-solid ${iconPorPerfil(perfil.nombre)} text-xs"></i>
+                  </span>
+                  <span class="font-extrabold text-slate-900 text-xs truncate">${perfil.nombre}</span>
+                  <span class="px-1.5 py-0.5 rounded text-[9px] font-bold ${
+                    perfil.es_sistema
+                      ? 'bg-slate-100 text-slate-600'
+                      : 'bg-indigo-100 text-indigo-700'
+                  }">${perfil.es_sistema ? 'Sistema' : 'Custom'}</span>
+                </div>
+                ${
+                  !perfil.es_sistema
+                    ? `<button type="button" data-delete-perfil="${perfil.nombre}" title="Eliminar este perfil personalizado"
+                        class="w-6 h-6 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 flex items-center justify-center transition cursor-pointer shrink-0">
+                        <i class="fa-solid fa-trash-can text-[10px]"></i>
+                      </button>`
+                    : ''
+                }
               </div>
-              <p class="text-[11px] text-slate-500 line-clamp-1 mt-0.5">${
-                p.descripcion || 'Sin descripción'
-              }</p>
-            </div>
-            <div class="shrink-0 text-right">
-              <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
-                esSeleccionado
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-slate-100 text-slate-700'
-              }">
-                ${activosCount}/${totalCatalogo}
-              </span>
-              <p class="text-[9px] text-slate-400 mt-0.5">permisos</p>
-            </div>
-          </button>
+
+              <input type="text" data-perfil-desc="${pIdx}" value="${(
+                perfil.descripcion || ''
+              ).replace(/"/g, '&quot;')}"
+                placeholder="Descripción del perfil..."
+                class="mt-2 w-full rounded-lg border border-slate-200 bg-slate-50 focus:bg-white px-2 py-1 text-[11px] text-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+
+              <!-- Botones rápidos para aplicar nivel a todo el renglón en este módulo -->
+              <div class="mt-2 pt-2 border-t border-slate-100 flex flex-wrap items-center gap-1">
+                <span class="text-[9px] font-bold text-slate-400 uppercase mr-0.5">Renglón:</span>
+                <button type="button" data-row-quick-level="edicion_total" data-row-idx="${pIdx}"
+                  class="px-1.5 py-0.5 rounded bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-[9px] transition cursor-pointer"
+                  title="Marcar todas las actividades de este módulo como Edición Total">
+                  Todo Edición
+                </button>
+                <button type="button" data-row-quick-level="operacion" data-row-idx="${pIdx}"
+                  class="px-1.5 py-0.5 rounded bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-[9px] transition cursor-pointer"
+                  title="Marcar todas las actividades de este módulo como Operación">
+                  Operación
+                </button>
+                <button type="button" data-row-quick-level="lectura" data-row-idx="${pIdx}"
+                  class="px-1.5 py-0.5 rounded bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-[9px] transition cursor-pointer"
+                  title="Marcar todas las actividades de este módulo como Solo Visibilidad">
+                  Visibilidad
+                </button>
+                ${
+                  !esDueno
+                    ? `<button type="button" data-row-quick-level="sin_acceso" data-row-idx="${pIdx}"
+                        class="px-1.5 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-[9px] transition cursor-pointer"
+                        title="Quitar acceso a todas las actividades de este módulo">
+                        Sin Acceso
+                      </button>`
+                    : ''
+                }
+              </div>
+            </td>
+
+            <!-- Celdas de Intersección (Perfil × Actividad) con Selector de Nivel + Casillas de Selección -->
+            ${actividades
+              .map((act) => {
+                const actKey = act.key;
+                const nivelActual = nivelesPerfil[actKey] || 'sin_acceso';
+                const bloqueadoDueno =
+                  esDueno &&
+                  (actKey === 'cfg_acceso_modulo' || actKey === 'cfg_perfiles_permisos');
+
+                const chkVer = ['lectura', 'operacion', 'edicion_total'].includes(nivelActual);
+                const chkOperar = ['operacion', 'edicion_total'].includes(nivelActual);
+                const chkEditar = nivelActual === 'edicion_total';
+                const st = estiloCeldaPorNivel(nivelActual);
+
+                return `
+                  <td class="p-2.5 border-r border-slate-200/80 last:border-r-0 ${st.bg} transition"
+                      data-cell-perfil="${pIdx}" data-cell-act="${actKey}">
+                    <!-- Selector directo del Nivel de Acceso -->
+                    <select data-select-nivel="${pIdx}" data-act-key="${actKey}"
+                      ${bloqueadoDueno ? 'disabled title="Fijo en Dueño para evitar bloqueo del sistema"' : ''}
+                      class="w-full rounded-lg border px-2 py-1 text-[11px] font-extrabold ${
+                        st.selectBg
+                      } focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer">
+                      <option value="sin_acceso" ${
+                        nivelActual === 'sin_acceso' ? 'selected' : ''
+                      }>🚫 Sin Acceso</option>
+                      <option value="lectura" ${
+                        nivelActual === 'lectura' ? 'selected' : ''
+                      }>👁️ Solo Visibilidad</option>
+                      <option value="operacion" ${
+                        nivelActual === 'operacion' ? 'selected' : ''
+                      }>⚡ Creación / Operación</option>
+                      <option value="edicion_total" ${
+                        nivelActual === 'edicion_total' ? 'selected' : ''
+                      }>🛡️ Edición Total</option>
+                    </select>
+
+                    <!-- Casillas de selección jerárquicas (Visibilidad / Operación / Edición Total) -->
+                    <div class="mt-2 space-y-1 pl-0.5">
+                      <label class="flex items-center gap-1.5 text-[10px] font-semibold ${
+                        chkVer ? 'text-blue-900' : 'text-slate-400'
+                      } cursor-pointer select-none">
+                        <input type="checkbox"
+                          class="chk-matriz-nivel rounded text-blue-600 w-3.5 h-3.5 cursor-pointer"
+                          data-chk-perfil="${pIdx}"
+                          data-chk-act="${actKey}"
+                          data-chk-tier="lectura"
+                          ${chkVer ? 'checked' : ''}
+                          ${bloqueadoDueno ? 'disabled' : ''} />
+                        <span>Visibilidad (Ver)</span>
+                      </label>
+
+                      <label class="flex items-center gap-1.5 text-[10px] font-semibold ${
+                        chkOperar ? 'text-emerald-900' : 'text-slate-400'
+                      } cursor-pointer select-none">
+                        <input type="checkbox"
+                          class="chk-matriz-nivel rounded text-emerald-600 w-3.5 h-3.5 cursor-pointer"
+                          data-chk-perfil="${pIdx}"
+                          data-chk-act="${actKey}"
+                          data-chk-tier="operacion"
+                          ${chkOperar ? 'checked' : ''}
+                          ${bloqueadoDueno ? 'disabled' : ''} />
+                        <span>Crear / Operar</span>
+                      </label>
+
+                      <label class="flex items-center gap-1.5 text-[10px] font-semibold ${
+                        chkEditar ? 'text-indigo-900' : 'text-slate-400'
+                      } cursor-pointer select-none">
+                        <input type="checkbox"
+                          class="chk-matriz-nivel rounded text-indigo-600 w-3.5 h-3.5 cursor-pointer"
+                          data-chk-perfil="${pIdx}"
+                          data-chk-act="${actKey}"
+                          data-chk-tier="edicion_total"
+                          ${chkEditar ? 'checked' : ''}
+                          ${bloqueadoDueno ? 'disabled' : ''} />
+                        <span>Edición Total</span>
+                      </label>
+                    </div>
+                  </td>
+                `;
+              })
+              .join('')}
+          </tr>
         `;
       })
       .join('');
 
-    listaEl.querySelectorAll('[data-select-perfil]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const nom = btn.getAttribute('data-select-perfil');
-        if (nom) {
-          this.perfilSeleccionadoNombre = nom;
-          this.renderPerfilesYPermisos();
+    this.bindEventosTablaMatriz();
+  }
+
+  bindEventosTablaMatriz() {
+    const tbodyEl = document.getElementById('matriz-perfiles-tbody');
+    if (!tbodyEl) return;
+
+    // 1. Edición de descripción del perfil en la primera columna
+    tbodyEl.querySelectorAll('[data-perfil-desc]').forEach((input) => {
+      input.addEventListener('input', () => {
+        const idx = Number(input.getAttribute('data-perfil-desc'));
+        if (this.perfiles[idx]) {
+          this.perfiles[idx].descripcion = input.value;
         }
       });
     });
 
-    if (perfilActivo) {
-      this.renderEditorPermisosDePerfil(perfilActivo);
-    }
+    // 2. Cambio mediante el selector desplegable de nivel en una celda
+    tbodyEl.querySelectorAll('[data-select-nivel]').forEach((sel) => {
+      sel.addEventListener('change', () => {
+        const pIdx = Number(sel.getAttribute('data-select-nivel'));
+        const actKey = sel.getAttribute('data-act-key');
+        const nuevoNivel = sel.value || 'sin_acceso';
+        this.actualizarNivelCelda(pIdx, actKey, nuevoNivel);
+      });
+    });
+
+    // 3. Cambio mediante las casillas de selección (Visibilidad / Operación / Edición Total)
+    tbodyEl.querySelectorAll('.chk-matriz-nivel').forEach((chk) => {
+      chk.addEventListener('change', () => {
+        const pIdx = Number(chk.getAttribute('data-chk-perfil'));
+        const actKey = chk.getAttribute('data-chk-act');
+        const tier = chk.getAttribute('data-chk-tier');
+        const marcado = chk.checked;
+
+        let nuevoNivel = 'sin_acceso';
+        if (tier === 'edicion_total') {
+          nuevoNivel = marcado ? 'edicion_total' : 'operacion';
+        } else if (tier === 'operacion') {
+          nuevoNivel = marcado ? 'operacion' : 'lectura';
+        } else if (tier === 'lectura') {
+          nuevoNivel = marcado ? 'lectura' : 'sin_acceso';
+        }
+
+        this.actualizarNivelCelda(pIdx, actKey, nuevoNivel);
+      });
+    });
+
+    // 4. Botones rápidos de renglón (Todo Edición / Operación / Visibilidad / Sin Acceso en el módulo actual)
+    tbodyEl.querySelectorAll('[data-row-quick-level]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const pIdx = Number(btn.getAttribute('data-row-idx'));
+        const nivel = btn.getAttribute('data-row-quick-level') || 'lectura';
+        const modulo = this.getModuloActivo();
+        const perfil = this.perfiles[pIdx];
+        if (!perfil || !modulo) return;
+
+        const esDueno = String(perfil.nombre || '').toLowerCase() === 'dueño';
+        if (!perfil.niveles) perfil.niveles = {};
+
+        (modulo.actividades || []).forEach((act) => {
+          if (
+            esDueno &&
+            (act.key === 'cfg_acceso_modulo' || act.key === 'cfg_perfiles_permisos')
+          ) {
+            perfil.niveles[act.key] = 'edicion_total';
+          } else {
+            perfil.niveles[act.key] = nivel;
+          }
+        });
+
+        this.recalcularPermisosBooleanosDePerfil(perfil);
+        this.renderMatrizPerfilesPorModulo();
+      });
+    });
+
+    // 5. Botón eliminar perfil personalizado
+    tbodyEl.querySelectorAll('[data-delete-perfil]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const nombre = btn.getAttribute('data-delete-perfil');
+        if (nombre) {
+          await this.eliminarPerfilPorNombre(nombre);
+        }
+      });
+    });
   }
 
-  renderEditorPermisosDePerfil(perfil) {
-    const nomEl = document.getElementById('perfil-editor-nombre');
-    const badgeEl = document.getElementById('perfil-editor-badge');
-    const descEl = document.getElementById('perfil-editor-descripcion');
-    const btnEliminar = document.getElementById('btn-perfil-eliminar');
-    const contVer = document.getElementById('perfil-checkboxes-ver');
-    const contHacer = document.getElementById('perfil-checkboxes-hacer');
+  actualizarNivelCelda(pIdx, actKey, nuevoNivel) {
+    const perfil = this.perfiles[pIdx];
+    if (!perfil || !actKey) return;
 
-    if (nomEl) nomEl.textContent = perfil.nombre;
-    if (descEl) descEl.value = perfil.descripcion || '';
-
-    if (badgeEl) {
-      if (perfil.protegido) {
-        badgeEl.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-800';
-        badgeEl.textContent = 'Perfil Propietario';
-      } else if (perfil.es_sistema) {
-        badgeEl.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800';
-        badgeEl.textContent = 'Perfil Base Editable';
-      } else {
-        badgeEl.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-800';
-        badgeEl.textContent = 'Perfil Personalizado';
-      }
-    }
-
-    if (btnEliminar) {
-      btnEliminar.classList.toggle('hidden', Boolean(perfil.es_sistema));
-    }
-
-    const permisosMap = perfil.permisos || {};
+    if (!perfil.niveles) perfil.niveles = {};
     const esDueno = String(perfil.nombre || '').toLowerCase() === 'dueño';
 
-    const renderCasilla = (item) => {
-      const checked = Boolean(permisosMap[item.key]);
-      const bloqueadoPorSeguridad =
-        esDueno && (item.key === 'ver_config' || item.key === 'editar_configuracion');
-
-      return `
-        <label class="flex items-start gap-3 p-3 rounded-xl border transition cursor-pointer select-none ${
-          checked
-            ? 'border-blue-500/70 bg-blue-50/40 hover:bg-blue-50/70'
-            : 'border-slate-200 bg-white hover:bg-slate-50'
-        }">
-          <input type="checkbox"
-            class="perfil-permiso-checkbox mt-0.5 w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
-            data-permiso-key="${item.key}"
-            ${checked ? 'checked' : ''}
-            ${bloqueadoPorSeguridad ? 'disabled title="El Dueño siempre conserva acceso a Configuración para evitar bloqueo"' : ''} />
-          <div class="min-w-0 flex-1">
-            <div class="font-extrabold text-slate-800 text-xs flex items-center gap-1.5">
-              <span>${item.titulo}</span>
-              ${
-                bloqueadoPorSeguridad
-                  ? '<span class="px-1.5 py-0.2 rounded bg-purple-100 text-purple-700 text-[9px] font-bold">Fijo en Dueño</span>'
-                  : ''
-              }
-            </div>
-            <p class="text-[11px] text-slate-500 leading-snug mt-0.5">${item.descripcion}</p>
-          </div>
-        </label>
-      `;
-    };
-
-    const itemsVer = this.catalogoPermisos.filter((x) => x.grupo === 'ver');
-    const itemsHacer = this.catalogoPermisos.filter((x) => x.grupo === 'hacer');
-
-    if (contVer) {
-      contVer.innerHTML = itemsVer.map(renderCasilla).join('');
-    }
-    if (contHacer) {
-      contHacer.innerHTML = itemsHacer.map(renderCasilla).join('');
+    if (
+      esDueno &&
+      (actKey === 'cfg_acceso_modulo' || actKey === 'cfg_perfiles_permisos')
+    ) {
+      perfil.niveles[actKey] = 'edicion_total';
+    } else {
+      perfil.niveles[actKey] = nuevoNivel;
     }
 
-    // Actualizar estilo visual de cada tarjeta al marcar/desmarcar una casilla
-    document.querySelectorAll('.perfil-permiso-checkbox').forEach((chk) => {
-      chk.addEventListener('change', () => {
-        const label = chk.closest('label');
-        if (!label) return;
-        if (chk.checked) {
-          label.className =
-            'flex items-start gap-3 p-3 rounded-xl border transition cursor-pointer select-none border-blue-500/70 bg-blue-50/40 hover:bg-blue-50/70';
-        } else {
-          label.className =
-            'flex items-start gap-3 p-3 rounded-xl border transition cursor-pointer select-none border-slate-200 bg-white hover:bg-slate-50';
-        }
-      });
-    });
-  }
-
-  marcarCasillasPerfilActual(estadoBooleano) {
-    const perfil = this.getPerfilSeleccionado();
-    const esDueno = perfil && String(perfil.nombre).toLowerCase() === 'dueño';
-
-    document.querySelectorAll('.perfil-permiso-checkbox').forEach((chk) => {
-      const key = chk.getAttribute('data-permiso-key');
-      if (esDueno && (key === 'ver_config' || key === 'editar_configuracion')) {
-        chk.checked = true;
-      } else if (!estadoBooleano && key === 'ver_agenda') {
-        // Dejar al menos Agenda marcada al limpiar para que siempre exista un módulo visible
-        chk.checked = true;
-      } else {
-        chk.checked = Boolean(estadoBooleano);
+    // Si el usuario habilita una actividad dentro de un módulo pero el acceso a la pestaña del módulo estaba en "sin_acceso",
+    // activar automáticamente la pestaña del módulo en al menos "lectura" para que sea coherente
+    const modulo = this.getModuloActivo();
+    if (modulo && nuevoNivel !== 'sin_acceso') {
+      const actAcceso = (modulo.actividades || []).find((a) => a.es_acceso_modulo);
+      if (
+        actAcceso &&
+        actAcceso.key !== actKey &&
+        (perfil.niveles[actAcceso.key] || 'sin_acceso') === 'sin_acceso'
+      ) {
+        perfil.niveles[actAcceso.key] = 'lectura';
       }
-      chk.dispatchEvent(new Event('change'));
-    });
+    }
+
+    this.recalcularPermisosBooleanosDePerfil(perfil);
+    this.renderMatrizPerfilesPorModulo();
   }
 
-  recolectarPermisosDeCasillas() {
-    const permisos = {};
-    document.querySelectorAll('.perfil-permiso-checkbox').forEach((chk) => {
-      const key = chk.getAttribute('data-permiso-key');
-      if (key) {
-        permisos[key] = Boolean(chk.checked);
-      }
-    });
-    return permisos;
-  }
-
-  async crearNuevoPerfil() {
+  async crearNuevoPerfilEnMatriz() {
     const inputNombre = document.getElementById('nuevo-perfil-nombre');
     const inputDesc = document.getElementById('nuevo-perfil-descripcion');
     const formCrear = document.getElementById('form-crear-nuevo-perfil');
@@ -736,39 +1083,49 @@ export class ConfigPersonalView {
     }
 
     if (this.perfiles.some((p) => String(p.nombre).toLowerCase() === nombre.toLowerCase())) {
-      this.notify(`Ya existe un perfil llamado "${nombre}". Selecciónalo en la lista para editarlo.`, 'warning');
+      this.notify(`Ya existe el perfil "${nombre}" en la tabla.`, 'warning');
       return;
     }
 
-    // Permisos iniciales sugeridos para un nuevo perfil operativo
-    const permisosIniciales = {
-      ver_dashboard: false,
-      ver_agenda: true,
-      ver_clientes: false,
-      ver_inventario: true,
-      ver_caja: false,
-      ver_config: false,
-      buscar_clientes: true,
-      crear_clientes_mascotas: true,
-      agendar_citas: true,
-      gestionar_asistencia_citas: true,
-      gestionar_inventario: false,
-      registrar_caja: false,
-      editar_configuracion: false,
-      usar_impersonate: false,
+    const nivelesIniciales = {
+      agenda_acceso_modulo: 'operacion',
+      agenda_kpis_cobro_dia: 'lectura',
+      agenda_crear_citas: 'operacion',
+      agenda_asistencia_cobro: 'operacion',
+      agenda_cancelar_editar: 'lectura',
+      cli_acceso_padron_completo: 'sin_acceso',
+      cli_buscador_lateral: 'operacion',
+      cli_expediente_perfil: 'operacion',
+      cli_alta_edicion_clientes: 'operacion',
+      cli_alta_edicion_mascotas: 'operacion',
+      dash_acceso_modulo: 'lectura',
+      dash_kpis_financieros: 'sin_acceso',
+      dash_graficas_operativas: 'lectura',
+      dash_alertas_stock: 'lectura',
+      inv_acceso_modulo: 'operacion',
+      inv_catalogo_productos: 'lectura',
+      inv_escaner_descuento: 'operacion',
+      inv_escaner_venta: 'operacion',
+      caja_acceso_modulo: 'sin_acceso',
+      caja_movimientos_manuales: 'sin_acceso',
+      caja_corte_turno: 'sin_acceso',
+      cfg_acceso_modulo: 'sin_acceso',
+      cfg_horarios_plantilla: 'sin_acceso',
+      cfg_catalogo_servicios: 'sin_acceso',
+      cfg_gestion_personal: 'sin_acceso',
+      cfg_perfiles_permisos: 'sin_acceso',
     };
 
     try {
       const res = await this.api.post('/perfiles', {
         nombre,
         descripcion: descripcion || `Perfil personalizado: ${nombre}`,
-        permisos: permisosIniciales,
+        niveles: nivelesIniciales,
       });
 
       if (Array.isArray(res.perfiles)) {
         this.perfiles = res.perfiles;
       }
-      this.perfilSeleccionadoNombre = res.perfil?.nombre || nombre;
 
       if (formCrear) {
         formCrear.reset();
@@ -776,10 +1133,10 @@ export class ConfigPersonalView {
       }
 
       this.sincronizarPerfilesConApp();
-      this.renderPerfilesYPermisos();
+      this.renderMatrizPerfilesPorModulo();
       this.renderSelectoresDePerfiles();
       this.notify(
-        `Perfil "${this.perfilSeleccionadoNombre}" creado. Ahora puedes marcar o desmarcar sus casillas de permisos.`,
+        `Perfil "${nombre}" agregado como nuevo renglón en la matriz. Ajusta sus niveles por módulo y guarda.`,
         'success'
       );
     } catch (err) {
@@ -787,79 +1144,45 @@ export class ConfigPersonalView {
     }
   }
 
-  async guardarPermisosPerfilSeleccionado() {
-    const perfil = this.getPerfilSeleccionado();
-    if (!perfil) return;
-
-    const descripcion =
-      document.getElementById('perfil-editor-descripcion')?.value.trim() ||
-      perfil.descripcion ||
-      '';
-    const permisos = this.recolectarPermisosDeCasillas();
-
-    const tieneAlMenosUnModulo = [
-      'ver_dashboard',
-      'ver_agenda',
-      'ver_clientes',
-      'ver_inventario',
-      'ver_caja',
-      'ver_config',
-    ].some((k) => Boolean(permisos[k]));
-
-    if (!tieneAlMenosUnModulo) {
-      this.notify(
-        'Selecciona al menos una casilla en "¿Qué módulos puede VER este perfil en el menú?".',
-        'warning'
-      );
-      return;
-    }
-
+  async guardarMatrizCompleta() {
     try {
-      const res = await this.api.put(
-        `/perfiles/${encodeURIComponent(perfil.nombre)}`,
-        {
-          nombre: perfil.nombre,
-          descripcion,
-          permisos,
-        }
-      );
+      this.perfiles.forEach((p) => this.recalcularPermisosBooleanosDePerfil(p));
+      const res = await this.api.put('/perfiles-matriz', {
+        perfiles: this.perfiles,
+      });
 
       if (Array.isArray(res.perfiles)) {
         this.perfiles = res.perfiles;
       }
       this.sincronizarPerfilesConApp();
-      this.renderPerfilesYPermisos();
+      this.renderMatrizPerfilesPorModulo();
       this.renderSelectoresDePerfiles();
       this.notify(
-        res.mensaje || `Permisos del perfil "${perfil.nombre}" actualizados.`,
+        res.mensaje || 'Matriz de permisos de todos los perfiles guardada correctamente.',
         'success'
       );
     } catch (err) {
-      this.notify(`Error al guardar permisos del perfil: ${err.message}`, 'error');
+      this.notify(`Error al guardar la matriz de permisos: ${err.message}`, 'error');
     }
   }
 
-  async eliminarPerfilSeleccionado() {
-    const perfil = this.getPerfilSeleccionado();
-    if (!perfil || perfil.es_sistema) return;
-
+  async eliminarPerfilPorNombre(nombrePerfil) {
     const confirmar = window.confirm(
-      `¿Eliminar el perfil personalizado "${perfil.nombre}"?\nSolo se puede eliminar si ningún colaborador lo tiene asignado actualmente.`
+      `¿Eliminar el perfil personalizado "${nombrePerfil}" de la tabla?\nSolo se puede eliminar si ningún colaborador lo tiene asignado actualmente.`
     );
     if (!confirmar) return;
 
     try {
       const res = await this.api.delete(
-        `/perfiles/${encodeURIComponent(perfil.nombre)}`
+        `/perfiles/${encodeURIComponent(nombrePerfil)}`
       );
       if (Array.isArray(res.perfiles)) {
         this.perfiles = res.perfiles;
       }
-      this.perfilSeleccionadoNombre = this.perfiles[0]?.nombre || 'Recepcionista';
       this.sincronizarPerfilesConApp();
-      this.renderPerfilesYPermisos();
+      this.renderMatrizPerfilesPorModulo();
       this.renderSelectoresDePerfiles();
-      this.notify(res.mensaje || `Perfil "${perfil.nombre}" eliminado.`, 'info');
+      this.notify(res.mensaje || `Perfil "${nombrePerfil}" eliminado.`, 'info');
     } catch (err) {
       this.notify(`No se pudo eliminar el perfil: ${err.message}`, 'error');
     }

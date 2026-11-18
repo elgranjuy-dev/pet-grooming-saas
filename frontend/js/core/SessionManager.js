@@ -1,12 +1,13 @@
 /**
  * SessionManager.js
  * Gestiona el flujo de login por subdominio (Usuario + Contraseña),
- * persiste la sesión en sessionStorage, sincroniza la matriz de Perfiles y Permisos
- * (casillas de selección ver/hacer por perfil) y soporta modo "Impersonate".
+ * persiste la sesión en sessionStorage, sincroniza la Matriz de Perfiles y Permisos
+ * por módulo/actividad (niveles: sin_acceso, lectura, operacion, edicion_total)
+ * y soporta modo "Impersonate".
  */
 export class SessionManager {
   static STORAGE_KEY = 'pet_grooming_saas_session_v1';
-  static PERFILES_STORAGE_KEY = 'pet_grooming_perfiles_permisos_v1';
+  static PERFILES_STORAGE_KEY = 'pet_grooming_perfiles_permisos_v2';
 
   static DEFAULT_PERFILES = [
     {
@@ -14,6 +15,34 @@ export class SessionManager {
       descripcion: 'Control total de la organización, finanzas, padrón completo, configuración y perfiles.',
       es_sistema: true,
       protegido: true,
+      niveles: {
+        agenda_acceso_modulo: 'edicion_total',
+        agenda_kpis_cobro_dia: 'edicion_total',
+        agenda_crear_citas: 'edicion_total',
+        agenda_asistencia_cobro: 'edicion_total',
+        agenda_cancelar_editar: 'edicion_total',
+        cli_acceso_padron_completo: 'edicion_total',
+        cli_buscador_lateral: 'edicion_total',
+        cli_expediente_perfil: 'edicion_total',
+        cli_alta_edicion_clientes: 'edicion_total',
+        cli_alta_edicion_mascotas: 'edicion_total',
+        dash_acceso_modulo: 'edicion_total',
+        dash_kpis_financieros: 'edicion_total',
+        dash_graficas_operativas: 'edicion_total',
+        dash_alertas_stock: 'edicion_total',
+        inv_acceso_modulo: 'edicion_total',
+        inv_catalogo_productos: 'edicion_total',
+        inv_escaner_descuento: 'edicion_total',
+        inv_escaner_venta: 'edicion_total',
+        caja_acceso_modulo: 'edicion_total',
+        caja_movimientos_manuales: 'edicion_total',
+        caja_corte_turno: 'edicion_total',
+        cfg_acceso_modulo: 'edicion_total',
+        cfg_horarios_plantilla: 'edicion_total',
+        cfg_catalogo_servicios: 'edicion_total',
+        cfg_gestion_personal: 'edicion_total',
+        cfg_perfiles_permisos: 'edicion_total',
+      },
       permisos: {
         ver_dashboard: true,
         ver_agenda: true,
@@ -36,6 +65,34 @@ export class SessionManager {
       descripcion: 'Administración general de sucursal, clientes, agenda, inventario, personal y perfiles.',
       es_sistema: true,
       protegido: false,
+      niveles: {
+        agenda_acceso_modulo: 'edicion_total',
+        agenda_kpis_cobro_dia: 'edicion_total',
+        agenda_crear_citas: 'edicion_total',
+        agenda_asistencia_cobro: 'edicion_total',
+        agenda_cancelar_editar: 'edicion_total',
+        cli_acceso_padron_completo: 'edicion_total',
+        cli_buscador_lateral: 'edicion_total',
+        cli_expediente_perfil: 'edicion_total',
+        cli_alta_edicion_clientes: 'edicion_total',
+        cli_alta_edicion_mascotas: 'edicion_total',
+        dash_acceso_modulo: 'edicion_total',
+        dash_kpis_financieros: 'edicion_total',
+        dash_graficas_operativas: 'edicion_total',
+        dash_alertas_stock: 'edicion_total',
+        inv_acceso_modulo: 'edicion_total',
+        inv_catalogo_productos: 'edicion_total',
+        inv_escaner_descuento: 'edicion_total',
+        inv_escaner_venta: 'edicion_total',
+        caja_acceso_modulo: 'edicion_total',
+        caja_movimientos_manuales: 'edicion_total',
+        caja_corte_turno: 'edicion_total',
+        cfg_acceso_modulo: 'edicion_total',
+        cfg_horarios_plantilla: 'edicion_total',
+        cfg_catalogo_servicios: 'edicion_total',
+        cfg_gestion_personal: 'edicion_total',
+        cfg_perfiles_permisos: 'edicion_total',
+      },
       permisos: {
         ver_dashboard: true,
         ver_agenda: true,
@@ -58,6 +115,34 @@ export class SessionManager {
       descripcion: 'Atención en mostrador: búsqueda de clientes, alta de clientes/mascotas, agenda y cobros.',
       es_sistema: true,
       protegido: false,
+      niveles: {
+        agenda_acceso_modulo: 'operacion',
+        agenda_kpis_cobro_dia: 'lectura',
+        agenda_crear_citas: 'edicion_total',
+        agenda_asistencia_cobro: 'operacion',
+        agenda_cancelar_editar: 'operacion',
+        cli_acceso_padron_completo: 'sin_acceso',
+        cli_buscador_lateral: 'operacion',
+        cli_expediente_perfil: 'operacion',
+        cli_alta_edicion_clientes: 'operacion',
+        cli_alta_edicion_mascotas: 'operacion',
+        dash_acceso_modulo: 'lectura',
+        dash_kpis_financieros: 'lectura',
+        dash_graficas_operativas: 'lectura',
+        dash_alertas_stock: 'lectura',
+        inv_acceso_modulo: 'operacion',
+        inv_catalogo_productos: 'lectura',
+        inv_escaner_descuento: 'operacion',
+        inv_escaner_venta: 'operacion',
+        caja_acceso_modulo: 'operacion',
+        caja_movimientos_manuales: 'operacion',
+        caja_corte_turno: 'operacion',
+        cfg_acceso_modulo: 'sin_acceso',
+        cfg_horarios_plantilla: 'sin_acceso',
+        cfg_catalogo_servicios: 'sin_acceso',
+        cfg_gestion_personal: 'sin_acceso',
+        cfg_perfiles_permisos: 'sin_acceso',
+      },
       permisos: {
         ver_dashboard: true,
         ver_agenda: true,
@@ -80,6 +165,34 @@ export class SessionManager {
       descripcion: 'Operación de cobros en caja, agenda del día, recepción y venta de productos con escáner.',
       es_sistema: true,
       protegido: false,
+      niveles: {
+        agenda_acceso_modulo: 'operacion',
+        agenda_kpis_cobro_dia: 'lectura',
+        agenda_crear_citas: 'operacion',
+        agenda_asistencia_cobro: 'edicion_total',
+        agenda_cancelar_editar: 'operacion',
+        cli_acceso_padron_completo: 'sin_acceso',
+        cli_buscador_lateral: 'operacion',
+        cli_expediente_perfil: 'lectura',
+        cli_alta_edicion_clientes: 'operacion',
+        cli_alta_edicion_mascotas: 'operacion',
+        dash_acceso_modulo: 'lectura',
+        dash_kpis_financieros: 'lectura',
+        dash_graficas_operativas: 'lectura',
+        dash_alertas_stock: 'lectura',
+        inv_acceso_modulo: 'operacion',
+        inv_catalogo_productos: 'lectura',
+        inv_escaner_descuento: 'operacion',
+        inv_escaner_venta: 'edicion_total',
+        caja_acceso_modulo: 'edicion_total',
+        caja_movimientos_manuales: 'edicion_total',
+        caja_corte_turno: 'edicion_total',
+        cfg_acceso_modulo: 'sin_acceso',
+        cfg_horarios_plantilla: 'sin_acceso',
+        cfg_catalogo_servicios: 'sin_acceso',
+        cfg_gestion_personal: 'sin_acceso',
+        cfg_perfiles_permisos: 'sin_acceso',
+      },
       permisos: {
         ver_dashboard: true,
         ver_agenda: true,
@@ -102,11 +215,39 @@ export class SessionManager {
       descripcion: 'Operación en área de grooming: consulta de citas asignadas, expedientes técnicos e insumos.',
       es_sistema: true,
       protegido: false,
+      niveles: {
+        agenda_acceso_modulo: 'lectura',
+        agenda_kpis_cobro_dia: 'sin_acceso',
+        agenda_crear_citas: 'sin_acceso',
+        agenda_asistencia_cobro: 'operacion',
+        agenda_cancelar_editar: 'lectura',
+        cli_acceso_padron_completo: 'sin_acceso',
+        cli_buscador_lateral: 'lectura',
+        cli_expediente_perfil: 'lectura',
+        cli_alta_edicion_clientes: 'sin_acceso',
+        cli_alta_edicion_mascotas: 'lectura',
+        dash_acceso_modulo: 'sin_acceso',
+        dash_kpis_financieros: 'sin_acceso',
+        dash_graficas_operativas: 'sin_acceso',
+        dash_alertas_stock: 'lectura',
+        inv_acceso_modulo: 'operacion',
+        inv_catalogo_productos: 'lectura',
+        inv_escaner_descuento: 'operacion',
+        inv_escaner_venta: 'sin_acceso',
+        caja_acceso_modulo: 'sin_acceso',
+        caja_movimientos_manuales: 'sin_acceso',
+        caja_corte_turno: 'sin_acceso',
+        cfg_acceso_modulo: 'sin_acceso',
+        cfg_horarios_plantilla: 'sin_acceso',
+        cfg_catalogo_servicios: 'sin_acceso',
+        cfg_gestion_personal: 'sin_acceso',
+        cfg_perfiles_permisos: 'sin_acceso',
+      },
       permisos: {
         ver_dashboard: false,
         ver_agenda: true,
         ver_clientes: false,
-        ver_inventario: TrueBooleanFallback(true),
+        ver_inventario: true,
         ver_caja: false,
         ver_config: false,
         buscar_clientes: true,
@@ -194,6 +335,22 @@ export class SessionManager {
   getPermisosDePerfil(rol = null) {
     const perfil = this.getPerfilConfig(rol);
     return (perfil && perfil.permisos) || {};
+  }
+
+  getNivelesDePerfil(rol = null) {
+    const perfil = this.getPerfilConfig(rol);
+    return (perfil && perfil.niveles) || {};
+  }
+
+  getNivelActividad(activityKey, rol = null) {
+    const niveles = this.getNivelesDePerfil(rol);
+    return niveles[activityKey] || 'sin_acceso';
+  }
+
+  hasActivityAccess(activityKey, minLevel = 'lectura', rol = null) {
+    const rank = { sin_acceso: 0, lectura: 1, operacion: 2, edicion_total: 3 };
+    const actual = this.getNivelActividad(activityKey, rol);
+    return (rank[actual] ?? 0) >= (rank[minLevel] ?? 1);
   }
 
   hasPermission(permisoKey, rol = null) {
@@ -440,12 +597,16 @@ export class SessionManager {
       }
     });
 
-    // Permisos operativos (HACER) según las casillas del perfil activo
-    const canBuscarClientes = this.hasPermission('buscar_clientes', rolActivo);
-    const canCrearClientes = this.hasPermission('crear_clientes_mascotas', rolActivo);
-    const canAgendarCitas = this.hasPermission('agendar_citas', rolActivo);
-    const canGestionarInv = this.hasPermission('gestionar_inventario', rolActivo);
-    const canRegistrarCaja = this.hasPermission('registrar_caja', rolActivo);
+    // Permisos operativos y de visibilidad según los niveles por actividad del perfil activo
+    const canBuscarClientes = this.hasActivityAccess('cli_buscador_lateral', 'lectura', rolActivo);
+    const canCrearClientes = this.hasActivityAccess('cli_alta_edicion_clientes', 'operacion', rolActivo);
+    const canAgendarCitas = this.hasActivityAccess('agenda_crear_citas', 'operacion', rolActivo);
+    const canVerKpisAgenda = this.hasActivityAccess('agenda_kpis_cobro_dia', 'lectura', rolActivo);
+    const canAltaProductos = this.hasActivityAccess('inv_catalogo_productos', 'operacion', rolActivo);
+    const canUsarEscaner =
+      this.hasActivityAccess('inv_escaner_descuento', 'operacion', rolActivo) ||
+      this.hasActivityAccess('inv_escaner_venta', 'operacion', rolActivo);
+    const canRegistrarCaja = this.hasActivityAccess('caja_movimientos_manuales', 'operacion', rolActivo);
     const canEditarConfig = this.hasPermission('editar_configuracion', rolActivo);
 
     // 1. Buscador global y botón Registrar Nuevo Cliente en menú lateral
@@ -462,7 +623,11 @@ export class SessionManager {
       boxBuscadorLateral.classList.toggle('hidden', !canBuscarClientes && !canCrearClientes);
     }
 
-    // 2. Botón "+ Nueva Cita" en Agenda
+    // 2. Agenda: KPIs financieros superiores y botón "+ Nueva Cita"
+    const kpisAgendaTop = document.getElementById('agenda-kpis-top');
+    if (kpisAgendaTop) {
+      kpisAgendaTop.classList.toggle('hidden', !canVerKpisAgenda);
+    }
     const btnNuevaCitaAgenda = document.getElementById('btn-agenda-abrir-modal-cita');
     if (btnNuevaCitaAgenda) {
       btnNuevaCitaAgenda.classList.toggle('hidden', !canAgendarCitas);
@@ -471,11 +636,11 @@ export class SessionManager {
     // 3. Formularios de Inventario y Caja
     const formCrearProd = document.getElementById('form-crear-producto');
     if (formCrearProd) {
-      formCrearProd.classList.toggle('hidden', !canGestionarInv);
+      formCrearProd.classList.toggle('hidden', !canAltaProductos);
     }
     const formEscaner = document.getElementById('form-escaner');
     if (formEscaner) {
-      formEscaner.classList.toggle('hidden', !canGestionarInv);
+      formEscaner.classList.toggle('hidden', !canUsarEscaner);
     }
     const formCajaManual = document.getElementById('form-caja-manual');
     if (formCajaManual) {
@@ -490,7 +655,7 @@ export class SessionManager {
       el.classList.toggle('hidden', !isAdminOrConfig);
     });
 
-    // 5. El botón de Impersonate en el menú lateral permanece visible si el usuario REAL tiene permiso usar_impersonate
+    // 5. Botón de Impersonate en el menú lateral
     const btnImpersonate = document.getElementById('btn-open-impersonate');
     if (btnImpersonate) {
       btnImpersonate.classList.toggle('hidden', !this.canImpersonate());
@@ -498,8 +663,4 @@ export class SessionManager {
 
     return allowedTabs;
   }
-}
-
-function TrueBooleanFallback(val) {
-  return Boolean(val);
 }

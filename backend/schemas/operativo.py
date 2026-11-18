@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
 
 
@@ -160,5 +160,11 @@ class PerfilPermisosInput(ContextoOperativoMixin):
     nombre: str = Field(..., min_length=2)
     nuevo_nombre: Optional[str] = None
     descripcion: Optional[str] = ""
+    niveles: Optional[Dict[str, str]] = None
     permisos: Dict[str, bool] = Field(default_factory=dict)
+
+
+class MatrizPerfilesBatchInput(ContextoOperativoMixin):
+    perfiles: List[Dict[str, Any]] = Field(default_factory=list)
+
 

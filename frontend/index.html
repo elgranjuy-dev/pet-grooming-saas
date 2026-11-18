@@ -1195,14 +1195,14 @@
             </div>
           </div>
 
-          <!-- Bloque Nuevo: Gestión de Perfiles y Permisos (Casillas de Selección por Perfil) -->
+          <!-- Bloque Nuevo: Matriz de Perfiles y Permisos por Módulo (Renglones = Perfiles | Columnas = Actividades) -->
           <div class="module-widget lg:col-span-12 bg-white rounded-2xl p-5 border border-slate-200 shadow-sm" data-widget-id="cfg-perfiles-permisos">
             <div draggable="true" class="widget-header flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
               <h3 class="widget-title text-sm font-bold text-slate-800 flex items-center">
-                <span class="widget-drag-handle w-6 h-6 rounded-md bg-slate-100 hover:bg-blue-50 text-slate-400 hover:text-blue-600 mr-2 inline-flex items-center justify-center transition shrink-0" title="Arrastra desde aquí para mover y ordenar este bloque"><i class="fa-solid fa-grip-vertical text-xs"></i></span><i class="fa-solid fa-user-shield text-blue-600 mr-1.5"></i>Gestión de Perfiles y Permisos (Qué puede Ver y Hacer cada Perfil)
+                <span class="widget-drag-handle w-6 h-6 rounded-md bg-slate-100 hover:bg-blue-50 text-slate-400 hover:text-blue-600 mr-2 inline-flex items-center justify-center transition shrink-0" title="Arrastra desde aquí para mover y ordenar este bloque"><i class="fa-solid fa-grip-vertical text-xs"></i></span><i class="fa-solid fa-table-cells-large text-blue-600 mr-1.5"></i>Matriz de Permisos por Módulo (Perfiles × Actividades y Niveles de Acceso)
               </h3>
               <div class="widget-actions flex items-center gap-1.5 shrink-0 ml-auto">
-                <span class="widget-header-extra text-[10px] text-slate-400 hidden sm:inline">Permisos a nivel Perfil (no por usuario individual)</span>
+                <span class="widget-header-extra text-[10px] text-slate-400 hidden sm:inline">Renglones: Perfiles · Columnas: Actividades del módulo</span>
                 <div class="widget-window-controls flex items-center gap-1 pl-1">
                   <button type="button" class="widget-minimize-btn w-7 h-7 rounded-lg bg-slate-100 hover:bg-blue-100 text-slate-600 hover:text-blue-700 border border-slate-200/80 flex items-center justify-center transition shrink-0" title="Minimizar / Expandir bloque">
                     <i class="fa-solid fa-minus text-xs pointer-events-none"></i>
@@ -1214,111 +1214,103 @@
               </div>
             </div>
 
-            <div class="widget-body pt-4">
-              <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 text-xs">
-                <!-- Columna izquierda: Lista de Perfiles y Crear Nuevo Perfil -->
-                <div class="lg:col-span-4 space-y-3 border-b lg:border-b-0 lg:border-r border-slate-100 pb-4 lg:pb-0 lg:pr-4">
-                  <div class="flex items-center justify-between gap-2">
+            <div class="widget-body pt-4 space-y-4 text-xs">
+              <!-- Barra Superior: Selector de Módulo + Botones de Acción (Nuevo Perfil y Guardar Matriz) -->
+              <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-3 bg-slate-900 text-white p-3.5 rounded-2xl shadow-xs">
+                <div class="flex flex-col sm:flex-row sm:items-center gap-2.5 flex-1">
+                  <div class="flex items-center gap-2 shrink-0">
+                    <span class="w-8 h-8 rounded-xl bg-blue-600/25 border border-blue-400/30 text-blue-300 flex items-center justify-center">
+                      <i class="fa-solid fa-layer-group"></i>
+                    </span>
                     <div>
-                      <h4 class="font-extrabold text-slate-800 uppercase tracking-wider text-[11px]">Perfiles del Sistema</h4>
-                      <p class="text-[11px] text-slate-400">Selecciona un perfil para editar sus casillas</p>
+                      <label for="perfiles-modulo-select" class="block text-[10px] uppercase tracking-wider font-extrabold text-blue-300">
+                        Módulo a Configurar
+                      </label>
+                      <select id="perfiles-modulo-select"
+                        class="mt-0.5 rounded-xl bg-slate-800 border border-slate-700 text-white font-extrabold text-xs px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer">
+                        <option value="agenda">Agenda, Turnos y Citas</option>
+                        <option value="clientes">Clientes, Mascotas y Expedientes</option>
+                        <option value="dashboard">Dashboard e Indicadores</option>
+                        <option value="inventario">Inventario y Terminal Escáner</option>
+                        <option value="caja">Caja, Cobros y Cortes</option>
+                        <option value="config">Configuración, Personal y Perfiles</option>
+                      </select>
                     </div>
-                    <button id="btn-mostrar-crear-perfil" type="button"
-                      class="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition cursor-pointer">
-                      <i class="fa-solid fa-plus text-[10px]"></i>
-                      <span>Nuevo Perfil</span>
-                    </button>
                   </div>
 
-                  <!-- Caja desplegable para crear un nuevo perfil -->
-                  <form id="form-crear-nuevo-perfil" class="hidden p-3.5 rounded-xl bg-blue-50/70 border border-blue-200 space-y-2.5">
-                    <div class="flex items-center justify-between">
-                      <span class="font-extrabold text-blue-900 text-xs">
-                        <i class="fa-solid fa-id-card-clip mr-1 text-blue-600"></i>Crear Nuevo Perfil
-                      </span>
-                      <button id="btn-cancelar-crear-perfil" type="button" class="text-slate-400 hover:text-slate-600">
-                        <i class="fa-solid fa-xmark"></i>
-                      </button>
-                    </div>
-                    <div>
-                      <label class="block text-[11px] font-bold text-slate-700 mb-1">Nombre del Perfil *</label>
-                      <input id="nuevo-perfil-nombre" type="text" placeholder="Ej. Supervisor, Auxiliar de Baño, Gerente..."
-                        class="w-full rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-600" />
-                    </div>
-                    <div>
-                      <label class="block text-[11px] font-bold text-slate-700 mb-1">Descripción breve</label>
-                      <input id="nuevo-perfil-descripcion" type="text" placeholder="Ej. Supervisa agenda, clientes e inventario..."
-                        class="w-full rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-600" />
-                    </div>
-                    <button type="submit"
-                      class="w-full py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition cursor-pointer">
-                      <i class="fa-solid fa-check mr-1"></i>Crear Perfil y Configurar Permisos
-                    </button>
-                  </form>
-
-                  <!-- Lista de perfiles disponibles -->
-                  <div id="cfg-perfiles-lista" class="space-y-2 max-h-96 overflow-y-auto pr-0.5"></div>
+                  <!-- Pestañas rápidas para cambiar entre módulos con un clic -->
+                  <div id="perfiles-modulo-tabs" class="flex flex-wrap items-center gap-1.5 pt-1 sm:pt-0 sm:pl-2 sm:border-l border-slate-700/80"></div>
                 </div>
 
-                <!-- Columna derecha: Matriz de Casillas de Selección (Qué puede VER y HACER el perfil) -->
-                <div class="lg:col-span-8 space-y-4">
-                  <div class="flex flex-wrap items-start justify-between gap-3 bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80">
-                    <div class="space-y-1 flex-1 min-w-[220px]">
-                      <div class="flex items-center gap-2 flex-wrap">
-                        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Editando Perfil:</span>
-                        <h4 id="perfil-editor-nombre" class="text-base font-extrabold text-slate-900">Recepcionista</h4>
-                        <span id="perfil-editor-badge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800">Perfil del Sistema</span>
-                      </div>
-                      <input id="perfil-editor-descripcion" type="text"
-                        placeholder="Descripción de las responsabilidades de este perfil..."
-                        class="w-full rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-600" />
-                    </div>
-
-                    <div class="flex flex-wrap items-center gap-1.5 shrink-0">
-                      <button id="btn-perfil-marcar-todo" type="button"
-                        class="px-2.5 py-1.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 font-bold text-[11px] transition cursor-pointer">
-                        <i class="fa-solid fa-check-double mr-1 text-blue-600"></i>Marcar Todo
-                      </button>
-                      <button id="btn-perfil-desmarcar-todo" type="button"
-                        class="px-2.5 py-1.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 font-bold text-[11px] transition cursor-pointer">
-                        <i class="fa-regular fa-square mr-1 text-slate-400"></i>Limpiar
-                      </button>
-                      <button id="btn-perfil-eliminar" type="button"
-                        class="hidden px-2.5 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-bold text-[11px] transition cursor-pointer">
-                        <i class="fa-solid fa-trash-can mr-1"></i>Eliminar Perfil
-                      </button>
-                      <button id="btn-guardar-permisos-perfil" type="button"
-                        class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-xs transition cursor-pointer flex items-center gap-1.5">
-                        <i class="fa-solid fa-floppy-disk"></i>
-                        <span>Guardar Permisos del Perfil</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  <!-- Grupo 1: Casillas de lo que puede VER (Módulos del Menú) -->
-                  <div class="space-y-2">
-                    <div class="flex items-center justify-between">
-                      <h5 class="font-extrabold text-slate-800 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
-                        <i class="fa-solid fa-eye text-blue-600"></i>
-                        <span>1. ¿Qué módulos puede VER este perfil en el menú?</span>
-                      </h5>
-                      <span class="text-[11px] text-slate-400">Controla las secciones visibles en la barra de navegación</span>
-                    </div>
-                    <div id="perfil-checkboxes-ver" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5"></div>
-                  </div>
-
-                  <!-- Grupo 2: Casillas de lo que puede HACER (Acciones y Operaciones) -->
-                  <div class="space-y-2 pt-2 border-t border-slate-100">
-                    <div class="flex items-center justify-between">
-                      <h5 class="font-extrabold text-slate-800 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
-                        <i class="fa-solid fa-bolt text-amber-500"></i>
-                        <span>2. ¿Qué acciones puede HACER u operar este perfil?</span>
-                      </h5>
-                      <span class="text-[11px] text-slate-400">Habilita o bloquea botones, registros, cobros y funciones</span>
-                    </div>
-                    <div id="perfil-checkboxes-hacer" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5"></div>
-                  </div>
+                <!-- Botones de Nuevo Perfil y Guardar Matriz Completa -->
+                <div class="flex flex-wrap items-center gap-2 shrink-0">
+                  <button id="btn-mostrar-crear-perfil" type="button"
+                    class="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs flex items-center gap-1.5 shadow-xs transition cursor-pointer">
+                    <i class="fa-solid fa-user-plus text-[11px]"></i>
+                    <span>+ Nuevo Perfil</span>
+                  </button>
+                  <button id="btn-guardar-permisos-perfil" type="button"
+                    class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs flex items-center gap-1.5 shadow-xs transition cursor-pointer">
+                    <i class="fa-solid fa-floppy-disk"></i>
+                    <span>Guardar Matriz de Permisos</span>
+                  </button>
                 </div>
+              </div>
+
+              <!-- Formulario desplegable para crear un nuevo perfil (se agrega como nuevo renglón de la tabla) -->
+              <form id="form-crear-nuevo-perfil" class="hidden p-4 rounded-2xl bg-blue-50/80 border border-blue-200 grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+                <div class="md:col-span-4">
+                  <label class="block text-[11px] font-extrabold text-blue-950 mb-1">
+                    <i class="fa-solid fa-id-card-clip mr-1 text-blue-600"></i>Nombre del Nuevo Perfil (Nuevo Renglón) *
+                  </label>
+                  <input id="nuevo-perfil-nombre" type="text" placeholder="Ej. Supervisor, Auxiliar de Baño, Gerente..."
+                    class="w-full rounded-xl border border-blue-300 bg-white px-3 py-2 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-blue-600" />
+                </div>
+                <div class="md:col-span-5">
+                  <label class="block text-[11px] font-extrabold text-blue-950 mb-1">Descripción / Función del Perfil</label>
+                  <input id="nuevo-perfil-descripcion" type="text" placeholder="Ej. Supervisa agenda, consulta expedientes y apoya en recepción..."
+                    class="w-full rounded-xl border border-blue-300 bg-white px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-600" />
+                </div>
+                <div class="md:col-span-3 flex items-center gap-2">
+                  <button type="submit"
+                    class="flex-1 py-2 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs transition cursor-pointer">
+                    <i class="fa-solid fa-plus mr-1"></i>Agregar a la Tabla
+                  </button>
+                  <button id="btn-cancelar-crear-perfil" type="button"
+                    class="py-2 px-3 rounded-xl bg-white hover:bg-slate-100 text-slate-600 border border-slate-200 font-bold text-xs transition cursor-pointer">
+                    Cancelar
+                  </button>
+                </div>
+              </form>
+
+              <!-- Leyenda de Niveles de Acceso y Casillas Jerárquicas -->
+              <div class="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200/90">
+                <div class="flex items-center gap-2">
+                  <span id="matriz-modulo-titulo-activo" class="font-extrabold text-slate-800 text-xs">Módulo: Agenda, Turnos y Citas</span>
+                  <span id="matriz-modulo-desc-activa" class="text-[11px] text-slate-500 hidden md:inline"></span>
+                </div>
+                <div class="flex flex-wrap items-center gap-2 text-[10px] font-bold">
+                  <span class="px-2 py-0.5 rounded-md bg-slate-200/80 text-slate-700 inline-flex items-center gap-1">
+                    <i class="fa-solid fa-ban text-slate-500"></i> Sin Acceso (Ninguna casilla)
+                  </span>
+                  <span class="px-2 py-0.5 rounded-md bg-blue-100 text-blue-800 inline-flex items-center gap-1">
+                    <i class="fa-solid fa-eye text-blue-600"></i> Solo Visibilidad (Lectura)
+                  </span>
+                  <span class="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 inline-flex items-center gap-1">
+                    <i class="fa-solid fa-bolt text-emerald-600"></i> Creación y Operación
+                  </span>
+                  <span class="px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-800 inline-flex items-center gap-1">
+                    <i class="fa-solid fa-shield-halved text-indigo-600"></i> Edición Total / Admin
+                  </span>
+                </div>
+              </div>
+
+              <!-- Tabla Matriz: Renglones = Perfiles | Encabezados de Columna = Actividades del Módulo -->
+              <div class="overflow-x-auto rounded-2xl border border-slate-200 shadow-2xs">
+                <table class="w-full text-left border-collapse min-w-[920px]">
+                  <thead id="matriz-perfiles-thead" class="bg-slate-900 text-white text-[11px]"></thead>
+                  <tbody id="matriz-perfiles-tbody" class="divide-y divide-slate-200 bg-white"></tbody>
+                </table>
               </div>
             </div>
           </div>
@@ -1814,6 +1806,6 @@
   </div>
 
   <!-- Controlador Principal POO (ES Module) -->
-  <script type="module" src="./js/App.js?v=0.9.2"></script>
+  <script type="module" src="./js/App.js?v=0.9.3"></script>
 </body>
 </html>
