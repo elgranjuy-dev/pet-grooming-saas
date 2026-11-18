@@ -1,21 +1,125 @@
 /**
  * SessionManager.js
  * Gestiona el flujo de login por subdominio (Usuario + Contraseña),
- * persiste la sesión en sessionStorage, aplica permisos visuales por rol
- * y soporta modo "Impersonate" exclusivo para Dueño / Administrador.
+ * persiste la sesión en sessionStorage, sincroniza la matriz de Perfiles y Permisos
+ * (casillas de selección ver/hacer por perfil) y soporta modo "Impersonate".
  */
 export class SessionManager {
   static STORAGE_KEY = 'pet_grooming_saas_session_v1';
+  static PERFILES_STORAGE_KEY = 'pet_grooming_perfiles_permisos_v1';
 
-  // Permisos de pestañas visibles según el rol del usuario activo (o simulado en Impersonate)
-  // El módulo "clientes" (Clientes y Expedientes con base de datos completa) es exclusivo para Dueño y Administrador
-  static ROLE_PERMISSIONS = {
-    'Dueño': ['dashboard', 'agenda', 'clientes', 'inventario', 'caja', 'config'],
-    'Administrador': ['dashboard', 'agenda', 'clientes', 'inventario', 'caja', 'config'],
-    'Recepcionista': ['dashboard', 'agenda', 'inventario', 'caja'],
-    'Cajero': ['dashboard', 'agenda', 'inventario', 'caja'],
-    'Estilista': ['agenda', 'inventario'],
-  };
+  static DEFAULT_PERFILES = [
+    {
+      nombre: 'Dueño',
+      descripcion: 'Control total de la organización, finanzas, padrón completo, configuración y perfiles.',
+      es_sistema: true,
+      protegido: true,
+      permisos: {
+        ver_dashboard: true,
+        ver_agenda: true,
+        ver_clientes: true,
+        ver_inventario: true,
+        ver_caja: true,
+        ver_config: true,
+        buscar_clientes: true,
+        crear_clientes_mascotas: true,
+        agendar_citas: true,
+        gestionar_asistencia_citas: true,
+        gestionar_inventario: true,
+        registrar_caja: true,
+        editar_configuracion: true,
+        usar_impersonate: true,
+      },
+    },
+    {
+      nombre: 'Administrador',
+      descripcion: 'Administración general de sucursal, clientes, agenda, inventario, personal y perfiles.',
+      es_sistema: true,
+      protegido: false,
+      permisos: {
+        ver_dashboard: true,
+        ver_agenda: true,
+        ver_clientes: true,
+        ver_inventario: true,
+        ver_caja: true,
+        ver_config: true,
+        buscar_clientes: true,
+        crear_clientes_mascotas: true,
+        agendar_citas: true,
+        gestionar_asistencia_citas: true,
+        gestionar_inventario: true,
+        registrar_caja: true,
+        editar_configuracion: true,
+        usar_impersonate: true,
+      },
+    },
+    {
+      nombre: 'Recepcionista',
+      descripcion: 'Atención en mostrador: búsqueda de clientes, alta de clientes/mascotas, agenda y cobros.',
+      es_sistema: true,
+      protegido: false,
+      permisos: {
+        ver_dashboard: true,
+        ver_agenda: true,
+        ver_clientes: false,
+        ver_inventario: true,
+        ver_caja: true,
+        ver_config: false,
+        buscar_clientes: true,
+        crear_clientes_mascotas: true,
+        agendar_citas: true,
+        gestionar_asistencia_citas: true,
+        gestionar_inventario: true,
+        registrar_caja: true,
+        editar_configuracion: false,
+        usar_impersonate: false,
+      },
+    },
+    {
+      nombre: 'Cajero',
+      descripcion: 'Operación de cobros en caja, agenda del día, recepción y venta de productos con escáner.',
+      es_sistema: true,
+      protegido: false,
+      permisos: {
+        ver_dashboard: true,
+        ver_agenda: true,
+        ver_clientes: false,
+        ver_inventario: true,
+        ver_caja: true,
+        ver_config: false,
+        buscar_clientes: true,
+        crear_clientes_mascotas: true,
+        agendar_citas: true,
+        gestionar_asistencia_citas: true,
+        gestionar_inventario: true,
+        registrar_caja: true,
+        editar_configuracion: false,
+        usar_impersonate: false,
+      },
+    },
+    {
+      nombre: 'Estilista',
+      descripcion: 'Operación en área de grooming: consulta de citas asignadas, expedientes técnicos e insumos.',
+      es_sistema: true,
+      protegido: false,
+      permisos: {
+        ver_dashboard: false,
+        ver_agenda: true,
+        ver_clientes: false,
+        ver_inventario: TrueBooleanFallback(true),
+        ver_caja: false,
+        ver_config: false,
+        buscar_clientes: true,
+        crear_clientes_mascotas: false,
+        agendar_citas: false,
+        gestionar_asistencia_citas: true,
+        gestionar_inventario: true,
+        registrar_caja: false,
+        editar_configuracion: false,
+        usar_impersonate: false,
+      },
+    },
+  ];
 
   constructor(apiClient) {
     this.api = apiClient;
@@ -41,6 +145,62 @@ export class SessionManager {
     sessionStorage.removeItem(SessionManager.STORAGE_KEY);
   }
 
+  getPerfiles() {
+    try {
+      const raw = localStorage.getItem(SessionManager.PERFILES_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+    } catch (_) {}
+    return SessionManager.DEFAULT_PERFILES;
+  }
+
+  setPerfiles(perfiles) {
+    if (!Array.isArray(perfiles) || !perfiles.length) return;
+    try {
+      localStorage.setItem(SessionManager.PERFILES_STORAGE_KEY, JSON.stringify(perfiles));
+    } catch (_) {}
+  }
+
+  async sincronizarPerfilesServidor() {
+    try {
+      const data = await this.api.get('/perfiles');
+      if (Array.isArray(data.perfiles) && data.perfiles.length) {
+        this.setPerfiles(data.perfiles);
+        return data.perfiles;
+      }
+    } catch (_) {}
+    return this.getPerfiles();
+  }
+
+  getPerfilConfig(rol = null) {
+    const s = this.getSession();
+    const roleName = String(rol || (s ? s.rol : 'Dueño')).trim();
+    const perfiles = this.getPerfiles();
+    const encontrado = perfiles.find(
+      (p) => String(p.nombre || '').toLowerCase() === roleName.toLowerCase()
+    );
+    if (encontrado) return encontrado;
+    return (
+      SessionManager.DEFAULT_PERFILES.find(
+        (p) => p.nombre.toLowerCase() === roleName.toLowerCase()
+      ) || SessionManager.DEFAULT_PERFILES[0]
+    );
+  }
+
+  getPermisosDePerfil(rol = null) {
+    const perfil = this.getPerfilConfig(rol);
+    return (perfil && perfil.permisos) || {};
+  }
+
+  hasPermission(permisoKey, rol = null) {
+    const permisos = this.getPermisosDePerfil(rol);
+    return Boolean(permisos[permisoKey]);
+  }
+
   isAuthenticated() {
     const s = this.getSession();
     return Boolean(s && s.organizacion_id && s.sucursal_id && s.usuario_id);
@@ -50,9 +210,15 @@ export class SessionManager {
     const s = this.getSession();
     if (!s) return false;
     if (s.is_impersonating && s.original_admin) {
-      return ['Dueño', 'Administrador'].includes(s.original_admin.rol);
+      return (
+        ['Dueño', 'Administrador'].includes(s.original_admin.rol) ||
+        this.hasPermission('usar_impersonate', s.original_admin.rol)
+      );
     }
-    return ['Dueño', 'Administrador'].includes(s.rol);
+    return (
+      ['Dueño', 'Administrador'].includes(s.rol) ||
+      this.hasPermission('usar_impersonate', s.rol)
+    );
   }
 
   isImpersonating() {
@@ -66,7 +232,7 @@ export class SessionManager {
     if (s.is_impersonating && s.original_admin) {
       return s.original_admin;
     }
-    if (['Dueño', 'Administrador'].includes(s.rol)) {
+    if (this.canImpersonate()) {
       return {
         usuario_id: s.usuario_id,
         usuario_nombre: s.usuario_nombre,
@@ -88,11 +254,10 @@ export class SessionManager {
   async iniciarImpersonate(targetUser) {
     const s = this.getSession();
     if (!s || !this.canImpersonate()) {
-      throw new Error('Solo un Administrador o Dueño puede usar Impersonate.');
+      throw new Error('Tu perfil no tiene permiso para usar Impersonate.');
     }
 
     const originalAdmin = this.getOriginalAdmin();
-    // Si selecciona su propio usuario original de admin, equivale a salir de impersonate
     if (
       originalAdmin &&
       targetUser.id === originalAdmin.usuario_id &&
@@ -194,6 +359,10 @@ export class SessionManager {
     const usr = res.usuario || {};
     const asistencia = res.asistencia || {};
 
+    if (Array.isArray(res.perfiles) && res.perfiles.length) {
+      this.setPerfiles(res.perfiles);
+    }
+
     const sessionPayload = {
       organizacion_id: res.organizacion_id || org.id,
       organizacion_nombre: res.organizacion_nombre || org.nombre || 'Organización',
@@ -239,17 +408,27 @@ export class SessionManager {
   getAllowedTabs(rol = null) {
     const session = this.getSession();
     const roleName = rol || (session ? session.rol : 'Dueño');
-    return (
-      SessionManager.ROLE_PERMISSIONS[roleName] ||
-      SessionManager.ROLE_PERMISSIONS['Dueño']
-    );
+    const permisos = this.getPermisosDePerfil(roleName);
+
+    const tabMap = [
+      { key: 'ver_dashboard', tab: 'dashboard' },
+      { key: 'ver_agenda', tab: 'agenda' },
+      { key: 'ver_clientes', tab: 'clientes' },
+      { key: 'ver_inventario', tab: 'inventario' },
+      { key: 'ver_caja', tab: 'caja' },
+      { key: 'ver_config', tab: 'config' },
+    ];
+
+    const allowed = tabMap.filter((item) => Boolean(permisos[item.key])).map((item) => item.tab);
+    return allowed.length ? allowed : ['agenda'];
   }
 
   aplicarPermisosVisuales() {
     const session = this.getSession();
     if (!session) return [];
 
-    const allowedTabs = this.getAllowedTabs(session.rol);
+    const rolActivo = session.rol;
+    const allowedTabs = this.getAllowedTabs(rolActivo);
     const navButtons = document.querySelectorAll('[data-tab-target]');
 
     navButtons.forEach((btn) => {
@@ -261,14 +440,57 @@ export class SessionManager {
       }
     });
 
-    // Los elementos exclusivos del rol activo se ocultan si el rol simulado no es Admin/Dueño
+    // Permisos operativos (HACER) según las casillas del perfil activo
+    const canBuscarClientes = this.hasPermission('buscar_clientes', rolActivo);
+    const canCrearClientes = this.hasPermission('crear_clientes_mascotas', rolActivo);
+    const canAgendarCitas = this.hasPermission('agendar_citas', rolActivo);
+    const canGestionarInv = this.hasPermission('gestionar_inventario', rolActivo);
+    const canRegistrarCaja = this.hasPermission('registrar_caja', rolActivo);
+    const canEditarConfig = this.hasPermission('editar_configuracion', rolActivo);
+
+    // 1. Buscador global y botón Registrar Nuevo Cliente en menú lateral
+    const formBuscador = document.getElementById('form-buscador-clientes');
+    if (formBuscador) {
+      formBuscador.classList.toggle('hidden', !canBuscarClientes);
+    }
+    const btnNuevoCliente = document.getElementById('btn-sidebar-nuevo-cliente');
+    if (btnNuevoCliente) {
+      btnNuevoCliente.classList.toggle('hidden', !canCrearClientes);
+    }
+    const boxBuscadorLateral = document.getElementById('sidebar-buscador-global-box');
+    if (boxBuscadorLateral) {
+      boxBuscadorLateral.classList.toggle('hidden', !canBuscarClientes && !canCrearClientes);
+    }
+
+    // 2. Botón "+ Nueva Cita" en Agenda
+    const btnNuevaCitaAgenda = document.getElementById('btn-agenda-abrir-modal-cita');
+    if (btnNuevaCitaAgenda) {
+      btnNuevaCitaAgenda.classList.toggle('hidden', !canAgendarCitas);
+    }
+
+    // 3. Formularios de Inventario y Caja
+    const formCrearProd = document.getElementById('form-crear-producto');
+    if (formCrearProd) {
+      formCrearProd.classList.toggle('hidden', !canGestionarInv);
+    }
+    const formEscaner = document.getElementById('form-escaner');
+    if (formEscaner) {
+      formEscaner.classList.toggle('hidden', !canGestionarInv);
+    }
+    const formCajaManual = document.getElementById('form-caja-manual');
+    if (formCajaManual) {
+      formCajaManual.classList.toggle('hidden', !canRegistrarCaja);
+    }
+
+    // 4. Elementos marcados con data-role-admin-only
     const adminOnlyEls = document.querySelectorAll('[data-role-admin-only]');
-    const isAdmin = ['Dueño', 'Administrador'].includes(session.rol);
+    const isAdminOrConfig =
+      ['Dueño', 'Administrador'].includes(rolActivo) || canEditarConfig;
     adminOnlyEls.forEach((el) => {
-      el.classList.toggle('hidden', !isAdmin);
+      el.classList.toggle('hidden', !isAdminOrConfig);
     });
 
-    // El botón de Impersonate en el menú lateral permanece visible si el usuario REAL es Dueño/Administrador
+    // 5. El botón de Impersonate en el menú lateral permanece visible si el usuario REAL tiene permiso usar_impersonate
     const btnImpersonate = document.getElementById('btn-open-impersonate');
     if (btnImpersonate) {
       btnImpersonate.classList.toggle('hidden', !this.canImpersonate());
@@ -276,4 +498,8 @@ export class SessionManager {
 
     return allowedTabs;
   }
+}
+
+function TrueBooleanFallback(val) {
+  return Boolean(val);
 }

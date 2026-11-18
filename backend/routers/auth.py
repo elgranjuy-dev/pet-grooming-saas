@@ -7,6 +7,7 @@ from backend.core.database import get_db
 from backend.core.security import SecurityManager
 from backend.repositories.base import BranchRepository
 from backend.schemas.operativo import PinLoginRequest
+from backend.services.perfiles_permisos import CATALOGO_PERMISOS, PerfilesPermisosService
 
 router = APIRouter(prefix="/api", tags=["Autenticación y Contexto"])
 
@@ -197,6 +198,7 @@ def _construir_sesion_completa(
 
     usuario_seguro = {k: v for k, v in usuario.items() if k != "pin"}
     org_clean = {k: v for k, v in org.items() if k != "password_hash"}
+    perfiles = PerfilesPermisosService.obtener_perfiles(db, org["id"])
 
     return {
         "autenticado": True,
@@ -215,6 +217,8 @@ def _construir_sesion_completa(
         "sucursales": sucs,
         "usuario": usuario_seguro,
         "asistencia": asistencia,
+        "perfiles": perfiles,
+        "catalogo_permisos": CATALOGO_PERMISOS,
         "mensaje": f"Bienvenido(a), {usuario['nombre']} ({usuario['rol']})",
     }
 

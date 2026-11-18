@@ -5,14 +5,14 @@
  * el flujo de login por subdominio (Usuario + Contraseña), vistas dinámicas por rol,
  * modo Impersonate para Administrador/Dueño, barra lateral colapsable y Check-Out.
  */
-import { ApiClient } from './core/ApiClient.js?v=0.9.1';
-import { SessionManager } from './core/SessionManager.js?v=0.9.1';
-import { WidgetManager } from './core/WidgetManager.js?v=0.9.1';
-import { DashboardView } from './views/DashboardView.js?v=0.9.1';
-import { AgendaView } from './views/AgendaView.js?v=0.9.1';
-import { ClientesView } from './views/ClientesView.js?v=0.9.1';
-import { InventarioCajaView } from './views/InventarioCajaView.js?v=0.9.1';
-import { ConfigPersonalView } from './views/ConfigPersonalView.js?v=0.9.1';
+import { ApiClient } from './core/ApiClient.js?v=0.9.2';
+import { SessionManager } from './core/SessionManager.js?v=0.9.2';
+import { WidgetManager } from './core/WidgetManager.js?v=0.9.2';
+import { DashboardView } from './views/DashboardView.js?v=0.9.2';
+import { AgendaView } from './views/AgendaView.js?v=0.9.2';
+import { ClientesView } from './views/ClientesView.js?v=0.9.2';
+import { InventarioCajaView } from './views/InventarioCajaView.js?v=0.9.2';
+import { ConfigPersonalView } from './views/ConfigPersonalView.js?v=0.9.2';
 
 export class App {
   constructor() {
@@ -48,6 +48,7 @@ export class App {
     this.bindImpersonateEvents();
 
     if (this.session.isAuthenticated()) {
+      await this.session.sincronizarPerfilesServidor();
       this.mostrarPanelOperativo();
     } else {
       await this.mostrarPantallaLogin();
@@ -161,6 +162,7 @@ export class App {
     );
 
     this.actualizarBannerImpersonate();
+    this.renderBotonesImpersonatePerfiles();
 
     const allowedTabs = this.session.aplicarPermisosVisuales();
     const targetTab = allowedTabs.includes(this.activeTab)
@@ -237,7 +239,33 @@ export class App {
       });
     }
 
-    document.querySelectorAll('[data-impersonate-role]').forEach((btn) => {
+    this.renderBotonesImpersonatePerfiles();
+  }
+
+  renderBotonesImpersonatePerfiles() {
+    const rolesListEl = document.getElementById('impersonate-roles-list');
+    if (!rolesListEl) return;
+
+    const perfiles = this.session.getPerfiles();
+    if (Array.isArray(perfiles) && perfiles.length) {
+      rolesListEl.innerHTML = perfiles
+        .map((p) => {
+          const totalActivos = Object.values(p.permisos || {}).filter(Boolean).length;
+          return `
+            <button type="button" data-impersonate-role="${p.nombre}"
+              class="p-2.5 rounded-xl border border-slate-200 hover:border-blue-500 hover:bg-blue-50/60 text-left transition group cursor-pointer">
+              <p class="font-extrabold text-slate-800 group-hover:text-blue-700 flex items-center justify-between">
+                <span class="truncate">${p.nombre}</span>
+                <i class="fa-solid fa-arrow-right text-[10px] text-slate-400 group-hover:text-blue-600"></i>
+              </p>
+              <p class="text-[10px] text-slate-500 mt-0.5 line-clamp-1">${totalActivos} permisos activos</p>
+            </button>
+          `;
+        })
+        .join('');
+    }
+
+    rolesListEl.querySelectorAll('[data-impersonate-role]').forEach((btn) => {
       btn.addEventListener('click', async () => {
         const rol = btn.getAttribute('data-impersonate-role');
         if (!rol) return;
@@ -254,9 +282,11 @@ export class App {
 
   async abrirModalImpersonate() {
     if (!this.session.canImpersonate()) {
-      this.notify('Solo un Administrador o Dueño puede usar Impersonate.', 'warning');
+      this.notify('Tu perfil no tiene permiso para usar Impersonate.', 'warning');
       return;
     }
+
+    this.renderBotonesImpersonatePerfiles();
 
     const modal = document.getElementById('modal-impersonate');
     const listContainer = document.getElementById('impersonate-users-list');

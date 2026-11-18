@@ -16,6 +16,7 @@ from backend.schemas.operativo import (
     EscaneoRequest,
     ExcepcionCreate,
     MascotaCreate,
+    PerfilPermisosInput,
     PlantillaDiaUpdate,
     ProductoCreate,
     ServicioCreate,
@@ -23,6 +24,11 @@ from backend.schemas.operativo import (
     UsuarioUpdate,
 )
 from backend.services.disponibilidad import AvailabilityEngine
+from backend.services.perfiles_permisos import (
+    CATALOGO_PERMISOS,
+    PERFILES_BASE_SISTEMA,
+    PerfilesPermisosService,
+)
 
 router = APIRouter(prefix="/api", tags=["Operativo CRM"])
 
@@ -1638,7 +1644,11 @@ def listar_personal(
     bitacora_repo = BranchRepository(db, "bitacora_auditoria", org_id, suc_id)
 
     asistencias = asistencias_repo.get_all(order_by="hora_entrada", desc=True, limit=50)
-    bitacora = bitacora_repo.get_all(order_by="fecha", desc=True, limit=100)
+    bitacora_raw = bitacora_repo.get_all(order_by="fecha", desc=True, limit=120)
+    bitacora = [
+        b for b in bitacora_raw if b.get("accion") != "CONFIG_PERFILES_SNAPSHOT"
+    ][:100]
+    perfiles = PerfilesPermisosService.obtener_perfiles(db, org_id)
 
     return {
         "personal": personal,
@@ -1646,6 +1656,8 @@ def listar_personal(
         "sucursales": sucs,
         "asistencias": asistencias,
         "bitacora": bitacora,
+        "perfiles": perfiles,
+        "catalogo_permisos": CATALOGO_PERMISOS,
         "total": len(personal),
     }
 
@@ -1664,8 +1676,319 @@ def listar_bitacora(
     bitacora_repo = BranchRepository(
         db, "bitacora_auditoria", ctx["organizacion_id"], ctx["sucursal_id"]
     )
-    eventos = bitacora_repo.get_all(order_by="fecha", desc=True, limit=100)
+    eventos_raw = bitacora_repo.get_all(order_by="fecha", desc=True, limit=120)
+    eventos = [
+        e for e in eventos_raw if e.get("accion") != "CONFIG_PERFILES_SNAPSHOT"
+    ][:100]
     return {"bitacora": eventos, "total": len(eventos)}
+
+
+# -------------------------------------------------------------------------
+# 7B. GESTIÓN DE PERFILES Y PERMISOS (ROLES CONFIGURABLES CON CASILLAS)
+# -------------------------------------------------------------------------
+@router.get("/perfiles")
+def obtener_perfiles_permisos(
+    organizacion_id: Optional[str] = Query(default=None),
+    sucursal_id: Optional[str] = Query(default=None),
+    x_organizacion_id: Optional[str] = Header(default=None),
+    x_sucursal_id: Optional[str] = Header(default=None),
+    db: Client = Depends(get_db),
+) -> Dict[str, Any]:
+    """Devuelve todos los perfiles de la organización y el catálogo de casillas de permisos (ver/hacer)."""
+    ctx = _resolver_contexto(
+        db,
+        organizacion_id,
+        sucursal_id,
+        x_organizacion_id,
+        x_sucursal_id,
+        requiere_sucursal=False,
+    )
+    org_id = ctx["organizacion_id"]
+    perfiles = PerfilesPermisosService.obtener_perfiles(db, org_id)
+    return {
+        "perfiles": perfiles,
+        "catalogo_permisos": CATALOGO_PERMISOS,
+        "total": len(perfiles),
+    }
+
+
+@router.post("/perfiles")
+def crear_o_actualizar_perfil(
+    payload: PerfilPermisosInput,
+    organizacion_id: Optional[str] = Query(default=None),
+    sucursal_id: Optional[str] = Query(default=None),
+    x_organizacion_id: Optional[str] = Header(default=None),
+    x_sucursal_id: Optional[str] = Header(default=None),
+    db: Client = Depends(get_db),
+) -> Dict[str, Any]:
+    """Crea un nuevo perfil o actualiza los permisos de un perfil existente."""
+    ctx = _resolver_contexto(
+        db,
+        organizacion_id or payload.organizacion_id,
+        sucursal_id or payload.sucursal_id,
+        x_organizacion_id,
+        x_sucursal_id,
+    )
+    org_id, suc_id = ctx["organizacion_id"], ctx["sucursal_id"]
+
+    nombre_limpio = (payload.nombre or "").strip()
+    if len(nombre_limpio) < 2:
+        raise HTTPException(
+            status_code=400,
+            detail="El nombre del perfil debe tener al menos 2 caracteres.",
+        )
+
+    perfiles = PerfilesPermisosService.obtener_perfiles(db, org_id)
+    existente_idx = next(
+        (i for i, p in enumerate(perfiles) if p["nombre"].lower() == nombre_limpio.lower()),
+        None,
+    )
+
+    es_dueno = nombre_limpio.lower() == "dueño"
+    es_base = any(b.lower() == nombre_limpio.lower() for b in PERFILES_BASE_SISTEMA)
+
+    permisos_norm = PerfilesPermisosService._normalizar_permisos(
+        payload.permisos,
+        perfiles[existente_idx]["permisos"] if existente_idx is not None else None,
+    )
+    if es_dueno:
+        permisos_norm["ver_config"] = True
+        permisos_norm["editar_configuracion"] = True
+
+    if not any(
+        permisos_norm.get(k)
+        for k in (
+            "ver_dashboard",
+            "ver_agenda",
+            "ver_clientes",
+            "ver_inventario",
+            "ver_caja",
+            "ver_config",
+        )
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail="El perfil debe tener al menos un módulo visible ('Ver módulo...') seleccionado.",
+        )
+
+    perfil_obj = {
+        "nombre": perfiles[existente_idx]["nombre"] if existente_idx is not None else nombre_limpio,
+        "descripcion": (payload.descripcion or "").strip()
+        or (
+            perfiles[existente_idx].get("descripcion")
+            if existente_idx is not None
+            else "Perfil personalizado de la organización."
+        ),
+        "es_sistema": es_base,
+        "protegido": es_dueno,
+        "permisos": permisos_norm,
+    }
+
+    accion_audit = "CREAR_PERFIL"
+    if existente_idx is not None:
+        perfiles[existente_idx] = perfil_obj
+        accion_audit = "EDITAR_PERFIL_PERMISOS"
+    else:
+        perfiles.append(perfil_obj)
+
+    PerfilesPermisosService.guardar_perfiles(db, org_id, suc_id, perfiles)
+
+    activos_count = sum(1 for v in permisos_norm.values() if v)
+    SecurityManager.registrar_auditoria(
+        db=db,
+        org_id=org_id,
+        suc_id=suc_id,
+        usuario=payload.usuario_actual or "Administrador",
+        rol=payload.rol_actual or "Dueño",
+        accion=accion_audit,
+        detalle=f"Perfil '{perfil_obj['nombre']}' guardado ({activos_count} permisos habilitados)",
+    )
+
+    return {
+        "perfil": perfil_obj,
+        "perfiles": perfiles,
+        "catalogo_permisos": CATALOGO_PERMISOS,
+        "mensaje": f"Permisos del perfil '{perfil_obj['nombre']}' guardados correctamente.",
+    }
+
+
+@router.put("/perfiles/{nombre_perfil}")
+def editar_perfil_existente(
+    nombre_perfil: str,
+    payload: PerfilPermisosInput,
+    organizacion_id: Optional[str] = Query(default=None),
+    sucursal_id: Optional[str] = Query(default=None),
+    x_organizacion_id: Optional[str] = Header(default=None),
+    x_sucursal_id: Optional[str] = Header(default=None),
+    db: Client = Depends(get_db),
+) -> Dict[str, Any]:
+    """Actualiza las casillas de permisos, descripción o nombre de un perfil."""
+    ctx = _resolver_contexto(
+        db,
+        organizacion_id or payload.organizacion_id,
+        sucursal_id or payload.sucursal_id,
+        x_organizacion_id,
+        x_sucursal_id,
+    )
+    org_id, suc_id = ctx["organizacion_id"], ctx["sucursal_id"]
+
+    perfiles = PerfilesPermisosService.obtener_perfiles(db, org_id)
+    target_idx = next(
+        (i for i, p in enumerate(perfiles) if p["nombre"].lower() == nombre_perfil.strip().lower()),
+        None,
+    )
+    if target_idx is None:
+        return crear_o_actualizar_perfil(
+            payload, organizacion_id, sucursal_id, x_organizacion_id, x_sucursal_id, db
+        )
+
+    actual = perfiles[target_idx]
+    nuevo_nom = (payload.nuevo_nombre or payload.nombre or actual["nombre"]).strip()
+
+    # Si es perfil del sistema, su nombre se mantiene fijo pero sus permisos sí son editables
+    if actual.get("es_sistema"):
+        nuevo_nom = actual["nombre"]
+    elif nuevo_nom.lower() != actual["nombre"].lower():
+        if any(
+            i != target_idx and p["nombre"].lower() == nuevo_nom.lower()
+            for i, p in enumerate(perfiles)
+        ):
+            raise HTTPException(
+                status_code=400,
+                detail=f"Ya existe otro perfil llamado '{nuevo_nom}'.",
+            )
+
+    es_dueno = actual["nombre"].lower() == "dueño"
+    permisos_norm = PerfilesPermisosService._normalizar_permisos(
+        payload.permisos, actual.get("permisos")
+    )
+    if es_dueno:
+        permisos_norm["ver_config"] = True
+        permisos_norm["editar_configuracion"] = True
+
+    if not any(
+        permisos_norm.get(k)
+        for k in (
+            "ver_dashboard",
+            "ver_agenda",
+            "ver_clientes",
+            "ver_inventario",
+            "ver_caja",
+            "ver_config",
+        )
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail="El perfil debe tener al menos un módulo visible ('Ver módulo...') seleccionado.",
+        )
+
+    actualizado = {
+        **actual,
+        "nombre": nuevo_nom,
+        "descripcion": (payload.descripcion or "").strip() or actual.get("descripcion", ""),
+        "permisos": permisos_norm,
+    }
+    perfiles[target_idx] = actualizado
+    PerfilesPermisosService.guardar_perfiles(db, org_id, suc_id, perfiles)
+
+    activos_count = sum(1 for v in permisos_norm.values() if v)
+    SecurityManager.registrar_auditoria(
+        db=db,
+        org_id=org_id,
+        suc_id=suc_id,
+        usuario=payload.usuario_actual or "Administrador",
+        rol=payload.rol_actual or "Dueño",
+        accion="EDITAR_PERFIL_PERMISOS",
+        detalle=f"Permisos actualizados para perfil '{actualizado['nombre']}' ({activos_count} permisos activos)",
+    )
+
+    return {
+        "perfil": actualizado,
+        "perfiles": perfiles,
+        "catalogo_permisos": CATALOGO_PERMISOS,
+        "mensaje": f"Permisos del perfil '{actualizado['nombre']}' actualizados correctamente.",
+    }
+
+
+@router.delete("/perfiles/{nombre_perfil}")
+def eliminar_perfil_personalizado(
+    nombre_perfil: str,
+    organizacion_id: Optional[str] = Query(default=None),
+    sucursal_id: Optional[str] = Query(default=None),
+    usuario_actual: Optional[str] = Query(default=None),
+    rol_actual: Optional[str] = Query(default=None),
+    x_organizacion_id: Optional[str] = Header(default=None),
+    x_sucursal_id: Optional[str] = Header(default=None),
+    x_usuario_actual: Optional[str] = Header(default=None),
+    x_rol_actual: Optional[str] = Header(default=None),
+    db: Client = Depends(get_db),
+) -> Dict[str, Any]:
+    """Elimina un perfil personalizado si no es un perfil base del sistema ni está asignado a colaboradores."""
+    ctx = _resolver_contexto(
+        db, organizacion_id, sucursal_id, x_organizacion_id, x_sucursal_id
+    )
+    org_id, suc_id = ctx["organizacion_id"], ctx["sucursal_id"]
+
+    perfiles = PerfilesPermisosService.obtener_perfiles(db, org_id)
+    target = next(
+        (p for p in perfiles if p["nombre"].lower() == nombre_perfil.strip().lower()),
+        None,
+    )
+    if not target:
+        raise HTTPException(status_code=404, detail="Perfil no encontrado.")
+
+    if target.get("es_sistema") or any(
+        b.lower() == target["nombre"].lower() for b in PERFILES_BASE_SISTEMA
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail=f"El perfil '{target['nombre']}' es un perfil base del sistema. Puedes editar sus casillas de permisos, pero no eliminarlo.",
+        )
+
+    # Verificar si algún colaborador tiene asignado este perfil
+    personal_raw = (
+        db.table("usuarios_crm")
+        .select("*")
+        .eq("organizacion_id", org_id)
+        .execute()
+        .data
+        or []
+    )
+    en_uso = [
+        SecurityManager.normalizar_usuario_crm(u).get("nombre")
+        for u in personal_raw
+        if str(SecurityManager.normalizar_usuario_crm(u).get("rol", "")).lower()
+        == target["nombre"].lower()
+    ]
+    if en_uso:
+        raise HTTPException(
+            status_code=400,
+            detail=f"No se puede eliminar el perfil '{target['nombre']}' porque está asignado a: {', '.join(en_uso)}.",
+        )
+
+    nuevos_perfiles = [
+        p for p in perfiles if p["nombre"].lower() != target["nombre"].lower()
+    ]
+    PerfilesPermisosService.guardar_perfiles(db, org_id, suc_id, nuevos_perfiles)
+
+    SecurityManager.registrar_auditoria(
+        db=db,
+        org_id=org_id,
+        suc_id=suc_id,
+        usuario=usuario_actual or x_usuario_actual or "Administrador",
+        rol=rol_actual or x_rol_actual or "Dueño",
+        accion="ELIMINAR_PERFIL",
+        detalle=f"Perfil personalizado eliminado: {target['nombre']}",
+    )
+
+    return {
+        "eliminado": True,
+        "nombre": target["nombre"],
+        "perfiles": nuevos_perfiles,
+        "catalogo_permisos": CATALOGO_PERMISOS,
+        "mensaje": f"Perfil '{target['nombre']}' eliminado correctamente.",
+    }
+
 
 
 @router.post("/personal")

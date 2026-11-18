@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Dict, List, Optional
 from pydantic import BaseModel, Field
 
 
@@ -154,3 +154,11 @@ class ServicioCreate(ContextoOperativoMixin):
     duracion_minutos: int = 60
     precio_base: float = 0.0
     activo: Optional[bool] = True
+
+
+class PerfilPermisosInput(ContextoOperativoMixin):
+    nombre: str = Field(..., min_length=2)
+    nuevo_nombre: Optional[str] = None
+    descripcion: Optional[str] = ""
+    permisos: Dict[str, bool] = Field(default_factory=dict)
+

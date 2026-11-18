@@ -6,35 +6,58 @@ class SecurityManager:
     """Utilidades de seguridad, generación de hashes de lealtad, normalización de roles y auditoría."""
 
     RECEPCIONISTA_PREFIX = "REC::"
+    CUSTOM_ROL_PREFIX = "ROL::"
+    ROLES_DB_NATIVOS = {"Dueño", "Administrador", "Cajero", "Estilista"}
+
+    @staticmethod
+    def _limpiar_pin_codificado(raw_pin: str) -> Tuple[Optional[str], str]:
+        """Extrae el rol personalizado codificado (si existe) y devuelve (rol_extraido, pin_limpio)."""
+        pin_str = str(raw_pin or "").strip()
+        if pin_str.startswith(SecurityManager.RECEPCIONISTA_PREFIX):
+            return "Recepcionista", pin_str[len(SecurityManager.RECEPCIONISTA_PREFIX) :]
+        if pin_str.startswith(SecurityManager.CUSTOM_ROL_PREFIX):
+            resto = pin_str[len(SecurityManager.CUSTOM_ROL_PREFIX) :]
+            if "::" in resto:
+                rol_custom, pin_real = resto.split("::", 1)
+                return rol_custom.strip() or "Estilista", pin_real
+        return None, pin_str
 
     @staticmethod
     def codificar_rol_y_pin(rol: str, pin: str) -> Tuple[str, str]:
         """
         Normaliza rol y pin para compatibilidad con el constraint SQL `usuarios_crm_rol_check`
-        ('Dueño', 'Administrador', 'Cajero', 'Estilista') cuando el usuario elige 'Recepcionista'.
+        ('Dueño', 'Administrador', 'Cajero', 'Estilista') cuando el usuario elige 'Recepcionista'
+        o cualquier perfil personalizado creado en el módulo de Perfiles y Permisos.
         """
         rol_limpio = (rol or "Estilista").strip()
-        pin_limpio = str(pin or "").strip()
-        if pin_limpio.startswith(SecurityManager.RECEPCIONISTA_PREFIX):
-            pin_limpio = pin_limpio[len(SecurityManager.RECEPCIONISTA_PREFIX) :]
+        _, pin_limpio = SecurityManager._limpiar_pin_codificado(pin)
+
+        # Coincidencia insensible a mayúsculas con los 4 roles nativos del constraint SQL
+        for nativo in SecurityManager.ROLES_DB_NATIVOS:
+            if rol_limpio.lower() == nativo.lower():
+                return nativo, pin_limpio
 
         if rol_limpio.lower() == "recepcionista":
             return "Cajero", f"{SecurityManager.RECEPCIONISTA_PREFIX}{pin_limpio}"
-        return rol_limpio, pin_limpio
+
+        # Cualquier otro perfil personalizado se almacena bajo 'Cajero' en DB con prefijo ROL::<Perfil>::
+        rol_seguro = rol_limpio.replace("::", "-")
+        return "Cajero", f"{SecurityManager.CUSTOM_ROL_PREFIX}{rol_seguro}::{pin_limpio}"
 
     @staticmethod
     def normalizar_usuario_crm(usuario: Dict[str, Any], ocultar_pin: bool = False) -> Dict[str, Any]:
         """
-        Restaura el rol 'Recepcionista' si el campo pin tiene el prefijo REC::
+        Restaura el rol personalizado o 'Recepcionista' si el campo pin tiene prefijo codificado
         y opcionalmente elimina el campo pin antes de responder al cliente.
         """
         if not usuario:
             return {}
         copia = dict(usuario)
         raw_pin = str(copia.get("pin") or "")
-        if raw_pin.startswith(SecurityManager.RECEPCIONISTA_PREFIX):
-            copia["rol"] = "Recepcionista"
-            copia["pin"] = raw_pin[len(SecurityManager.RECEPCIONISTA_PREFIX) :]
+        rol_extraido, pin_limpio = SecurityManager._limpiar_pin_codificado(raw_pin)
+        if rol_extraido:
+            copia["rol"] = rol_extraido
+            copia["pin"] = pin_limpio
         if ocultar_pin:
             copia.pop("pin", None)
         return copia
