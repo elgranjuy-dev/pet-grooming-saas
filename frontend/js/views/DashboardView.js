@@ -20,7 +20,8 @@ export class DashboardView {
 
   async load() {
     try {
-      const data = await this.api.get('/dashboard');
+      const fecha_local = new Date().toLocaleDateString('sv-SE');
+      const data = await this.api.get('/dashboard', { fecha_local });
       this.renderKpis(data.kpis || {});
       this.renderCharts(data.graficas || {});
       this.renderAlertasStock(data.alertas_stock || []);
@@ -37,6 +38,24 @@ export class DashboardView {
     }).format(Number(val || 0));
   }
 
+  formatearFechaHoraCivil(isoStr) {
+    if (!isoStr) return '-';
+    const s = String(isoStr).trim();
+    const match = s.match(/^(\d{4})-(\d{2})-(\d{2})[T\s](\d{2}):(\d{2})/);
+    if (match) {
+      const [, y, m, d, hh, mm] = match;
+      return `${d}/${m}/${y}, ${hh}:${mm}`;
+    }
+    try {
+      return new Date(s).toLocaleString('es-MX', {
+        dateStyle: 'short',
+        timeStyle: 'short',
+      });
+    } catch (_) {
+      return s;
+    }
+  }
+
   renderKpis(kpis) {
     const setText = (id, val) => {
       const el = document.getElementById(id);
@@ -46,9 +65,13 @@ export class DashboardView {
     setText('kpi-ingresos-totales', this.formatCurrency(kpis.ingresos_totales));
     setText('kpi-ingresos-hoy', `Hoy: ${this.formatCurrency(kpis.ingresos_hoy)}`);
     setText('kpi-citas-hoy', String(kpis.citas_hoy ?? 0));
+
+    const compHoy = kpis.citas_hoy_completadas ?? 0;
+    const pendHoy = kpis.citas_hoy_pendientes ?? 0;
+    const totHist = kpis.citas_totales ?? 0;
     setText(
       'kpi-citas-resumen',
-      `${kpis.citas_completadas ?? 0} completadas · ${kpis.citas_pendientes ?? 0} pendientes`
+      `${compHoy} completadas hoy · ${pendHoy} pendientes hoy (Histórico: ${totHist})`
     );
     setText('kpi-clientes-total', String(kpis.total_clientes ?? 0));
     setText('kpi-mascotas-total', `${kpis.total_mascotas ?? 0} mascotas registradas`);
@@ -169,12 +192,7 @@ export class DashboardView {
     tbody.innerHTML = citas
       .slice(0, 6)
       .map((c) => {
-        const fechaFmt = c.fecha_hora
-          ? new Date(c.fecha_hora).toLocaleString('es-MX', {
-              dateStyle: 'short',
-              timeStyle: 'short',
-            })
-          : '-';
+        const fechaFmt = this.formatearFechaHoraCivil(c.fecha_hora);
         const badgeColor =
           String(c.estado).toLowerCase() === 'completada'
             ? 'bg-emerald-100 text-emerald-700'

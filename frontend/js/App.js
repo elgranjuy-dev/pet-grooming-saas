@@ -5,14 +5,14 @@
  * el flujo de login por subdominio (Usuario + Contraseña), vistas dinámicas por rol,
  * modo Impersonate para Administrador/Dueño, barra lateral colapsable y Check-Out.
  */
-import { ApiClient } from './core/ApiClient.js?v=0.9.3';
-import { SessionManager } from './core/SessionManager.js?v=0.9.3';
-import { WidgetManager } from './core/WidgetManager.js?v=0.9.3';
-import { DashboardView } from './views/DashboardView.js?v=0.9.3';
-import { AgendaView } from './views/AgendaView.js?v=0.9.3';
-import { ClientesView } from './views/ClientesView.js?v=0.9.3';
-import { InventarioCajaView } from './views/InventarioCajaView.js?v=0.9.3';
-import { ConfigPersonalView } from './views/ConfigPersonalView.js?v=0.9.3';
+import { ApiClient } from './core/ApiClient.js?v=0.9.4';
+import { SessionManager } from './core/SessionManager.js?v=0.9.4';
+import { WidgetManager } from './core/WidgetManager.js?v=0.9.4';
+import { DashboardView } from './views/DashboardView.js?v=0.9.4';
+import { AgendaView } from './views/AgendaView.js?v=0.9.4';
+import { ClientesView } from './views/ClientesView.js?v=0.9.4';
+import { InventarioCajaView } from './views/InventarioCajaView.js?v=0.9.4';
+import { ConfigPersonalView } from './views/ConfigPersonalView.js?v=0.9.4';
 
 export class App {
   constructor() {
@@ -529,21 +529,101 @@ export class App {
     }
 
     const btnCheckout = document.getElementById('btn-checkout-turno');
+    const modalCorte = document.getElementById('modal-corte-caja');
+    const btnCerrarCorte = document.getElementById('btn-cerrar-modal-corte-caja');
+    const btnCancelarCorte = document.getElementById('btn-cancelar-modal-corte-caja');
+    const formCorte = document.getElementById('form-corte-caja-turno');
+    const inputFondo = document.getElementById('corte-fondo-inicial');
+    const inputContado = document.getElementById('corte-efectivo-contado');
+
+    this._efectivoVentasHoy = 0;
+
+    const actualizarDiferenciaCorte = () => {
+      const fondo = Number(inputFondo?.value || 0);
+      const contado = Number(inputContado?.value || 0);
+      const esperadoTotal = fondo + (this._efectivoVentasHoy || 0);
+      const diff = Number((contado - esperadoTotal).toFixed(2));
+
+      const boxEl = document.getElementById('corte-diferencia-box');
+      const valEl = document.getElementById('corte-diferencia-valor');
+      if (!boxEl || !valEl) return;
+
+      if (Math.abs(diff) < 0.01) {
+        boxEl.className = 'p-2.5 rounded-xl bg-emerald-100/80 border border-emerald-300 flex items-center justify-between';
+        valEl.className = 'font-mono font-black text-sm text-emerald-800';
+        valEl.textContent = '$0.00 (Cuadre exacto)';
+      } else if (diff > 0) {
+        boxEl.className = 'p-2.5 rounded-xl bg-blue-100/80 border border-blue-300 flex items-center justify-between';
+        valEl.className = 'font-mono font-black text-sm text-blue-800';
+        valEl.textContent = `+$${diff.toFixed(2)} (Sobrante en caja)`;
+      } else {
+        boxEl.className = 'p-2.5 rounded-xl bg-rose-100/80 border border-rose-300 flex items-center justify-between';
+        valEl.className = 'font-mono font-black text-sm text-rose-800';
+        valEl.textContent = `-$${Math.abs(diff).toFixed(2)} (Faltante en caja)`;
+      }
+    };
+
+    if (inputFondo) inputFondo.addEventListener('input', actualizarDiferenciaCorte);
+    if (inputContado) inputContado.addEventListener('input', actualizarDiferenciaCorte);
+
+    if (btnCerrarCorte && modalCorte) {
+      btnCerrarCorte.addEventListener('click', () => modalCorte.classList.add('hidden'));
+    }
+    if (btnCancelarCorte && modalCorte) {
+      btnCancelarCorte.addEventListener('click', () => modalCorte.classList.add('hidden'));
+    }
+
     if (btnCheckout) {
       btnCheckout.addEventListener('click', async () => {
-        const montoStr = window.prompt(
-          'Corte de Caja al finalizar turno ($ MXN):\nIngresa el monto efectivo en caja (o 0 si no aplica):',
-          '0'
-        );
-        if (montoStr === null) return;
+        if (!modalCorte) return;
+        modalCorte.classList.remove('hidden');
 
-        const monto = Number(montoStr) || 0;
+        try {
+          const hoyIso = new Date().toLocaleDateString('sv-SE');
+          const dataCaja = await this.api.get('/caja');
+          const movs = (dataCaja.movimientos || []).filter((m) =>
+            String(m.fecha || '').startswith
+              ? String(m.fecha || '').startsWith(hoyIso)
+              : String(m.fecha || '').slice(0, 10) === hoyIso
+          );
+
+          let efec = 0;
+          let tarj = 0;
+          let transf = 0;
+          movs.forEach((m) => {
+            const monto = Number(m.monto || 0);
+            const mp = String(m.metodo_pago || 'Efectivo').toLowerCase();
+            if (mp.includes('tarjeta')) tarj += monto;
+            else if (mp.includes('transfer')) transf += monto;
+            else efec += monto;
+          });
+
+          this._efectivoVentasHoy = efec;
+          const elEfec = document.getElementById('corte-efectivo-esperado');
+          const elTarj = document.getElementById('corte-tarjeta-hoy');
+          const elTransf = document.getElementById('corte-transferencia-hoy');
+          if (elEfec) elEfec.textContent = `$${efec.toFixed(2)}`;
+          if (elTarj) elTarj.textContent = `$${tarj.toFixed(2)}`;
+          if (elTransf) elTransf.textContent = `$${transf.toFixed(2)}`;
+          if (inputFondo) inputFondo.value = '0';
+          if (inputContado) inputContado.value = efec.toFixed(2);
+          actualizarDiferenciaCorte();
+        } catch (_) {}
+      });
+    }
+
+    if (formCorte) {
+      formCorte.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const monto = Number(inputContado?.value || 0);
         try {
           await this.session.cerrarTurno(monto);
-          this.notify('Turno cerrado y salida registrada en asistencia.', 'info');
+          modalCorte?.classList.add('hidden');
+          this.notify('Corte de caja registrado y turno cerrado correctamente.', 'info');
           await this.mostrarPantallaLogin();
         } catch (err) {
           this.session.clearSession();
+          modalCorte?.classList.add('hidden');
           this.notify(`Sesión finalizada (${err.message})`, 'warning');
           await this.mostrarPantallaLogin();
         }

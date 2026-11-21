@@ -327,6 +327,7 @@ export class AgendaView {
     const estilista = c.estilista || 'Por asignar';
     const precio = Number(c.precio || 0).toFixed(2);
     const asistencia = c.asistencia || 'pendiente';
+    const etapaEstancia = c.etapa_estancia || (asistencia === 'asistio' ? 'Entregada' : 'Por llegar');
     const metodoPago = c.metodo_pago || 'Efectivo';
     const eligiendoPago = this.citaEligiendoPagoId === c.id;
 
@@ -349,9 +350,40 @@ export class AgendaView {
         <span class="px-2 py-0.5 rounded-full bg-rose-600 text-white text-[10px] font-extrabold inline-flex items-center">
           <i class="fa-solid fa-user-xmark mr-1"></i>No Asistió
         </span>`;
+    } else if (asistencia === 'cancelada') {
+      cardStyle = 'bg-slate-100 border-l-4 border-l-slate-400 border-slate-300 opacity-75';
+      badgeEstado = `
+        <span class="px-2 py-0.5 rounded-full bg-slate-600 text-white text-[10px] font-extrabold inline-flex items-center">
+          <i class="fa-solid fa-ban mr-1"></i>Cancelada con aviso
+        </span>`;
     }
 
-    // Controles de Asistió / No Asistió
+    // Selector rápido de Etapa de Estancia en Cabina (Recibida -> En servicio -> Lista -> Entregada)
+    const etapasOpciones = [
+      { val: 'Por llegar', label: '⏳ Por llegar' },
+      { val: 'Recibida', label: '🐾 Recibida' },
+      { val: 'En servicio', label: '🛁 En servicio' },
+      { val: 'Lista para recoger', label: '✨ Lista para recoger' },
+      { val: 'Entregada', label: '✅ Entregada' },
+    ];
+    const selectorEstanciaHtml =
+      asistencia === 'no_asistio' || asistencia === 'cancelada'
+        ? ''
+        : `
+          <select data-select-estancia="${c.id}" title="Seguimiento de la mascota durante su estancia en cabina"
+            class="rounded-lg border border-slate-300 bg-white px-2 py-1 text-[10px] font-extrabold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer">
+            ${etapasOpciones
+              .map(
+                (op) =>
+                  `<option value="${op.val}" ${
+                    etapaEstancia === op.val ? 'selected' : ''
+                  }>${op.label}</option>`
+              )
+              .join('')}
+          </select>
+        `;
+
+    // Controles de Asistió / No Asistió / Cancelar
     const botonesAsistenciaHtml = eligiendoPago
       ? `
         <div class="flex flex-wrap items-center gap-1.5 bg-white p-1.5 rounded-xl border border-emerald-300 shadow-xs">
@@ -373,6 +405,14 @@ export class AgendaView {
             <span>Tarjeta</span>
           </button>
           <button type="button"
+            data-action-asistio-pago="${c.id}"
+            data-metodo-pago="Transferencia"
+            data-cita-precio="${c.precio || 0}"
+            class="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-extrabold flex items-center gap-1 transition cursor-pointer">
+            <i class="fa-solid fa-building-columns"></i>
+            <span>Transf.</span>
+          </button>
+          <button type="button"
             data-action-cancel-pago="${c.id}"
             class="px-1.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-500 text-[10px] font-bold">
             ✕
@@ -381,19 +421,22 @@ export class AgendaView {
       `
       : `
         <div class="flex flex-wrap items-center gap-1.5">
+          ${selectorEstanciaHtml}
           <button type="button"
             data-action-abrir-asistio="${c.id}"
+            title="${asistencia === 'asistio' ? 'Cambiar método de pago registrado' : 'Marcar asistencia y registrar cobro'}"
             class="px-2.5 py-1.5 rounded-xl text-[11px] font-extrabold transition flex items-center gap-1 cursor-pointer ${
               asistencia === 'asistio'
-                ? 'bg-emerald-600 text-white shadow-2xs ring-2 ring-emerald-300'
+                ? 'bg-emerald-700 text-white shadow-2xs ring-2 ring-emerald-300'
                 : 'bg-white hover:bg-emerald-600 text-emerald-700 hover:text-white border border-emerald-300'
             }">
             <i class="fa-solid fa-circle-check"></i>
-            <span>Asistió</span>
+            <span>${asistencia === 'asistio' ? 'Cobrada (Editar)' : 'Asistió'}</span>
           </button>
 
           <button type="button"
             data-action-no-asistio="${c.id}"
+            title="El cliente no se presentó a su cita"
             class="px-2.5 py-1.5 rounded-xl text-[11px] font-extrabold transition flex items-center gap-1 cursor-pointer ${
               asistencia === 'no_asistio'
                 ? 'bg-rose-600 text-white shadow-2xs ring-2 ring-rose-300'
@@ -402,6 +445,17 @@ export class AgendaView {
             <i class="fa-solid fa-circle-xmark"></i>
             <span>No Asistió</span>
           </button>
+
+          ${
+            asistencia !== 'cancelada'
+              ? `<button type="button"
+                  data-action-cancelar-cita="${c.id}"
+                  title="Cancelar cita anticipadamente (libera el cupo sin marcar inasistencia)"
+                  class="px-2 py-1.5 rounded-xl text-[10px] font-bold bg-white hover:bg-slate-200 text-slate-600 border border-slate-300 transition cursor-pointer">
+                  <i class="fa-solid fa-ban mr-0.5"></i>Cancelar
+                </button>`
+              : ''
+          }
         </div>
       `;
 
@@ -475,7 +529,9 @@ export class AgendaView {
           <div class="text-left lg:text-right pr-1">
             <span class="text-[10px] uppercase font-extrabold text-slate-400 block">Importe Cita</span>
             <span class="text-base font-black ${
-              asistencia === 'no_asistio' ? 'line-through text-slate-400' : 'text-slate-900'
+              asistencia === 'no_asistio' || asistencia === 'cancelada'
+                ? 'line-through text-slate-400'
+                : 'text-slate-900'
             }">$${precio}</span>
           </div>
           ${botonesAsistenciaHtml}
@@ -841,6 +897,70 @@ export class AgendaView {
         await this.marcarNoAsistioCita(cid);
       });
     });
+
+    // 7. Cambio de etapa de estancia en cabina (Por llegar -> Recibida -> En servicio -> Lista -> Entregada)
+    container.querySelectorAll('[data-select-estancia]').forEach((sel) => {
+      sel.addEventListener('change', async () => {
+        const cid = sel.getAttribute('data-select-estancia');
+        const etapa = sel.value || 'Por llegar';
+        await this.cambiarEtapaEstanciaCita(cid, etapa);
+      });
+    });
+
+    // 8. Cancelar cita anticipadamente (distinto de No Asistió)
+    container.querySelectorAll('[data-action-cancelar-cita]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const cid = btn.getAttribute('data-action-cancelar-cita');
+        await this.cancelarCitaConAviso(cid);
+      });
+    });
+  }
+
+  async _sincronizarVistasDependientes() {
+    await this.cargarCitas();
+    const views = window.petGroomingApp?.views || {};
+    if (views.caja && typeof views.caja.load === 'function') {
+      await views.caja.load();
+    }
+    if (views.dashboard && typeof views.dashboard.load === 'function') {
+      await views.dashboard.load();
+    }
+    if (views.clientes && typeof views.clientes.cargarPadronGeneral === 'function') {
+      await views.clientes.cargarPadronGeneral();
+    }
+  }
+
+  async cambiarEtapaEstanciaCita(citaId, etapaEstancia) {
+    if (!citaId) return;
+    try {
+      await this.api.put(`/citas/${citaId}`, {
+        etapa_estancia: etapaEstancia,
+      });
+      this.notify(`Estancia en cabina actualizada: ${etapaEstancia}`, 'info');
+      await this.cargarCitas();
+    } catch (err) {
+      this.notify(`Error al actualizar estancia: ${err.message}`, 'error');
+    }
+  }
+
+  async cancelarCitaConAviso(citaId) {
+    if (!citaId) return;
+    const confirmar = window.confirm(
+      '¿Cancelar esta cita con aviso anticipado?\nSe liberará el espacio del horario y no se marcará como inasistencia (No Asistió).'
+    );
+    if (!confirmar) return;
+
+    try {
+      this.citaEligiendoPagoId = null;
+      await this.api.put(`/citas/${citaId}`, {
+        estado: 'Cancelada',
+        etapa_estancia: 'Cancelada',
+      });
+      this.notify('Cita cancelada con aviso. Se liberó el bloque horario.', 'info');
+      await this._sincronizarVistasDependientes();
+    } catch (err) {
+      this.notify(`Error al cancelar cita: ${err.message}`, 'error');
+    }
   }
 
   async marcarAsistioCita(citaId, metodoPago, monto) {
@@ -852,16 +972,10 @@ export class AgendaView {
         monto: Number(monto || 0),
       });
       this.notify(
-        `Cita marcada como Asistió ($${Number(monto || 0).toFixed(2)} en ${metodoPago}). Balance actualizado.`,
+        `Cita marcada como Asistió ($${Number(monto || 0).toFixed(2)} en ${metodoPago}). Balance y lealtad actualizados.`,
         'success'
       );
-      await this.cargarCitas();
-      if (window.petGroomingApp?.views?.caja) {
-        await window.petGroomingApp.views.caja.load();
-      }
-      if (window.petGroomingApp?.views?.dashboard) {
-        await window.petGroomingApp.views.dashboard.load();
-      }
+      await this._sincronizarVistasDependientes();
     } catch (err) {
       this.notify(`Error al registrar asistencia: ${err.message}`, 'error');
     }
@@ -873,18 +987,13 @@ export class AgendaView {
       this.citaEligiendoPagoId = null;
       await this.api.post(`/citas/${citaId}/no-asistio`, {});
       this.notify(
-        'Cita marcada como No Asistió. Se actualizó la disponibilidad y el corte del día.',
+        'Cita marcada como No Asistió. Se actualizó la disponibilidad, lealtad y corte del día.',
         'info'
       );
-      await this.cargarCitas();
-      if (window.petGroomingApp?.views?.caja) {
-        await window.petGroomingApp.views.caja.load();
-      }
-      if (window.petGroomingApp?.views?.dashboard) {
-        await window.petGroomingApp.views.dashboard.load();
-      }
+      await this._sincronizarVistasDependientes();
     } catch (err) {
       this.notify(`Error al marcar No Asistió: ${err.message}`, 'error');
     }
   }
 }
+

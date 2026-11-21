@@ -101,6 +101,7 @@ def _resolver_contexto(
 # -------------------------------------------------------------------------
 @router.get("/dashboard")
 def obtener_dashboard(
+    fecha_local: Optional[str] = Query(default=None),
     organizacion_id: Optional[str] = Query(default=None),
     sucursal_id: Optional[str] = Query(default=None),
     x_organizacion_id: Optional[str] = Header(default=None),
@@ -124,10 +125,20 @@ def obtener_dashboard(
     clientes = clientes_repo.get_all()
     mascotas = mascotas_repo.get_all()
 
-    hoy_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    hoy_str = (
+        fecha_local[:10]
+        if (fecha_local and len(fecha_local) >= 10)
+        else datetime.now().strftime("%Y-%m-%d")
+    )
 
     citas_hoy = [
         c for c in citas if str(c.get("fecha_hora", "")).startswith(hoy_str)
+    ]
+    citas_hoy_completadas = [
+        c for c in citas_hoy if str(c.get("estado", "")).lower() == "completada"
+    ]
+    citas_hoy_pendientes = [
+        c for c in citas_hoy if str(c.get("estado", "")).lower() == "programada"
     ]
     citas_completadas = [
         c for c in citas if str(c.get("estado", "")).lower() == "completada"
@@ -176,11 +187,14 @@ def obtener_dashboard(
 
     return {
         "kpis": {
+            "fecha_referencia": hoy_str,
             "ingresos_totales": round(ingresos_totales, 2),
             "ingresos_hoy": round(ingresos_hoy, 2),
             "ticket_promedio": ticket_promedio,
             "citas_totales": len(citas),
             "citas_hoy": len(citas_hoy),
+            "citas_hoy_completadas": len(citas_hoy_completadas),
+            "citas_hoy_pendientes": len(citas_hoy_pendientes),
             "citas_completadas": len(citas_completadas),
             "citas_pendientes": len(citas_programadas),
             "total_clientes": len(clientes),
@@ -301,6 +315,33 @@ def buscar_clientes_privado(
     }
 
 
+def _sincronizar_visitas_mascota(
+    db: Client, org_id: str, mascota_id: Optional[str]
+) -> int:
+    """
+    Recalcula las citas con estado 'Completada' de una mascota y sincroniza
+    la columna `visitas_acumuladas` en la tabla `mascotas`.
+    """
+    if not mascota_id:
+        return 0
+    try:
+        res_citas = (
+            db.table("citas")
+            .select("id")
+            .eq("organizacion_id", org_id)
+            .eq("mascota_id", mascota_id)
+            .eq("estado", "Completada")
+            .execute()
+        )
+        total_completadas = len(res_citas.data or [])
+        db.table("mascotas").update({"visitas_acumuladas": total_completadas}).eq(
+            "id", mascota_id
+        ).eq("organizacion_id", org_id).execute()
+        return total_completadas
+    except Exception:
+        return 0
+
+
 @router.get("/clientes-mascotas/padron")
 def obtener_padron_clientes_mascotas(
     organizacion_id: Optional[str] = Query(default=None),
@@ -324,6 +365,36 @@ def obtener_padron_clientes_mascotas(
 
     clientes_raw = clientes_repo.get_all(order_by="created_at", desc=True)
     mascotas_raw = mascotas_repo.get_all(order_by="created_at", desc=True)
+
+    # Contar citas completadas reales por mascota para garantizar 100% consistencia con el expediente
+    conteo_completadas: Dict[str, int] = {}
+    try:
+        citas_comp_res = (
+            db.table("citas")
+            .select("mascota_id")
+            .eq("organizacion_id", org_id)
+            .eq("estado", "Completada")
+            .execute()
+        )
+        for row in citas_comp_res.data or []:
+            mid = row.get("mascota_id")
+            if mid:
+                conteo_completadas[mid] = conteo_completadas.get(mid, 0) + 1
+    except Exception:
+        pass
+
+    for m in mascotas_raw:
+        mid = m.get("id")
+        if mid and mid in conteo_completadas:
+            vis_real = conteo_completadas[mid]
+            if int(m.get("visitas_acumuladas") or 0) != vis_real:
+                m["visitas_acumuladas"] = vis_real
+                try:
+                    db.table("mascotas").update({"visitas_acumuladas": vis_real}).eq(
+                        "id", mid
+                    ).execute()
+                except Exception:
+                    pass
 
     clientes_por_id: Dict[str, Dict[str, Any]] = {
         c["id"]: c for c in clientes_raw if c.get("id")
@@ -431,8 +502,12 @@ def obtener_expediente_cliente(
     for c in citas_cliente:
         mid = c.get("mascota_id")
         pet = mascotas_por_id.get(mid, {})
+        no_asistio = _es_cita_no_asistio(c)
         cita_enriquecida = {
             **c,
+            "notas_servicio": _limpiar_tag_no_asistio(c.get("notas_servicio")),
+            "etapa_estancia": _extraer_etapa_estancia(c),
+            "estado": "No Asistió" if no_asistio else c.get("estado"),
             "mascota_nombre": pet.get("nombre") or "Mascota",
             "mascota_raza": pet.get("raza") or "",
             "mascota_codigo": pet.get("codigo_barras") or "",
@@ -461,6 +536,14 @@ def obtener_expediente_cliente(
         comp_m = [
             c for c in hist_m if str(c.get("estado", "")).lower() == "completada"
         ]
+        visitas_reales = len(comp_m)
+        if int(m.get("visitas_acumuladas") or 0) != visitas_reales:
+            try:
+                db.table("mascotas").update({"visitas_acumuladas": visitas_reales}).eq(
+                    "id", mid
+                ).execute()
+            except Exception:
+                pass
         gasto_m = sum(float(c.get("precio") or 0) for c in comp_m)
         ultima_m = comp_m[0].get("fecha_hora") if comp_m else (
             hist_m[0].get("fecha_hora") if hist_m else None
@@ -468,9 +551,10 @@ def obtener_expediente_cliente(
         mascotas_detalladas.append(
             {
                 **m,
+                "visitas_acumuladas": visitas_reales,
                 "historial_citas": hist_m,
                 "total_citas": len(hist_m),
-                "citas_completadas": len(comp_m),
+                "citas_completadas": visitas_reales,
                 "total_invertido": round(gasto_m, 2),
                 "ultima_visita": ultima_m,
             }
@@ -671,9 +755,46 @@ def consultar_disponibilidad_semana(
         raise HTTPException(status_code=400, detail=str(exc))
 
 
+_ESTANCIA_REGEX = re.compile(r"\[ESTANCIA:([^\]]+)\]")
+
+
 def _limpiar_tag_no_asistio(notas: Optional[str]) -> str:
     texto = str(notas or "")
-    return texto.replace("[NO_ASISTIO]", "").strip()
+    texto = texto.replace("[NO_ASISTIO]", "")
+    texto = _ESTANCIA_REGEX.sub("", texto)
+    return texto.strip()
+
+
+def _extraer_etapa_estancia(cita: Dict[str, Any]) -> str:
+    notas = str(cita.get("notas_servicio") or "")
+    match = _ESTANCIA_REGEX.search(notas)
+    if match:
+        return match.group(1).strip()
+    estado = str(cita.get("estado") or "Programada").lower()
+    if estado == "completada":
+        return "Entregada"
+    if _es_cita_no_asistio(cita):
+        return "No asistió"
+    if estado in ("cancelada", "cancelado"):
+        return "Cancelada"
+    return "Por llegar"
+
+
+def _construir_notas_con_tags(
+    notas_limpias: Optional[str],
+    no_asistio: bool = False,
+    etapa_estancia: Optional[str] = None,
+) -> str:
+    limpio = _limpiar_tag_no_asistio(notas_limpias)
+    prefijos: List[str] = []
+    if no_asistio:
+        prefijos.append("[NO_ASISTIO]")
+    if etapa_estancia and etapa_estancia.strip():
+        etapa_clean = etapa_estancia.strip().replace("]", "")
+        prefijos.append(f"[ESTANCIA:{etapa_clean}]")
+    if limpio:
+        prefijos.append(limpio)
+    return " ".join(prefijos).strip()
 
 
 def _es_cita_no_asistio(cita: Dict[str, Any]) -> bool:
@@ -769,14 +890,13 @@ def listar_citas(
             asistencia = "pendiente"
             estado_visual = "Programada"
 
+        etapa_estancia = _extraer_etapa_estancia(c)
         precio_cita = float(c.get("precio") or 0.0)
         monto_pagado = (
             float(mov_caja.get("monto") or precio_cita) if mov_caja else precio_cita
         )
         metodo_pago = (mov_caja.get("metodo_pago") if mov_caja else None) or None
 
-        # Cálculos financieros del día / rango:
-        # Por cobrar = Todas las citas activas o completadas del día (excluyendo No Asistió y Canceladas)
         if not no_asistio and not es_cancelada:
             por_cobrar_total += precio_cita
         if asistencia == "pendiente":
@@ -800,6 +920,7 @@ def listar_citas(
                 ),
                 "asistencia": asistencia,
                 "estado_visual": estado_visual,
+                "etapa_estancia": etapa_estancia,
                 "metodo_pago": metodo_pago,
                 "mascota_nombre": (
                     mascota_obj.get("nombre")
@@ -845,6 +966,80 @@ def listar_citas(
     }
 
 
+def _validar_cupo_y_fecha_futura(
+    db: Client,
+    org_id: str,
+    suc_id: str,
+    fecha_hora_str: str,
+    duracion_minutos: int = 60,
+    cita_id_excluir: Optional[str] = None,
+) -> None:
+    """
+    Valida que la fecha/hora no esté en el pasado y que exista cupo disponible
+    en el bloque solicitado para impedir sobrecupos simultáneos.
+    """
+    raw_fh = str(fecha_hora_str or "").strip()
+    dt_clean = raw_fh.replace("Z", "")
+    if "+" in dt_clean:
+        dt_clean = dt_clean.split("+")[0]
+    dt_cita = datetime.fromisoformat(dt_clean)
+    ahora_local = datetime.now()
+    if dt_cita.date() < ahora_local.date():
+        raise HTTPException(
+            status_code=400,
+            detail="No se pueden agendar ni reprogramar citas en fechas pasadas.",
+        )
+    if dt_cita.date() == ahora_local.date() and dt_cita < ahora_local.replace(
+        second=0, microsecond=0
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail="No se pueden agendar ni reprogramar citas en un horario que ya pasó el día de hoy.",
+        )
+
+    # Verificar capacidad del bloque en AvailabilityEngine para evitar sobrecupos
+    try:
+        fecha_dia = dt_cita.strftime("%Y-%m-%d")
+        hora_hhmm = dt_cita.strftime("%H:%M")
+        engine = AvailabilityEngine(db=db, organizacion_id=org_id, sucursal_id=suc_id)
+        disp = engine.calcular_disponibilidad(
+            fecha_str=fecha_dia, duracion_minutos=duracion_minutos
+        )
+        if disp.get("cerrado"):
+            raise HTTPException(
+                status_code=400,
+                detail=f"La sucursal se encuentra cerrada el {fecha_dia} ({disp.get('motivo') or 'Día inactivo'}).",
+            )
+        slots = disp.get("slots") or []
+        slot_obj = next((s for s in slots if s.get("hora") == hora_hhmm), None)
+        if slot_obj and not slot_obj.get("disponible"):
+            # Si estamos reagendando la misma cita que ya estaba en ese mismo horario, permitirlo
+            permite_mismo_slot = False
+            if cita_id_excluir:
+                existente = (
+                    db.table("citas")
+                    .select("fecha_hora")
+                    .eq("id", cita_id_excluir)
+                    .limit(1)
+                    .execute()
+                    .data
+                    or []
+                )
+                if existente and str(existente[0].get("fecha_hora", "")).startswith(
+                    f"{fecha_dia}T{hora_hhmm}"
+                ):
+                    permite_mismo_slot = True
+            if not permite_mismo_slot:
+                raise HTTPException(
+                    status_code=409,
+                    detail=f"El bloque de las {hora_hhmm} del {fecha_dia} ya no tiene cupo disponible (sobrecupo bloqueado).",
+                )
+    except HTTPException:
+        raise
+    except Exception:
+        pass
+
+
 @router.post("/citas")
 def crear_cita(
     payload: CitaCreate,
@@ -863,32 +1058,18 @@ def crear_cita(
     )
     org_id, suc_id = ctx["organizacion_id"], ctx["sucursal_id"]
 
-    # Bloqueo estricto para no agendar citas en el pasado
-    raw_fh = str(payload.fecha_hora or "").strip()
-    try:
-        dt_clean = raw_fh.replace("Z", "")
-        if "+" in dt_clean:
-            dt_clean = dt_clean.split("+")[0]
-        dt_cita = datetime.fromisoformat(dt_clean)
-        ahora_local = datetime.now()
-        if dt_cita.date() < ahora_local.date():
-            raise HTTPException(
-                status_code=400,
-                detail="No se pueden agendar citas en fechas pasadas.",
-            )
-        if dt_cita.date() == ahora_local.date() and dt_cita < ahora_local.replace(
-            second=0, microsecond=0
-        ):
-            raise HTTPException(
-                status_code=400,
-                detail="No se pueden agendar citas en un horario que ya pasó el día de hoy.",
-            )
-    except HTTPException:
-        raise
-    except Exception:
-        pass
+    _validar_cupo_y_fecha_futura(
+        db=db,
+        org_id=org_id,
+        suc_id=suc_id,
+        fecha_hora_str=payload.fecha_hora,
+        duracion_minutos=payload.duracion_minutos or 60,
+    )
 
     citas_repo = BranchRepository(db, "citas", org_id, suc_id)
+    notas_con_etapa = _construir_notas_con_tags(
+        payload.notas_servicio, no_asistio=False, etapa_estancia="Por llegar"
+    )
 
     nueva_cita = citas_repo.insert(
         {
@@ -899,7 +1080,7 @@ def crear_cita(
             "estilista": payload.estilista or "Por asignar",
             "precio": payload.precio,
             "estado": payload.estado or "Programada",
-            "notas_servicio": payload.notas_servicio or "",
+            "notas_servicio": notas_con_etapa,
         }
     )
 
@@ -916,6 +1097,138 @@ def crear_cita(
     return {"cita": nueva_cita, "mensaje": "Cita agendada correctamente."}
 
 
+@router.put("/citas/{cita_id}")
+def actualizar_o_reagendar_cita(
+    cita_id: str,
+    payload: CitaUpdate,
+    organizacion_id: Optional[str] = Query(default=None),
+    sucursal_id: Optional[str] = Query(default=None),
+    x_organizacion_id: Optional[str] = Header(default=None),
+    x_sucursal_id: Optional[str] = Header(default=None),
+    db: Client = Depends(get_db),
+) -> Dict[str, Any]:
+    """
+    Permite reagendar una cita (liberando el bloque anterior y validando el nuevo),
+    actualizar la etapa de estancia en cabina ('Por llegar', 'Recibida', 'En servicio',
+    'Lista para recoger', 'Entregada'), editar precio/estilista/notas o cancelar con aviso
+    (distinto de No Asistió).
+    """
+    ctx = _resolver_contexto(
+        db,
+        organizacion_id or payload.organizacion_id,
+        sucursal_id or payload.sucursal_id,
+        x_organizacion_id,
+        x_sucursal_id,
+    )
+    org_id, suc_id = ctx["organizacion_id"], ctx["sucursal_id"]
+
+    citas_repo = BranchRepository(db, "citas", org_id, suc_id)
+    cita = citas_repo.get_by_id(cita_id)
+    if not cita:
+        raise HTTPException(status_code=404, detail="Cita no encontrada.")
+
+    cambios: Dict[str, Any] = {}
+    duracion_obj = int(payload.duracion_minutos or cita.get("duracion_minutos") or 60)
+
+    if payload.fecha_hora and payload.fecha_hora != cita.get("fecha_hora"):
+        _validar_cupo_y_fecha_futura(
+            db=db,
+            org_id=org_id,
+            suc_id=suc_id,
+            fecha_hora_str=payload.fecha_hora,
+            duracion_minutos=duracion_obj,
+            cita_id_excluir=cita_id,
+        )
+        cambios["fecha_hora"] = payload.fecha_hora
+        # Si una cita cancelada o no-asistió se reagenda, vuelve a estar Programada
+        if not payload.estado and str(cita.get("estado", "")).lower() in (
+            "cancelada",
+            "cancelado",
+        ):
+            cambios["estado"] = "Programada"
+
+    if payload.servicio is not None and payload.servicio.strip():
+        cambios["servicio"] = payload.servicio.strip()
+    if payload.duracion_minutos is not None:
+        cambios["duracion_minutos"] = duracion_obj
+    if payload.estilista is not None and payload.estilista.strip():
+        cambios["estilista"] = payload.estilista.strip()
+    if payload.precio is not None:
+        cambios["precio"] = float(payload.precio)
+
+    estado_objetivo = payload.estado or cambios.get("estado") or cita.get("estado", "Programada")
+    es_no_asistio_actual = _es_cita_no_asistio(cita)
+
+    if payload.estado:
+        est_low = payload.estado.strip().lower()
+        if est_low in ("cancelada", "cancelado"):
+            cambios["estado"] = "Cancelada"
+            es_no_asistio_actual = False  # Cancelación anticipada != No Asistió
+        elif est_low == "programada":
+            cambios["estado"] = "Programada"
+            es_no_asistio_actual = False
+        elif est_low == "completada":
+            cambios["estado"] = "Completada"
+            es_no_asistio_actual = False
+
+    etapa_actual = (
+        payload.etapa_estancia
+        if payload.etapa_estancia is not None
+        else _extraer_etapa_estancia(cita)
+    )
+    if cambios.get("estado") == "Cancelada" and not es_no_asistio_actual:
+        etapa_actual = "Cancelada"
+    elif cambios.get("estado") == "Programada" and etapa_actual in ("Cancelada", "No asistió"):
+        etapa_actual = "Por llegar"
+
+    notas_limpias = (
+        payload.notas_servicio
+        if payload.notas_servicio is not None
+        else _limpiar_tag_no_asistio(cita.get("notas_servicio"))
+    )
+    cambios["notas_servicio"] = _construir_notas_con_tags(
+        notas_limpias,
+        no_asistio=es_no_asistio_actual,
+        etapa_estancia=etapa_actual,
+    )
+
+    cita_actualizada = citas_repo.update(cita_id, cambios)
+
+    # Si se canceló o regresó a Programada, limpiar cobro de caja si existía y sincronizar lealtad
+    if str(cambios.get("estado", "")).lower() in ("cancelada", "programada"):
+        caja_repo = BranchRepository(db, "caja", org_id, suc_id)
+        existentes = caja_repo.query("*").eq("cita_id", cita_id).execute().data or []
+        for mov in existentes:
+            if mov.get("id"):
+                caja_repo.delete(mov["id"])
+
+    visitas_actuales = _sincronizar_visitas_mascota(
+        db, org_id, cita.get("mascota_id")
+    )
+
+    SecurityManager.registrar_auditoria(
+        db=db,
+        org_id=org_id,
+        suc_id=suc_id,
+        usuario=payload.usuario_actual or "Operador Agenda",
+        rol=payload.rol_actual or "Operativo",
+        accion="ACTUALIZAR_CITA",
+        detalle=f"Cita {cita_id} actualizada (estado={cita_actualizada.get('estado')}, estancia={etapa_actual}, fecha={cita_actualizada.get('fecha_hora')})",
+    )
+
+    return {
+        "cita": {
+            **cita_actualizada,
+            "etapa_estancia": etapa_actual,
+            "notas_servicio_limpias": _limpiar_tag_no_asistio(
+                cita_actualizada.get("notas_servicio")
+            ),
+        },
+        "visitas_acumuladas_mascota": visitas_actuales,
+        "mensaje": "Cita actualizada correctamente.",
+    }
+
+
 @router.post("/citas/{cita_id}/completar")
 def completar_cita(
     cita_id: str,
@@ -927,7 +1240,8 @@ def completar_cita(
     db: Client = Depends(get_db),
 ) -> Dict[str, Any]:
     """
-    Marca una cita como Completada (Asistió) y registra o actualiza automáticamente el ingreso en caja.
+    Marca una cita como Completada (Asistió), registra o actualiza automáticamente el ingreso en caja
+    y sincroniza el contador de visitas_acumuladas de la mascota en la tabla mascotas.
     """
     ctx = _resolver_contexto(
         db,
@@ -956,7 +1270,19 @@ def completar_cita(
         if payload.notas_servicio is not None
         else cita.get("notas_servicio", "")
     )
-    notas_final = _limpiar_tag_no_asistio(notas_base)
+    etapa_previa = _extraer_etapa_estancia(cita)
+    etapa_final = (
+        payload.etapa_estancia
+        if payload.etapa_estancia
+        else (
+            etapa_previa
+            if etapa_previa in ("Recibida", "En servicio", "Lista para recoger", "Entregada")
+            else "Recibida"
+        )
+    )
+    notas_final = _construir_notas_con_tags(
+        notas_base, no_asistio=False, etapa_estancia=etapa_final
+    )
     metodo_pago_final = payload.metodo_pago or "Efectivo"
 
     cita_actualizada = citas_repo.update(
@@ -993,6 +1319,11 @@ def completar_cita(
             }
         )
 
+    # Sincronizar visitas_acumuladas en la tabla mascotas para que Padrón, Expediente y Escáner coincidan
+    visitas_actuales = _sincronizar_visitas_mascota(
+        db, org_id, cita.get("mascota_id")
+    )
+
     SecurityManager.registrar_auditoria(
         db=db,
         org_id=org_id,
@@ -1000,12 +1331,13 @@ def completar_cita(
         usuario=payload.usuario_actual or "Sistema",
         rol=payload.rol_actual or "Operativo",
         accion="ASISTIO_CITA",
-        detalle=f"Cita {cita_id} marcada como Asistió y cobrada (${monto_cobrado} en {metodo_pago_final})",
+        detalle=f"Cita {cita_id} marcada como Asistió y cobrada (${monto_cobrado} en {metodo_pago_final}) · Lealtad={visitas_actuales}",
     )
 
     return {
         "cita": cita_actualizada,
         "movimiento_caja": movimiento_caja,
+        "visitas_acumuladas_mascota": visitas_actuales,
         "mensaje": f"Cita marcada como Asistió (${monto_cobrado} en {metodo_pago_final}).",
     }
 
@@ -1020,8 +1352,8 @@ def marcar_no_asistio_cita(
     db: Client = Depends(get_db),
 ) -> Dict[str, Any]:
     """
-    Marca una cita como No Asistió (guardando estado Cancelada + marcador [NO_ASISTIO])
-    y reversa cualquier cobro asociado en caja si se había marcado antes como asistió.
+    Marca una cita como No Asistió (guardando estado Cancelada + marcador [NO_ASISTIO]),
+    reversa cualquier cobro asociado en caja y sincroniza el contador de lealtad de la mascota.
     """
     ctx = _resolver_contexto(
         db, organizacion_id, sucursal_id, x_organizacion_id, x_sucursal_id
@@ -1035,9 +1367,10 @@ def marcar_no_asistio_cita(
             status_code=404, detail="Cita no encontrada en esta sucursal."
         )
 
-    notas_limpias = _limpiar_tag_no_asistio(cita.get("notas_servicio"))
-    nuevas_notas = (
-        f"[NO_ASISTIO] {notas_limpias}".strip() if notas_limpias else "[NO_ASISTIO]"
+    nuevas_notas = _construir_notas_con_tags(
+        cita.get("notas_servicio"),
+        no_asistio=True,
+        etapa_estancia="No asistió",
     )
 
     cita_actualizada = citas_repo.update(
@@ -1055,6 +1388,10 @@ def marcar_no_asistio_cita(
         if mov.get("id"):
             caja_repo.delete(mov["id"])
 
+    visitas_actuales = _sincronizar_visitas_mascota(
+        db, org_id, cita.get("mascota_id")
+    )
+
     SecurityManager.registrar_auditoria(
         db=db,
         org_id=org_id,
@@ -1062,14 +1399,14 @@ def marcar_no_asistio_cita(
         usuario="Operador Agenda",
         rol="Operativo",
         accion="NO_ASISTIO_CITA",
-        detalle=f"Cita {cita_id} marcada como No Asistió ({cita.get('servicio', '')})",
+        detalle=f"Cita {cita_id} marcada como No Asistió ({cita.get('servicio', '')}) · Lealtad={visitas_actuales}",
     )
 
     return {
         "cita": cita_actualizada,
+        "visitas_acumuladas_mascota": visitas_actuales,
         "mensaje": "Cita marcada como No Asistió. Se liberó el espacio y se actualizó el balance del día.",
     }
-
 
 
 # -------------------------------------------------------------------------
@@ -1157,7 +1494,7 @@ def procesar_escaneo(
 ) -> Dict[str, Any]:
     """
     Procesa el escaneo de un código:
-    - Si inicia con PET-, busca la mascota y su dueño (tarjeta de lealtad).
+    - Si inicia con PET-, busca la mascota y su dueño (tarjeta de lealtad) con visitas sincronizadas.
     - De lo contrario, busca en el inventario de la sucursal por ID o nombre y aplica la acción
       (consulta, descontar_insumo o vender_producto).
     """
@@ -1188,7 +1525,11 @@ def procesar_escaneo(
                 status_code=404,
                 detail=f"No se encontró mascota con el código {codigo.upper()}",
             )
-        mascota = res.data[0]
+        mascota = dict(res.data[0])
+        visitas_sync = _sincronizar_visitas_mascota(db, org_id, mascota.get("id"))
+        mascota["visitas_acumuladas"] = max(
+            int(mascota.get("visitas_acumuladas") or 0), visitas_sync
+        )
         clientes_repo = OrganizationRepository(db, "clientes", org_id)
         cliente = clientes_repo.get_by_id(mascota["cliente_id"])
         return {

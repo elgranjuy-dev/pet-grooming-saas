@@ -156,13 +156,37 @@ export class InventarioCajaView {
         if (res.tipo === 'mascota') {
           const m = res.mascota || {};
           const c = res.cliente || {};
+          const visitas = Number(m.visitas_acumuladas || 0);
+          const meta = Number(m.meta_lealtad || 5);
           resultBox.innerHTML = `
-            <div class="p-3 rounded-lg bg-blue-50 border border-blue-200 text-xs space-y-1">
-              <div class="font-bold text-blue-900 text-sm">
-                <i class="fa-solid fa-dog mr-1"></i>Tarjeta de Lealtad Identificada: ${m.nombre} (${m.raza})
+            <div class="p-3.5 rounded-xl bg-blue-50 border border-blue-200 text-xs space-y-2">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <div class="font-extrabold text-blue-900 text-sm">
+                  <i class="fa-solid fa-dog mr-1"></i>Tarjeta de Lealtad Identificada: ${m.nombre} (${m.raza})
+                </div>
+                <span class="px-2.5 py-0.5 rounded-full bg-blue-600 text-white font-extrabold text-[11px]">
+                  Lealtad: ${visitas} / ${meta} visitas
+                </span>
               </div>
-              <p class="text-slate-700"><strong>Dueño:</strong> ${c.nombre || '-'} (${c.telefono || '-'})</p>
-              <p class="text-slate-600"><strong>Alergias:</strong> ${m.alergias_medicas || 'Ninguna'} | <strong>Shampoo/Corte:</strong> ${m.tipo_shampoo || '-'} / ${m.estilo_corte || '-'}</p>
+              <p class="text-slate-700">
+                <strong>Dueño:</strong> ${c.nombre || '-'} (${c.telefono || '-'}) ·
+                <strong>Temperamento:</strong> ${m.temperamento || 'Dócil'} ·
+                <strong class="text-red-700">Alergias:</strong> ${m.alergias_medicas || 'Ninguna'}
+              </p>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
+                <div class="p-2 rounded-lg bg-white border border-blue-100">
+                  <span class="text-[10px] uppercase font-bold text-slate-400 block"># de Navaja</span>
+                  <span class="font-bold text-slate-800">${m.numero_navaja || 'Sin especificar'}</span>
+                </div>
+                <div class="p-2 rounded-lg bg-white border border-blue-100">
+                  <span class="text-[10px] uppercase font-bold text-slate-400 block">Shampoo Asignado</span>
+                  <span class="font-bold text-slate-800">${m.tipo_shampoo || 'Sin especificar'}</span>
+                </div>
+                <div class="p-2 rounded-lg bg-white border border-blue-100">
+                  <span class="text-[10px] uppercase font-bold text-slate-400 block">Estilo de Corte</span>
+                  <span class="font-bold text-slate-800">${m.estilo_corte || 'Sin especificar'}</span>
+                </div>
+              </div>
             </div>`;
         } else {
           const p = res.producto || {};

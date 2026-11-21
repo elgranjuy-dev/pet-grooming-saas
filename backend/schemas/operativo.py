@@ -61,6 +61,19 @@ class CitaCompletar(ContextoOperativoMixin):
     monto: Optional[float] = None
     estilista: Optional[str] = None
     notas_servicio: Optional[str] = None
+    etapa_estancia: Optional[str] = None
+
+
+class CitaUpdate(ContextoOperativoMixin):
+    fecha_hora: Optional[str] = None
+    servicio: Optional[str] = None
+    duracion_minutos: Optional[int] = None
+    estilista: Optional[str] = None
+    precio: Optional[float] = None
+    estado: Optional[str] = None
+    etapa_estancia: Optional[str] = None
+    notas_servicio: Optional[str] = None
+
 
 
 class CajaManualCreate(ContextoOperativoMixin):

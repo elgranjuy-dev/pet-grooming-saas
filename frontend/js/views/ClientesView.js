@@ -409,8 +409,8 @@ export class ClientesView {
               <span class="block text-[10px] text-red-600 mt-0.5">Alergias: ${m.alergias_medicas || 'Ninguna'}</span>
             </td>
             <td class="p-2.5 text-[11px] text-slate-600">
-              <div><strong>Corte:</strong> ${m.estilo_corte || 'Estándar'}</div>
-              <div class="text-[10px] text-slate-400">Navaja: ${m.numero_navaja || '-'} · Shampoo: ${m.tipo_shampoo || '-'}</div>
+              <div><strong>Corte:</strong> ${m.estilo_corte || 'Sin especificar'}</div>
+              <div class="text-[10px] text-slate-500">Navaja: ${m.numero_navaja || 'Sin especificar'} · Shampoo: ${m.tipo_shampoo || 'Sin especificar'}</div>
             </td>
             <td class="p-2.5 font-extrabold text-blue-700 text-center">
               ${m.visitas_acumuladas || 0} / ${m.meta_lealtad || 5}
@@ -650,9 +650,17 @@ export class ClientesView {
 
   formatearFechaHora(isoStr) {
     if (!isoStr) return 'Sin registro';
+    const s = String(isoStr).trim();
+    const match = s.match(/^(\d{4})-(\d{2})-(\d{2})[T\s](\d{2}):(\d{2})/);
+    if (match) {
+      const [, y, m, d, hh, mm] = match;
+      const meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+      const mesTxt = meses[Math.max(0, Math.min(11, Number(m) - 1))];
+      return `${d} ${mesTxt} ${y}, ${hh}:${mm}`;
+    }
     try {
-      const d = new Date(isoStr);
-      if (Number.isNaN(d.getTime())) return isoStr;
+      const d = new Date(s);
+      if (Number.isNaN(d.getTime())) return s;
       return d.toLocaleString('es-MX', {
         day: '2-digit',
         month: 'short',
@@ -661,7 +669,7 @@ export class ClientesView {
         minute: '2-digit',
       });
     } catch (_) {
-      return isoStr;
+      return s;
     }
   }
 
@@ -1033,15 +1041,15 @@ export class ClientesView {
           </div>
           <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200/70">
             <span class="text-[10px] font-bold uppercase text-slate-400 block"># de Navaja</span>
-            <span class="font-bold text-slate-800">${m.numero_navaja || 'Estándar'}</span>
+            <span class="font-bold text-slate-800">${m.numero_navaja || 'Sin especificar'}</span>
           </div>
           <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200/70">
             <span class="text-[10px] font-bold uppercase text-slate-400 block">Shampoo Asignado</span>
-            <span class="font-bold text-slate-800">${m.tipo_shampoo || 'Neutro / General'}</span>
+            <span class="font-bold text-slate-800">${m.tipo_shampoo || 'Sin especificar'}</span>
           </div>
           <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200/70">
             <span class="text-[10px] font-bold uppercase text-slate-400 block">Estilo de Corte</span>
-            <span class="font-bold text-slate-800">${m.estilo_corte || 'Estándar'}</span>
+            <span class="font-bold text-slate-800">${m.estilo_corte || 'Sin especificar'}</span>
           </div>
         </div>
 
