@@ -12,6 +12,7 @@ from backend.schemas.operativo import (
     CheckOutRequest,
     CitaCompletar,
     CitaCreate,
+    CitaUpdate,
     ClienteCreate,
     EscaneoRequest,
     ExcepcionCreate,
