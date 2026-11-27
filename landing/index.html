@@ -3,30 +3,29 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PawFlow — CRM para Estéticas Caninas y Peluquerías de Mascotas</title>
+  <title>PawFlow — CRM Interactivo para Estéticas Caninas</title>
   <meta
     name="description"
-    content="Organiza tu estética canina con PawFlow: agenda inteligente sin traslapes, expedientes de mascotas con tarjeta de lealtad QR, inventario, corte de caja y control multi-sucursal."
+    content="El CRM diseñado para estéticas caninas modernas: agenda sin traslapes, expedientes de mascotas con tarjeta de lealtad QR, inventario, permisos por PIN y corte de caja multi-sucursal."
   />
   <meta property="og:type" content="website" />
-  <meta property="og:title" content="PawFlow — El CRM diseñado para estéticas caninas" />
+  <meta property="og:title" content="PawFlow — El CRM para estéticas caninas con orden real" />
   <meta
     property="og:description"
-    content="Agenda tipo Outlook, expedientes por mascota, lealtad QR, inventario y caja cuadrada al centavo. Prueba gratis 14 días."
+    content="Pruébalo con el nombre de tu estética antes de registrarte. Agenda tipo Outlook, lealtad QR, inventario y caja cuadrada al centavo."
   />
-  <meta property="og:image" content="./assets/hero-salon.jpg" />
-  <meta name="theme-color" content="#205B48" />
+  <meta property="og:image" content="./assets/heeler-hero.jpg" />
+  <meta name="theme-color" content="#1D65C1" />
 
-  <!-- Curated Editorial Typography: Fraunces + Plus Jakarta Sans -->
+  <!-- Variable Typefaces: Roboto Flex + Fraunces + Recursive (Kern Society DNA) -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
-    href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,SOFT,wght@0,9..144,0..100,400..700;1,9..144,0..100,400..600&family=Recursive:MONO,wght@0..1,400..700&family=Roboto+Flex:opsz,slnt,wdth,wght@8..144,-10..0,75..135,300..900&display=swap"
     rel="stylesheet"
   />
   <link rel="stylesheet" href="./css/styles.css" />
 
-  <!-- Structured Data for SEO -->
   <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -45,12 +44,12 @@
   </script>
 </head>
 <body>
-  <!-- Top Scroll Progress Rail -->
+  <!-- Scroll Progress Rail -->
   <div class="scroll-progress" aria-hidden="true">
     <div id="scroll-progress-bar" class="scroll-progress__bar"></div>
   </div>
 
-  <!-- Custom Editorial Cursor Lens (Desktop fine pointers only) -->
+  <!-- Editorial Cursor Lens -->
   <div id="cursor-lens" class="cursor-lens" aria-hidden="true">
     <span id="cursor-lens-label" class="cursor-lens__label"></span>
   </div>
@@ -62,7 +61,7 @@
     <div class="container header-inner">
       <a href="#inicio" class="brand" aria-label="PawFlow Inicio">
         <span class="brand-mark" aria-hidden="true">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
             <circle cx="7" cy="9.5" r="2.2" fill="currentColor" />
             <circle cx="12" cy="6.8" r="2.3" fill="currentColor" />
             <circle cx="17" cy="9.5" r="2.2" fill="currentColor" />
@@ -70,14 +69,15 @@
           </svg>
         </span>
         <span>PawFlow</span>
+        <span class="brand-meta">CRM · Estéticas Caninas</span>
       </a>
 
       <nav aria-label="Navegación principal">
         <ul class="nav-links">
-          <li><a href="#producto" data-roll>Producto</a></li>
-          <li><a href="#beneficios" data-roll>Beneficios</a></li>
-          <li><a href="#planes" data-roll>Planes</a></li>
-          <li><a href="#faq" data-roll>Preguntas</a></li>
+          <li><a href="#manifiesto" data-roll>(01) Manifiesto</a></li>
+          <li><a href="#testdrive" data-roll>(02) Test drive</a></li>
+          <li><a href="#enuso" data-roll>(03) En uso</a></li>
+          <li><a href="#planes" data-roll>(05) Planes</a></li>
         </ul>
       </nav>
 
@@ -108,10 +108,10 @@
 
     <div id="mobile-drawer" class="mobile-drawer" hidden>
       <ul class="mobile-nav-list">
-        <li><a href="#producto" data-close-mobile>Producto</a></li>
-        <li><a href="#beneficios" data-close-mobile>Beneficios</a></li>
-        <li><a href="#planes" data-close-mobile>Planes</a></li>
-        <li><a href="#faq" data-close-mobile>Preguntas</a></li>
+        <li><a href="#manifiesto" data-close-mobile>(01) Manifiesto</a></li>
+        <li><a href="#testdrive" data-close-mobile>(02) Test drive</a></li>
+        <li><a href="#enuso" data-close-mobile>(03) En uso</a></li>
+        <li><a href="#planes" data-close-mobile>(05) Planes</a></li>
       </ul>
       <div class="mobile-drawer-actions">
         <button id="btn-open-login-mobile" type="button" class="btn btn--secondary btn--full" data-open-login>
@@ -126,7 +126,7 @@
 
   <main id="inicio">
     <!-- ===================================================================
-         HERO SECTION
+         HERO: VARIABLE PROXIMITY WORDMARK + BLUE HEELER EDITORIAL
     ==================================================================== -->
     <section class="hero">
       <div class="container">
@@ -134,473 +134,316 @@
           <div class="studio-meta-group">
             <span>CDMX / México</span>
             <span id="studio-live-clock" class="studio-clock">--:-- hrs</span>
-            <span>Soporte en vivo · Multi-sucursal</span>
+            <span class="meta-accent">1 a 20 sucursales · Nube 24/7</span>
           </div>
-          <a href="#producto" class="scroll-cue" aria-label="Explorar producto">
-            <span>Scroll</span>
+          <a href="#testdrive" class="scroll-cue">
+            <span>Scroll ↓</span>
             <span class="scroll-cue__line" aria-hidden="true"></span>
           </a>
         </div>
-      </div>
 
-      <div class="container hero-grid">
-        <div class="hero-copy">
-          <span class="eyebrow">CRM para estéticas caninas · México y Latam</span>
-          <h1 class="hero-title" data-split>
-            Tu estética canina llena, ordenada y <em>sin fugas</em> en caja.
-          </h1>
-          <p class="hero-lead">
-            Deja atrás la libreta y los mensajes perdidos. Agenda tipo Outlook sin traslapes,
-            expedientes por mascota con tarjeta de lealtad QR, inventario y corte de caja en tiempo
-            real, desde una sucursal hasta veinte.
-          </p>
-
-          <div class="hero-ctas">
-            <a id="cta-hero-demo" href="#demo" class="btn btn--primary btn--lg" data-magnetic data-cursor="DEMO GRATIS">
-              Solicitar demo gratis
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M5 12h14" />
-                <path d="m13 6 6 6-6 6" />
-              </svg>
-            </a>
-            <a id="cta-hero-whatsapp" href="#" class="btn btn--secondary btn--lg" data-magnetic data-cursor="WHATSAPP" data-cursor-tone="wa" data-whatsapp-link data-wa-context="hero">
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <path d="M20.52 3.48A11.86 11.86 0 0 0 12.06 0C5.49 0 .14 5.34.14 11.91c0 2.1.55 4.15 1.59 5.95L0 24l6.3-1.65a11.87 11.87 0 0 0 5.75 1.47h.01c6.57 0 11.92-5.35 11.92-11.92 0-3.18-1.24-6.17-3.46-8.42ZM12.06 21.8h-.01a9.87 9.87 0 0 1-5.03-1.38l-.36-.21-3.74.98 1-3.65-.24-.37a9.86 9.86 0 0 1-1.52-5.26c0-5.45 4.44-9.89 9.9-9.89 2.64 0 5.13 1.03 6.99 2.9a9.83 9.83 0 0 1 2.9 7c0 5.45-4.44 9.88-9.89 9.88Zm5.42-7.41c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.65.07-.3-.15-1.26-.46-2.39-1.48-.88-.79-1.48-1.76-1.65-2.06-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.67-1.61-.92-2.2-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.8.37-.27.3-1.04 1.02-1.04 2.48 0 1.46 1.07 2.88 1.22 3.08.15.2 2.1 3.21 5.09 4.5.71.31 1.27.49 1.7.63.72.23 1.37.2 1.88.12.57-.09 1.76-.72 2.01-1.41.25-.7.25-1.29.17-1.41-.07-.12-.27-.2-.57-.35Z" />
-              </svg>
-              Hablar por WhatsApp
-            </a>
+        <!-- Kern Society Signature: Interactive Proximity Variable Display -->
+        <div class="kinetic-stage">
+          <div id="kinetic-wordmark" class="kinetic-wordmark" aria-label="PAWFLOW" data-cursor="MUEVE EL CURSOR">
+            <span class="kw-char">P</span>
+            <span class="kw-char">A</span>
+            <span class="kw-char">W</span>
+            <span class="kw-char is-accent">F</span>
+            <span class="kw-char is-accent">L</span>
+            <span class="kw-char is-accent">O</span>
+            <span class="kw-char is-accent">W</span>
           </div>
-
-          <ul class="hero-proof-list">
-            <li>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
-              14 días de prueba sin tarjeta
-            </li>
-            <li>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
-              Listo para operar el mismo día
-            </li>
-            <li>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
-              Sin plazos forzosos
-            </li>
-          </ul>
+          <div class="kinetic-caption">
+            <span>CRM MULTI-SUCURSAL PARA ESTÉTICAS CANINAS</span>
+            <span class="kinetic-caption__hint">Pasa el cursor sobre el título · software vivo</span>
+          </div>
         </div>
 
-        <div class="hero-visual">
-          <div class="hero-photo-frame curtain-frame reveal" data-parallax="22" data-cursor="VER CRM">
-            <img
-              src="./assets/hero-salon.jpg"
-              alt="Estilista canina cepillando a un poodle recién bañado en una estética moderna y luminosa"
-              width="1200"
-              height="900"
-              fetchpriority="high"
-            />
+        <div class="hero-grid">
+          <div>
+            <h1 class="hero-subheadline" data-split>
+              Agenda llena, equipo en orden y <em>cero fugas</em> en caja.
+            </h1>
+            <p class="hero-lead">
+              Diseñado para que tu estética canina opere con precisión de estudio: calendario tipo
+              Outlook sin traslapes, expedientes de mascotas con tarjeta de lealtad QR, control de
+              inventario y corte de caja en tiempo real.
+            </p>
+
+            <div class="hero-ctas">
+              <a id="cta-hero-demo" href="#testdrive" class="btn btn--primary btn--lg" data-magnetic data-cursor="PROBAR VIVO">
+                Probar con mi estética
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M5 12h14" /><path d="m13 6 6 6-6 6" />
+                </svg>
+              </a>
+              <a id="cta-hero-whatsapp" href="#" class="btn btn--secondary btn--lg" data-magnetic data-cursor="WHATSAPP" data-cursor-tone="wa" data-whatsapp-link data-wa-context="hero">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M20.52 3.48A11.86 11.86 0 0 0 12.06 0C5.49 0 .14 5.34.14 11.91c0 2.1.55 4.15 1.59 5.95L0 24l6.3-1.65a11.87 11.87 0 0 0 5.75 1.47h.01c6.57 0 11.92-5.35 11.92-11.92 0-3.18-1.24-6.17-3.46-8.42ZM12.06 21.8h-.01a9.87 9.87 0 0 1-5.03-1.38l-.36-.21-3.74.98 1-3.65-.24-.37a9.86 9.86 0 0 1-1.52-5.26c0-5.45 4.44-9.89 9.9-9.89 2.64 0 5.13 1.03 6.99 2.9a9.83 9.83 0 0 1 2.9 7c0 5.45-4.44 9.88-9.89 9.88Z" />
+                </svg>
+                Hablar por WhatsApp
+              </a>
+            </div>
+
+            <ul class="hero-proof-list">
+              <li>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="20 6 9 17 4 12" /></svg>
+                14 días gratis sin tarjeta
+              </li>
+              <li>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="20 6 9 17 4 12" /></svg>
+                Activación en 1 clic
+              </li>
+              <li>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="20 6 9 17 4 12" /></svg>
+                Desde $499 MXN/mes
+              </li>
+            </ul>
           </div>
 
-          <aside class="hero-live-card" aria-label="Resumen de ejemplo de operación diaria">
-            <div class="hero-live-card__head">
-              <span>Matriz Roma</span>
-              <span class="status-tag">3 estilistas en turno</span>
+          <div class="hero-visual">
+            <div class="hero-photo-frame curtain-frame reveal" data-parallax="22" data-cursor="BLUE HEELER">
+              <img
+                src="./assets/heeler-hero.jpg"
+                alt="Perro Blue Heeler recién bañado y sonriendo sobre una mesa de estética canina moderna en tonos azul pizarra"
+                width="1200"
+                height="900"
+                fetchpriority="high"
+              />
             </div>
-            <div class="hero-live-card__metrics">
-              <div>
-                <div class="hero-live-card__value">18 citas</div>
-                <div class="hero-live-card__label">0 traslapes hoy</div>
+
+            <aside class="hero-live-card" aria-label="Resumen operativo en vivo">
+              <div class="hero-live-card__head">
+                <span data-live-salon-short>Blue Paws Roma</span>
+                <span class="status-tag">3 estilistas activos</span>
               </div>
-              <div>
-                <div class="hero-live-card__value">$8,460</div>
-                <div class="hero-live-card__label">Caja en vivo (MXN)</div>
+              <div class="hero-live-card__metrics">
+                <div>
+                  <div class="hero-live-card__value">18 citas</div>
+                  <div class="hero-live-card__label">0 traslapes hoy</div>
+                </div>
+                <div>
+                  <div class="hero-live-card__value">$8,460</div>
+                  <div class="hero-live-card__label">Caja en vivo MXN</div>
+                </div>
               </div>
-            </div>
-          </aside>
+            </aside>
+          </div>
         </div>
       </div>
     </section>
 
     <!-- ===================================================================
-         VALUE STRIP (3 CORE PROMISES)
-    ==================================================================== -->
-    <section class="value-band" aria-label="Resultados clave">
-      <div class="container value-grid">
-        <article class="value-item reveal">
-          <span class="value-num">01</span>
-          <h2>Cero citas empalmadas</h2>
-          <p>
-            El motor de disponibilidad cruza horarios de estilistas, comidas y excepciones en tiempo
-            real. Nadie vuelve a agendar en el pasado ni a saturar una mesa.
-          </p>
-        </article>
-
-        <article class="value-item reveal">
-          <span class="value-num">02</span>
-          <h2>Clientes que sí regresan</h2>
-          <p>
-            Cada dueño y mascota tiene su expediente con historial de baños, notas de conducta y una
-            tarjeta de lealtad QR única que incentiva visitas recurrentes.
-          </p>
-        </article>
-
-        <article class="value-item reveal">
-          <span class="value-num">03</span>
-          <h2>Caja cuadrada al centavo</h2>
-          <p>
-            Cobra servicios y productos con escáner, descuenta stock automáticamente y revisa el
-            corte de caja y asistencia de tu equipo desde cualquier lugar.
-          </p>
-        </article>
-      </div>
-    </section>
-
-    <!-- ===================================================================
-         KINETIC CAPABILITIES MARQUEE (LIGHT & SHADE EDITORIAL RIBBON)
+         KINETIC MARQUEE (DEEP BLUE HEELER SLATE)
     ==================================================================== -->
     <div class="craft-marquee" aria-label="Capacidades de PawFlow">
       <div class="marquee-viewport">
         <div class="marquee-group">
           <span class="marquee-item marquee-item--serif">Agenda sin traslapes <span class="marquee-sep"></span></span>
-          <span class="marquee-item">Lealtad QR PET-XXXX <span class="marquee-sep"></span></span>
+          <span class="marquee-item">LEALTAD QR PET-XXXX <span class="marquee-sep"></span></span>
           <span class="marquee-item marquee-item--serif">Corte de caja en vivo <span class="marquee-sep"></span></span>
-          <span class="marquee-item">Multi-sucursal <span class="marquee-sep"></span></span>
+          <span class="marquee-item">MULTI-SUCURSAL <span class="marquee-sep"></span></span>
           <span class="marquee-item marquee-item--serif">Permisos por perfil <span class="marquee-sep"></span></span>
-          <span class="marquee-item">Reloj checador PIN <span class="marquee-sep"></span></span>
+          <span class="marquee-item">RELOJ CHECADOR PIN <span class="marquee-sep"></span></span>
           <span class="marquee-item marquee-item--serif">Privacidad celular <span class="marquee-sep"></span></span>
-          <span class="marquee-item">Onboarding 1-clic <span class="marquee-sep"></span></span>
+          <span class="marquee-item">ONBOARDING 1-CLIC <span class="marquee-sep"></span></span>
         </div>
         <div class="marquee-group" aria-hidden="true">
           <span class="marquee-item marquee-item--serif">Agenda sin traslapes <span class="marquee-sep"></span></span>
-          <span class="marquee-item">Lealtad QR PET-XXXX <span class="marquee-sep"></span></span>
+          <span class="marquee-item">LEALTAD QR PET-XXXX <span class="marquee-sep"></span></span>
           <span class="marquee-item marquee-item--serif">Corte de caja en vivo <span class="marquee-sep"></span></span>
-          <span class="marquee-item">Multi-sucursal <span class="marquee-sep"></span></span>
+          <span class="marquee-item">MULTI-SUCURSAL <span class="marquee-sep"></span></span>
           <span class="marquee-item marquee-item--serif">Permisos por perfil <span class="marquee-sep"></span></span>
-          <span class="marquee-item">Reloj checador PIN <span class="marquee-sep"></span></span>
+          <span class="marquee-item">RELOJ CHECADOR PIN <span class="marquee-sep"></span></span>
           <span class="marquee-item marquee-item--serif">Privacidad celular <span class="marquee-sep"></span></span>
-          <span class="marquee-item">Onboarding 1-clic <span class="marquee-sep"></span></span>
+          <span class="marquee-item">ONBOARDING 1-CLIC <span class="marquee-sep"></span></span>
         </div>
       </div>
     </div>
 
     <!-- ===================================================================
-         INTERACTIVE PRODUCT SHOWCASE
+         (01) MANIFESTO
     ==================================================================== -->
-    <section id="producto" class="showcase">
-      <div class="container">
-        <header class="showcase-header reveal">
-          <span class="eyebrow">01 · Recorrido interactivo</span>
-          <h2 class="section-heading" data-split>Todo lo que tu estética opera a diario, en una sola pantalla.</h2>
-          <p class="section-lead">
-            Explora los tres módulos que usan nuestros clientes cada mañana. Haz clic en los botones
-            para probar cómo responde PawFlow en tiempo real.
+    <section id="manifiesto" class="manifesto-section">
+      <div class="container manifesto-grid">
+        <div class="reveal">
+          <span class="chapter-tag"><span class="chapter-tag__num">(01)</span> Manifiesto</span>
+        </div>
+        <div class="reveal">
+          <p class="manifesto-statement" data-split>
+            Una estética canina no debería depender de libretas rayadas ni de chats perdidos.
+            PawFlow reúne <em>agenda, expedientes, lealtad QR y caja</em> en un sistema rápido que
+            tu equipo aprende en diez minutos.
           </p>
-        </header>
 
-        <div class="tour-tabs" role="tablist" aria-label="Módulos de PawFlow">
-          <button
-            id="tab-agenda"
-            type="button"
-            class="tour-tab is-active"
-            role="tab"
-            aria-selected="true"
-            aria-controls="panel-agenda"
-            data-tour-tab="agenda"
-          >
-            <span class="tour-tab__idx">01</span>
-            Agenda inteligente
-          </button>
-          <button
-            id="tab-lealtad"
-            type="button"
-            class="tour-tab"
-            role="tab"
-            aria-selected="false"
-            aria-controls="panel-lealtad"
-            data-tour-tab="lealtad"
-          >
-            <span class="tour-tab__idx">02</span>
-            Expediente y Lealtad QR
-          </button>
-          <button
-            id="tab-caja"
-            type="button"
-            class="tour-tab"
-            role="tab"
-            aria-selected="false"
-            aria-controls="panel-caja"
-            data-tour-tab="caja"
-          >
-            <span class="tour-tab__idx">03</span>
-            Caja, Inventario y Sucursales
-          </button>
+          <div class="pillars-row">
+            <div class="pillar-card">
+              <span class="pillar-card__num">01 / DISPONIBILIDAD REAL</span>
+              <h3>Cero citas empalmadas</h3>
+              <p>Cruza horarios de estilistas, comidas y excepciones automáticamente antes de confirmar.</p>
+            </div>
+            <div class="pillar-card">
+              <span class="pillar-card__num">02 / FIDELIZACIÓN QR</span>
+              <h3>Clientes que sí vuelven</h3>
+              <p>Tarjeta de lealtad digital única por dueño que premia cada baño y eleva la recompra.</p>
+            </div>
+            <div class="pillar-card">
+              <span class="pillar-card__num">03 / CONTROL DE DUEÑO</span>
+              <h3>Caja y cartera blindadas</h3>
+              <p>Celulares enmascarados a 4 dígitos, acceso por PIN y corte de caja auditado por turno.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================
+         (02) TEST DRIVE — LIVE INTERACTIVE SANDBOX (KERN SOCIETY STYLE)
+    ==================================================================== -->
+    <section id="testdrive" class="testdrive-section">
+      <div class="container">
+        <div class="testdrive-header reveal">
+          <div>
+            <span class="chapter-tag"><span class="chapter-tag__num">(02)</span> Test drive</span>
+            <h2 class="section-heading" data-split>Pruébalo con el nombre de <em>tu estética</em>.</h2>
+            <p class="section-lead">
+              Escribe el nombre de tu negocio abajo y mira en tiempo real cómo se personalizan tu
+              subdominio, tu tarjeta de lealtad QR, tu agenda y tu corte de caja.
+            </p>
+          </div>
         </div>
 
-        <!-- PANEL 1: AGENDA -->
-        <div id="panel-agenda" class="tour-panel is-active" role="tabpanel" aria-labelledby="tab-agenda">
-          <div class="tour-copy">
-            <h3>Calendario tipo Outlook pensado para baños, cortes y tiempos por raza.</h3>
-            <p>
-              Visualiza el día o la semana por estilista o de forma global. Bloquea horarios de
-              comida, días festivos y evita que alguien reserve en horarios vencidos.
-            </p>
-            <ul class="feature-checklist">
-              <li>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
-                <span>Cálculo automático de espacios libres sin traslapes por estilista.</span>
-              </li>
-              <li>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
-                <span>Control de asistencia (llegó, en servicio, listo para recoger, no asistió).</span>
-              </li>
-              <li>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
-                <span>Alta rápida de cita directo desde la ficha de cada mascota.</span>
-              </li>
-            </ul>
+        <div class="sandbox-console reveal">
+          <div class="sandbox-bar" data-spotlight>
+            <div class="sandbox-input-group">
+              <label for="sandbox-salon-input">Escribe el nombre de tu estética (se actualiza en vivo)</label>
+              <input
+                id="sandbox-salon-input"
+                class="sandbox-input"
+                type="text"
+                value="Blue Paws Roma"
+                maxlength="34"
+                placeholder="Ej. Estética Canina Norte"
+              />
+            </div>
+            <div class="sandbox-presets" role="group" aria-label="Ejemplos rápidos">
+              <button type="button" class="preset-btn is-active" data-salon-preset="Blue Paws Roma">Blue Paws Roma</button>
+              <button type="button" class="preset-btn" data-salon-preset="Heeler Spa GDL">Heeler Spa GDL</button>
+              <button type="button" class="preset-btn" data-salon-preset="Huella Studio MTY">Huella Studio MTY</button>
+            </div>
           </div>
 
-          <div class="demo-frame" aria-label="Demostración interactiva de Agenda">
-            <div class="demo-frame__bar">
-              <div>
-                <div class="demo-frame__title">Agenda · Jueves 26 Nov</div>
-                <div class="demo-frame__sub">Haz clic en un espacio libre para simular una reserva</div>
+          <div class="sandbox-subdomain-strip">
+            <span>Tu portal privado: <strong id="sandbox-subdomain-url" class="subdomain-url">https://blue-paws-roma.pawflow.mx</strong></span>
+            <span>Onboarding en 1 clic · Plantilla de 7 días incluida</span>
+          </div>
+
+          <div class="sandbox-grid">
+            <!-- PANE 1: AGENDA -->
+            <div class="sandbox-pane">
+              <div class="pane-head">
+                <span class="pane-label">A · Agenda Outlook (haz clic en un hueco libre)</span>
+                <div class="filter-group" role="group" aria-label="Filtrar estilista">
+                  <button type="button" class="filter-btn is-active" data-stylist="all">Todos</button>
+                  <button type="button" class="filter-btn" data-stylist="sofia">Sofía R.</button>
+                  <button type="button" class="filter-btn" data-stylist="carlos">Carlos M.</button>
+                </div>
               </div>
-              <div class="filter-group" role="group" aria-label="Filtrar por estilista">
-                <button type="button" class="filter-btn is-active" data-stylist="all">Todos</button>
-                <button type="button" class="filter-btn" data-stylist="sofia">Sofía R.</button>
-                <button type="button" class="filter-btn" data-stylist="carlos">Carlos M.</button>
-              </div>
-            </div>
-            <div class="demo-frame__body">
               <div id="demo-agenda-list" class="agenda-list"></div>
               <p class="agenda-hint">
-                <span id="demo-agenda-feedback">Espacios libres calculados respetando comidas y citas activas.</span>
+                <span id="demo-agenda-feedback">Espacios libres respetando comidas y turnos activos.</span>
                 <button id="btn-reset-agenda" type="button" class="filter-btn" style="display:none;">Reiniciar</button>
               </p>
             </div>
-          </div>
-        </div>
 
-        <!-- PANEL 2: EXPEDIENTE & LEALTAD -->
-        <div id="panel-lealtad" class="tour-panel" role="tabpanel" aria-labelledby="tab-lealtad">
-          <div class="tour-copy">
-            <h3>Conoce a cada peludo por su nombre y premia a sus dueños sin tarjetas de papel.</h3>
-            <p>
-              Busca cualquier cliente o mascota al instante desde la barra superior. Guarda notas de
-              corte, alergias, selector de razas (incluida Mestiza) y protege los números celulares
-              con enmascaramiento automático.
-            </p>
-            <ul class="feature-checklist">
-              <li>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
-                <span>Código QR de lealtad único por cliente (`PET-...`) escaneable en recepción.</span>
-              </li>
-              <li>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
-                <span>Celular enmascarado a 4 dígitos para proteger tu cartera ante rotación.</span>
-              </li>
-              <li>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
-                <span>Múltiples mascotas por dueño con historial completo de servicios.</span>
-              </li>
-            </ul>
-          </div>
-
-          <div class="demo-frame" aria-label="Demostración interactiva de Expediente y Lealtad QR">
-            <div class="demo-frame__bar">
-              <div>
-                <div class="demo-frame__title">Expediente de Mascota</div>
-                <div class="demo-frame__sub">Prueba escanear una visita en la tarjeta de lealtad</div>
+            <!-- PANE 2: LOYALTY QR -->
+            <div class="sandbox-pane">
+              <div class="pane-head">
+                <span class="pane-label">B · Tarjeta de Lealtad QR (escaneo en vivo)</span>
+                <span class="phone-masked">Tel: •••• ••84 21</span>
               </div>
-              <span class="phone-masked" title="Protección de privacidad activa">Tel: •••• ••84 21</span>
-            </div>
-            <div class="demo-frame__body">
-              <div class="pet-profile-head">
-                <div class="pet-identity">
-                  <div class="pet-avatar" aria-hidden="true">M</div>
+              <div class="loyalty-card" data-spotlight>
+                <div class="loyalty-card__top">
                   <div>
-                    <h4>Max · Poodle Toy</h4>
-                    <p>Dueña: Valeria Mendoza · 6.2 kg · Cliente frecuente</p>
+                    <div id="loyalty-salon-title" class="loyalty-salon-name">Blue Paws Roma</div>
+                    <div class="loyalty-code">HASH: PET-8F4A9C12E03D · BLUE (BLUE HEELER)</div>
                   </div>
-                </div>
-                <span class="agenda-status agenda-status--confirmed">Al corriente</span>
-              </div>
-
-              <div class="pet-notes">
-                <strong>Nota de estética:</strong> Usar shampoo de avena hipoalergénico. Corte
-                tijera en carita redonda; sensible en patitas traseras.
-              </div>
-
-              <div class="loyalty-box">
-                <div class="loyalty-box__top">
-                  <div>
-                    <div style="font-weight:700;font-size:0.92rem;">Tarjeta de Lealtad Digital</div>
-                    <div class="loyalty-code">HASH: PET-8F4A9C12E03D</div>
-                  </div>
-                  <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
                     <rect x="3" y="3" width="7" height="7" rx="1" />
                     <rect x="14" y="3" width="7" height="7" rx="1" />
                     <rect x="3" y="14" width="7" height="7" rx="1" />
                     <path d="M14 14h3v3h-3zM18 18h3v3h-3zM18 14h3M14 18v3" />
                   </svg>
                 </div>
-
                 <div id="demo-loyalty-stamps" class="loyalty-stamps" aria-live="polite"></div>
-
                 <div class="loyalty-footer">
-                  <span id="demo-loyalty-msg" class="loyalty-msg">
-                    <strong>4 de 5 baños</strong> · Falta 1 visita para premio
-                  </span>
-                  <button id="btn-scan-loyalty" type="button" class="btn btn--light btn--sm">
-                    Escanear visita (+1)
-                  </button>
+                  <span id="demo-loyalty-msg" class="loyalty-msg"><strong>4 de 5 baños</strong> · Falta 1 visita para premio</span>
+                  <button id="btn-scan-loyalty" type="button" class="btn btn--light btn--sm">Escanear visita (+1)</button>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
 
-        <!-- PANEL 3: CAJA, INVENTARIO Y MULTI-SUCURSAL -->
-        <div id="panel-caja" class="tour-panel" role="tabpanel" aria-labelledby="tab-caja">
-          <div class="tour-copy">
-            <h3>Supervisa caja, inventario y permisos de todas tus sucursales sin estar presente.</h3>
-            <p>
-              Cada colaborador inicia turno con su PIN y ve únicamente los módulos que tú autorizas.
-              Cobra en segundos, recibe alertas cuando un producto está por agotarse y audita cada
-              movimiento.
-            </p>
-            <ul class="feature-checklist">
-              <li>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
-                <span>Corte de caja por sucursal y desglose de servicios vs tienda retail.</span>
-              </li>
-              <li>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
-                <span>Matriz granular de permisos por perfil (Dueño, Admin, Cajero, Estilista).</span>
-              </li>
-              <li>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
-                <span>Modo Impersonate para revisar lo que ve cualquier colaborador en vivo.</span>
-              </li>
-            </ul>
-          </div>
-
-          <div class="demo-frame" aria-label="Demostración interactiva de Caja y Sucursales">
-            <div class="demo-frame__bar">
-              <div>
-                <div class="demo-frame__title">Balance e Inventario en Vivo</div>
-                <div class="demo-frame__sub">Cambia de sucursal para ver el aislamiento multi-sede</div>
+            <!-- PANE 3: PET RECORD & PERMISSIONS -->
+            <div class="sandbox-pane">
+              <div class="pane-head">
+                <span class="pane-label">C · Expediente &amp; Matriz de Permisos</span>
               </div>
-              <div class="filter-group" role="group" aria-label="Seleccionar sucursal">
-                <button type="button" class="filter-btn is-active" data-branch="roma">Matriz Roma</button>
-                <button type="button" class="filter-btn" data-branch="condesa">Suc. Condesa</button>
+              <div class="pet-record-top">
+                <div class="pet-badge-wrap">
+                  <div class="pet-avatar" aria-hidden="true">BH</div>
+                  <div>
+                    <h4>Blue · Australian Cattle Dog</h4>
+                    <p>Dueño: Rodrigo Sáenz · 18.4 kg · Deslanado</p>
+                  </div>
+                </div>
+                <span class="agenda-status agenda-status--confirmed">Al corriente</span>
               </div>
+              <div class="pet-notes">
+                <strong>Nota de estética:</strong> Doble manto denso; usar cepillo deslanador suave y
+                shampoo hidratante neutro. Muy dócil con secadora baja.
+              </div>
+              <table class="roles-table" aria-label="Permisos por perfil">
+                <thead>
+                  <tr><th>Perfil</th><th>Agenda</th><th>Caja</th><th>Teléfonos</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td><strong>Dueño / Admin</strong></td><td class="perm-yes">Total</td><td class="perm-yes">Total</td><td class="perm-yes">Visibles</td></tr>
+                  <tr><td><strong>Cajero</strong></td><td class="perm-yes">Agendar</td><td class="perm-yes">Cobrar</td><td class="perm-no">•••• 8421</td></tr>
+                  <tr><td><strong>Estilista</strong></td><td class="perm-yes">Sus citas</td><td class="perm-no">Bloqueado</td><td class="perm-no">Solo ficha</td></tr>
+                </tbody>
+              </table>
             </div>
-            <div class="demo-frame__body">
+
+            <!-- PANE 4: MULTI-BRANCH & STOCK -->
+            <div class="sandbox-pane">
+              <div class="pane-head">
+                <span class="pane-label">D · Caja, Inventario y Multi-Sucursal</span>
+                <div class="filter-group" role="group" aria-label="Cambiar sucursal">
+                  <button type="button" class="filter-btn is-active" data-branch="roma">Matriz</button>
+                  <button type="button" class="filter-btn" data-branch="condesa">Sucursal 2</button>
+                </div>
+              </div>
               <div class="branch-metrics">
                 <div class="metric-cell">
                   <span class="metric-cell__label">Ingresos hoy</span>
                   <span id="branch-rev" class="metric-cell__val">$8,460</span>
                 </div>
                 <div class="metric-cell">
-                  <span class="metric-cell__label">Ticket promedio</span>
+                  <span class="metric-cell__label">Ticket prom.</span>
                   <span id="branch-ticket" class="metric-cell__val">$470</span>
                 </div>
                 <div class="metric-cell">
-                  <span class="metric-cell__label">Equipo en turno</span>
+                  <span class="metric-cell__label">En turno</span>
                   <span id="branch-staff" class="metric-cell__val">4 activos</span>
                 </div>
               </div>
-
               <div id="branch-alert" class="stock-alert">
-                <span><strong>Stock bajo:</strong> Shampoo Hipoalergénico 1L (quedan 2 piezas)</span>
-                <span>Reordenar</span>
+                <span><strong>Stock bajo:</strong> Shampoo Hipoalergénico 1L (quedan 2 pzas)</span>
+                <strong>Reordenar</strong>
               </div>
-
-              <table class="roles-table" aria-label="Ejemplo de matriz de permisos">
-                <thead>
-                  <tr>
-                    <th>Perfil</th>
-                    <th>Agenda</th>
-                    <th>Corte Caja</th>
-                    <th>Base Clientes</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td><strong>Dueño / Admin</strong></td>
-                    <td class="perm-yes">Total</td>
-                    <td class="perm-yes">Total</td>
-                    <td class="perm-yes">Exportable</td>
-                  </tr>
-                  <tr>
-                    <td><strong>Cajero</strong></td>
-                    <td class="perm-yes">Agendar</td>
-                    <td class="perm-yes">Cobrar</td>
-                    <td class="perm-no">Tel. oculto</td>
-                  </tr>
-                  <tr>
-                    <td><strong>Estilista</strong></td>
-                    <td class="perm-yes">Solo sus citas</td>
-                    <td class="perm-no">Sin acceso</td>
-                    <td class="perm-no">Solo ficha</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ===================================================================
-         EDITORIAL STORY & SECURITY PILLARS
-    ==================================================================== -->
-    <section id="beneficios" class="story-section">
-      <div class="container story-grid">
-        <div class="story-photo curtain-frame reveal" data-parallax="24" data-cursor="CONOCE MÁS">
-          <img
-            src="./assets/reception-loyalty.jpg"
-            alt="Clienta sonriendo con su perro bichón frisé en la recepción de una estética canina moderna"
-            width="1200"
-            height="900"
-            loading="lazy"
-          />
-        </div>
-
-        <div class="reveal">
-          <span class="eyebrow">02 · Control real para dueños</span>
-          <h2 class="section-heading" data-split>Crece de una mesa a varias sucursales sin perder la calma.</h2>
-          <p class="section-lead">
-            Construimos PawFlow escuchando a dueños de estéticas que querían profesionalizar su
-            operación sin pasar horas configurando hojas de cálculo.
-          </p>
-
-          <div class="story-pillars">
-            <div class="pillar">
-              <h3>Tu cartera siempre protegida</h3>
-              <p>
-                Los números telefónicos se enmascaran en recepción y estética. Solo el dueño o
-                administrador accede a la base completa.
-              </p>
-            </div>
-            <div class="pillar">
-              <h3>Turnos y reloj checador por PIN</h3>
-              <p>
-                Cada estilista y cajero inicia y cierra su turno con un PIN rápido, dejando registro
-                exacto de asistencia y actividad.
-              </p>
-            </div>
-            <div class="pillar">
-              <h3>Activación en 1 clic</h3>
-              <p>
-                Te entregamos tu subdominio propio con horarios de los 7 días y catálogo base de
-                servicios listo para editar y cobrar hoy mismo.
-              </p>
-            </div>
-            <div class="pillar">
-              <h3>Sin instalaciones ni servidores</h3>
-              <p>
-                Funciona desde cualquier computadora, tablet o celular con navegador. Tus datos se
-                respaldan en la nube en tiempo real.
+              <p class="agenda-hint" style="margin-top: 0.9rem;">
+                <span>Panel conectado en vivo a <strong id="branch-salon-name">Blue Paws Roma</strong></span>
+                <a href="#demo" style="color:var(--accent-blue);font-weight:700;">Activar el mío →</a>
               </p>
             </div>
           </div>
@@ -609,136 +452,136 @@
     </section>
 
     <!-- ===================================================================
-         INTERACTIVE ROI CALCULATOR (DARK FOREST BAND + LIGHT SPOTLIGHT)
+         (03) IN USE — BLUE HEELER BANNER + SPECIMEN CARDS
     ==================================================================== -->
-    <section class="roi-section" aria-labelledby="roi-heading" data-spotlight>
-      <div class="container roi-grid">
-        <div class="reveal">
-          <span class="eyebrow eyebrow--light">03 · Calculadora de impacto</span>
-          <h2 id="roi-heading" class="section-heading section-heading--light" data-split>
-            ¿Cuánto dinero y tiempo deja tu estética sobre la mesa cada mes?
-          </h2>
-          <p class="section-lead section-lead--light">
-            Ajusta los valores a tu operación actual. Estimamos el impacto conservador de eliminar
-            huecos muertos, reducir faltas y reactivar visitas con lealtad QR.
-          </p>
-
-          <div class="roi-controls">
-            <div class="slider-field">
-              <div class="slider-field__head">
-                <label for="slider-citas">Citas promedio al día (por sucursal)</label>
-                <span id="val-citas" class="slider-field__value">12 citas</span>
-              </div>
-              <input id="slider-citas" type="range" min="4" max="35" step="1" value="12" />
-            </div>
-
-            <div class="slider-field">
-              <div class="slider-field__head">
-                <label for="slider-ticket">Ticket promedio por servicio (MXN)</label>
-                <span id="val-ticket" class="slider-field__value">$420 MXN</span>
-              </div>
-              <input id="slider-ticket" type="range" min="220" max="950" step="10" value="420" />
-            </div>
-
-            <div class="slider-field">
-              <div class="slider-field__head">
-                <label for="slider-sucursales">Número de sucursales</label>
-                <span id="val-sucursales" class="slider-field__value">1 sucursal</span>
-              </div>
-              <input id="slider-sucursales" type="range" min="1" max="10" step="1" value="1" />
-            </div>
-          </div>
-        </div>
-
-        <aside class="roi-card reveal" aria-live="polite">
-          <div>
-            <span class="roi-highlight-label">Potencial recuperado estimado / mes</span>
-            <div id="roi-money" class="roi-highlight-number">$13,104 MXN</div>
-          </div>
-
-          <div class="roi-breakdown">
-            <div>
-              <span id="roi-hours" class="roi-sub-val">26 hrs</span>
-              <span class="roi-sub-label">menos en WhatsApp, agenda y corte de caja</span>
-            </div>
-            <div>
-              <span id="roi-return" class="roi-sub-val">26×</span>
-              <span class="roi-sub-label">retorno sobre tu mensualidad</span>
-            </div>
-          </div>
-
-          <div class="roi-rec">
-            <span>Plan sugerido: <strong id="roi-plan-name">Básico ($499 MXN/mes)</strong></span>
-            <a id="cta-roi-demo" href="#demo" class="btn btn--light btn--sm" data-magnetic>Probar con mis números</a>
-          </div>
-        </aside>
-      </div>
-    </section>
-
-    <!-- ===================================================================
-         EDITORIAL MANIFESTO & COUNT-UP METRICS (LIGHT & SHADE CHAPTER)
-    ==================================================================== -->
-    <section class="manifesto-band" aria-label="Precisión operativa" data-spotlight>
+    <section id="enuso" class="inuse-section">
       <div class="container">
-        <div class="manifesto-top reveal">
-          <div>
-            <span class="eyebrow eyebrow--light">04 · Oficio y precisión</span>
-            <h2 class="manifesto-display" data-split>Artesanos del <em>orden</em> diario.</h2>
-          </div>
-          <p class="section-lead section-lead--light">
-            Cualquier libreta anota una cita. PawFlow orquesta cada baño, cada estilista y cada
-            peso en caja para que tú solo te enfoques en hacer crecer tu estética.
-          </p>
-        </div>
-
-        <div class="manifesto-stats">
-          <div class="stat-block reveal">
-            <span class="stat-block__idx">01</span>
-            <span class="stat-block__num" data-count-to="15" data-count-suffix=" min">15 min</span>
-            <span class="stat-block__label">para activar tu estética con horarios y servicios</span>
-          </div>
-          <div class="stat-block reveal">
-            <span class="stat-block__idx">02</span>
-            <span class="stat-block__num" data-count-to="0" data-count-suffix="">0</span>
-            <span class="stat-block__label">traslapes permitidos por el motor de agenda</span>
-          </div>
-          <div class="stat-block reveal">
-            <span class="stat-block__idx">03</span>
-            <span class="stat-block__num" data-count-to="20" data-count-suffix="+">20+</span>
-            <span class="stat-block__label">sucursales gestionables desde un solo panel</span>
-          </div>
-          <div class="stat-block reveal">
-            <span class="stat-block__idx">04</span>
-            <span class="stat-block__num" data-count-to="100" data-count-suffix="%">100%</span>
-            <span class="stat-block__label">en la nube, sin instalaciones ni servidores</span>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ===================================================================
-         EDITORIAL PORTRAIT BREAK + TESTIMONIALS
-    ==================================================================== -->
-    <section class="testimonials-section">
-      <div class="container">
-        <figure class="editorial-banner curtain-frame reveal" data-parallax="26" data-cursor="HISTORIA REAL">
+        <figure class="editorial-banner curtain-frame reveal" data-parallax="26" data-cursor="BLUE HEELER">
           <img
-            src="./assets/groomed-dogs.jpg"
-            alt="Un schnauzer miniatura y un pomerania recién arreglados y felices en una banca de lino"
+            src="./assets/heeler-banner.jpg"
+            alt="Un perro Blue Heeler y un bichón frisé recién arreglados sentados juntos en un estudio canino minimalista"
             width="1600"
             height="900"
             loading="lazy"
           />
         </figure>
 
-        <div class="testimonials-head reveal">
+        <div class="inuse-head reveal">
           <div>
-            <span class="eyebrow">Estéticas que operan con orden</span>
-            <h2 class="section-heading">Lo que dicen dueños como tú.</h2>
+            <span class="chapter-tag"><span class="chapter-tag__num">(03)</span> En uso</span>
+            <h2 class="section-heading" data-split>Diseñado para el <em>ritmo real</em> de tu estética.</h2>
           </div>
-          <p class="section-lead" style="max-width: 42ch;">
-            Desde estudios boutique de un solo estilista hasta cadenas urbanas en expansión.
+          <p class="section-lead" style="max-width:44ch;">
+            Cada pantalla resuelve un problema concreto del día a día, sin menús eternos ni curva de
+            aprendizaje.
           </p>
+        </div>
+
+        <div class="specimens-grid">
+          <article class="specimen-card reveal">
+            <div>
+              <div class="specimen-meta"><span>SPEC / 01</span><span>AGENDA</span></div>
+              <h3 class="specimen-title">Bloqueo en el pasado y horarios de comida</h3>
+              <p class="specimen-desc">
+                Impide agendar en horas ya vencidas, respeta descansos por estilista y registra
+                llegada, servicio terminado o inasistencia en un clic.
+              </p>
+            </div>
+            <div class="specimen-tag">AvailabilityEngine · Día y Semana</div>
+          </article>
+
+          <article class="specimen-card specimen-card--dark reveal" data-spotlight>
+            <div>
+              <div class="specimen-meta"><span>SPEC / 02</span><span>PRIVACIDAD</span></div>
+              <h3 class="specimen-title">Cartera blindada contra rotación</h3>
+              <p class="specimen-desc">
+                Los números celulares se enmascaran a los últimos 4 dígitos para recepción y
+                estilistas. Solo Dueño o Admin exportan la base completa.
+              </p>
+            </div>
+            <div class="specimen-tag">•••• ••84 21 · Acceso por Rol</div>
+          </article>
+
+          <article class="specimen-card reveal">
+            <div>
+              <div class="specimen-meta"><span>SPEC / 03</span><span>EQUIPO</span></div>
+              <h3 class="specimen-title">Turnos por PIN y modo Impersonate</h3>
+              <p class="specimen-desc">
+                Reloj checador rápido en recepción y supervisión en vivo: visualiza exactamente lo
+                que ve cualquier colaborador sin pedir su contraseña.
+              </p>
+            </div>
+            <div class="specimen-tag">Check-In / Check-Out + Auditoría</div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================
+         (04) IMPACTO — ROI CALCULATOR + TESTIMONIALS (DEEP BLUE HEELER SLATE)
+    ==================================================================== -->
+    <section id="impacto" class="roi-section" data-spotlight>
+      <div class="container">
+        <div class="roi-grid">
+          <div class="reveal">
+            <span class="chapter-tag chapter-tag--light"><span class="chapter-tag__num">(04)</span> Impacto mensual</span>
+            <h2 class="section-heading section-heading--light" data-split>
+              ¿Cuánto dinero y tiempo deja tu estética <em>sobre la mesa</em>?
+            </h2>
+            <p class="section-lead section-lead--light">
+              Ajusta los controles a tu operación actual. Calculamos el impacto conservador de
+              eliminar huecos muertos, reducir faltas y reactivar visitas con lealtad QR.
+            </p>
+
+            <div class="roi-controls">
+              <div class="slider-field">
+                <div class="slider-field__head">
+                  <label for="slider-citas">Citas promedio al día (por sucursal)</label>
+                  <span id="val-citas" class="slider-field__value">12 citas</span>
+                </div>
+                <input id="slider-citas" type="range" min="4" max="35" step="1" value="12" />
+              </div>
+
+              <div class="slider-field">
+                <div class="slider-field__head">
+                  <label for="slider-ticket">Ticket promedio por servicio (MXN)</label>
+                  <span id="val-ticket" class="slider-field__value">$420 MXN</span>
+                </div>
+                <input id="slider-ticket" type="range" min="220" max="950" step="10" value="420" />
+              </div>
+
+              <div class="slider-field">
+                <div class="slider-field__head">
+                  <label for="slider-sucursales">Número de sucursales</label>
+                  <span id="val-sucursales" class="slider-field__value">1 sucursal</span>
+                </div>
+                <input id="slider-sucursales" type="range" min="1" max="10" step="1" value="1" />
+              </div>
+            </div>
+          </div>
+
+          <aside class="roi-card reveal" aria-live="polite">
+            <div>
+              <span class="roi-highlight-label">Potencial recuperado estimado / mes</span>
+              <div id="roi-money" class="roi-highlight-number">$13,104 MXN</div>
+            </div>
+
+            <div class="roi-breakdown">
+              <div>
+                <span id="roi-hours" class="roi-sub-val">28 hrs</span>
+                <span class="roi-sub-label">menos en WhatsApp, agenda y corte de caja</span>
+              </div>
+              <div>
+                <span id="roi-return" class="roi-sub-val">26×</span>
+                <span class="roi-sub-label">retorno sobre tu mensualidad</span>
+              </div>
+            </div>
+
+            <div class="roi-rec">
+              <span>Plan sugerido: <strong id="roi-plan-name">Básico ($499 MXN/mes)</strong></span>
+              <a id="cta-roi-demo" href="#demo" class="btn btn--light btn--sm" data-magnetic>Probar con mis números</a>
+            </div>
+          </aside>
         </div>
 
         <div class="testimonials-grid">
@@ -746,13 +589,13 @@
             <div>
               <div class="quote-stars" aria-label="5 de 5 estrellas">★★★★★</div>
               <blockquote>
-                “Antes perdíamos dos o tres espacios cada sábado por citas mal anotadas. Con la
-                agenda de PawFlow llenamos cada bloque y el corte de caja nos toma cinco minutos.”
+                “Antes perdíamos dos o tres espacios cada sábado por citas mal anotadas. Con PawFlow
+                llenamos cada bloque y el corte de caja nos toma cinco minutos.”
               </blockquote>
             </div>
             <div class="quote-author">
               <strong>Mariana Delgado</strong>
-              <span>Fundadora, Lomo &amp; Espuma · CDMX (2 sucursales)</span>
+              <span>Lomo &amp; Espuma · CDMX (2 sucursales)</span>
             </div>
           </article>
 
@@ -761,12 +604,12 @@
               <div class="quote-stars" aria-label="5 de 5 estrellas">★★★★★</div>
               <blockquote>
                 “La tarjeta de lealtad con QR fue un hit inmediato. Los clientes regresan cada
-                cuatro semanas por su sello y nosotros ya sabemos qué shampoo usa cada perrito.”
+                cuatro semanas por su sello y ya sabemos qué shampoo usa cada perrito.”
               </blockquote>
             </div>
             <div class="quote-author">
               <strong>Diego Castellanos</strong>
-              <span>Director, Peluditos Spa · Guadalajara</span>
+              <span>Peluditos Spa · Guadalajara</span>
             </div>
           </article>
 
@@ -780,7 +623,7 @@
             </div>
             <div class="quote-author">
               <strong>Andrea Villarreal</strong>
-              <span>Dueña, Huella Studio · Monterrey (3 sucursales)</span>
+              <span>Huella Studio · Monterrey (3 sucursales)</span>
             </div>
           </article>
         </div>
@@ -788,163 +631,106 @@
     </section>
 
     <!-- ===================================================================
-         PRICING PLANS (ALIGNED WITH REAL BACKEND PLANES_CONFIG)
+         (05) CONFIGURADOR INTERACTIVO DE PLAN — KERN SOCIETY "LARGE PRINT"
     ==================================================================== -->
     <section id="planes" class="pricing-section">
       <div class="container">
-        <div class="pricing-top reveal">
-          <div>
-            <span class="eyebrow">05 · Planes claros en pesos mexicanos</span>
-            <h2 class="section-heading" data-split>Paga solo por el tamaño de tu operación.</h2>
-            <p class="section-lead">
-              Todos los planes incluyen 14 días de prueba gratis, migración inicial y actualizaciones
-              continuas sin costo extra.
-            </p>
-          </div>
-
-          <div class="billing-toggle" role="group" aria-label="Periodo de facturación">
-            <button id="billing-monthly" type="button" class="billing-btn is-active" data-billing="monthly">
-              Mensual
-            </button>
-            <button id="billing-annual" type="button" class="billing-btn" data-billing="annual">
-              Anual <span class="save-tag">-20%</span>
-            </button>
-          </div>
+        <div class="reveal">
+          <span class="chapter-tag"><span class="chapter-tag__num">(05)</span> Licenciamiento</span>
+          <h2 class="section-heading" data-split>Precios en <em>letra grande</em>.</h2>
+          <p class="section-lead">
+            Arma tu plan en dos clics. Todos incluyen 14 días de prueba gratis sin tarjeta y
+            actualizaciones continuas.
+          </p>
         </div>
 
-        <div class="pricing-grid">
-          <!-- PLAN BÁSICO -->
-          <article class="plan-card reveal" data-cursor="PLAN BÁSICO">
+        <div class="configurator-grid">
+          <div class="config-steps reveal">
             <div>
-              <div class="plan-head">
-                <h3 class="plan-name">Básico</h3>
+              <div class="config-step-label">
+                <span class="step-badge">1</span>
+                Elige el tamaño de tu operación
               </div>
-              <p class="plan-desc">Para estéticas independientes listas para dejar la libreta.</p>
-
-              <div class="plan-price">
-                <span class="plan-amount" data-price-monthly="$499" data-price-annual="$399">$499</span>
-                <span class="plan-period" data-period-text>MXN / mes</span>
+              <div class="option-pills" role="group" aria-label="Seleccionar plan por sucursales">
+                <button type="button" class="option-card" data-cfg-plan="basico">
+                  <strong>Básico</strong>
+                  <span>1 sucursal · 5 usuarios</span>
+                </button>
+                <button type="button" class="option-card is-selected" data-cfg-plan="pro">
+                  <strong>Pro</strong>
+                  <span>Hasta 5 sucursales</span>
+                  <span class="save-pill">Más elegido</span>
+                </button>
+                <button type="button" class="option-card" data-cfg-plan="enterprise">
+                  <strong>Enterprise</strong>
+                  <span>Hasta 20 sucursales</span>
+                </button>
               </div>
-
-              <ul class="plan-features">
-                <li>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
-                  <span><strong>1 sucursal</strong> operativa</span>
-                </li>
-                <li>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
-                  <span>Hasta <strong>5 usuarios</strong> con PIN</span>
-                </li>
-                <li>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
-                  <span>Hasta <strong>500 clientes</strong> y expedientes</span>
-                </li>
-                <li>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
-                  <span>Agenda sin traslapes + tarjeta de lealtad QR</span>
-                </li>
-                <li>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
-                  <span>Punto de venta, inventario y corte de caja</span>
-                </li>
-              </ul>
             </div>
 
-            <button type="button" class="btn btn--secondary btn--full" data-select-plan="Básico — $499/mes">
-              Probar plan Básico
-            </button>
-          </article>
-
-          <!-- PLAN PRO (FEATURED) -->
-          <article class="plan-card plan-card--featured reveal" data-spotlight data-cursor="MÁS ELEGIDO">
             <div>
-              <div class="plan-head">
-                <h3 class="plan-name">Pro</h3>
-                <span class="plan-tag">Más elegido</span>
+              <div class="config-step-label">
+                <span class="step-badge">2</span>
+                Elige tu frecuencia de pago
               </div>
-              <p class="plan-desc">Para estéticas con equipo completo o en expansión multi-sucursal.</p>
-
-              <div class="plan-price">
-                <span class="plan-amount" data-price-monthly="$999" data-price-annual="$799">$999</span>
-                <span class="plan-period" data-period-text>MXN / mes</span>
+              <div class="option-pills option-pills--two" role="group" aria-label="Seleccionar periodo">
+                <button type="button" class="option-card is-selected" data-cfg-billing="monthly">
+                  <strong>Mensual</strong>
+                  <span>Sin plazo forzoso, cancela cuando quieras</span>
+                </button>
+                <button type="button" class="option-card" data-cfg-billing="annual">
+                  <strong>Anual</strong>
+                  <span>Ahorra 20% cada mes</span>
+                  <span class="save-pill">-20% OFF</span>
+                </button>
               </div>
-
-              <ul class="plan-features">
-                <li>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
-                  <span>Hasta <strong>5 sucursales</strong> sincronizadas</span>
-                </li>
-                <li>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
-                  <span>Hasta <strong>25 usuarios</strong> y reloj checador</span>
-                </li>
-                <li>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
-                  <span>Hasta <strong>5,000 clientes</strong> con privacidad</span>
-                </li>
-                <li>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
-                  <span>Matriz granular de permisos por módulo y rol</span>
-                </li>
-                <li>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
-                  <span>Tablero financiero con KPIs en vivo y soporte directo</span>
-                </li>
-              </ul>
             </div>
 
-            <button type="button" class="btn btn--light btn--full" data-select-plan="Pro — $999/mes">
-              Probar plan Pro gratis
-            </button>
-          </article>
+            <div style="font-family:var(--font-mono);font-size:0.78rem;color:var(--ink-secondary);padding-top:0.4rem;border-top:1px solid var(--border-hairline);">
+              Incluye onboarding en 1 clic, subdominio propio, respaldo en la nube y soporte en español.
+            </div>
+          </div>
 
-          <!-- PLAN ENTERPRISE -->
-          <article class="plan-card reveal">
+          <aside class="config-summary reveal" data-spotlight data-cursor="ACTIVAR PLAN" aria-live="polite">
             <div>
-              <div class="plan-head">
-                <h3 class="plan-name">Enterprise</h3>
+              <div class="summary-top-tag">
+                <span>Plan seleccionado</span>
+                <span id="cfg-badge">RECOMENDADO</span>
               </div>
-              <p class="plan-desc">Para cadenas y franquicias de estética canina con alta demanda.</p>
+              <h3 id="cfg-title" class="summary-plan-title">PawFlow Pro</h3>
+              <p id="cfg-desc" style="margin:0 0 1.2rem;font-size:0.9rem;color:var(--ink-on-dark-muted);">
+                Para estéticas con equipo completo o en expansión multi-sucursal.
+              </p>
 
-              <div class="plan-price">
-                <span class="plan-amount" data-price-monthly="$2,499" data-price-annual="$1,999">$2,499</span>
-                <span class="plan-period" data-period-text>MXN / mes</span>
+              <div class="summary-price-row">
+                <span id="cfg-price" class="summary-price">$999</span>
+                <span id="cfg-period" class="summary-period">MXN / mes</span>
               </div>
 
-              <ul class="plan-features">
-                <li>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
-                  <span>Hasta <strong>20 sucursales</strong> con subdominio propio</span>
-                </li>
-                <li>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
-                  <span>Hasta <strong>100 usuarios</strong> y modo Impersonate</span>
-                </li>
-                <li>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
-                  <span>Hasta <strong>50,000 clientes</strong> y bitácora global</span>
-                </li>
-                <li>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
-                  <span>Onboarding asistido y carga inicial de catálogo</span>
-                </li>
-                <li>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
-                  <span>Soporte prioritario por WhatsApp con especialista</span>
-                </li>
-              </ul>
+              <ul id="cfg-quotas" class="summary-quotas" style="margin-top:1.25rem;"></ul>
             </div>
 
-            <button type="button" class="btn btn--secondary btn--full" data-select-plan="Enterprise — $2,499/mes">
-              Solicitar plan Enterprise
+            <button id="btn-cfg-select" type="button" class="btn btn--light btn--lg btn--full" data-magnetic>
+              Probar 14 días gratis con este plan →
             </button>
-          </article>
+          </aside>
         </div>
 
-        <p class="pricing-footnote">
-          Precios en pesos mexicanos (MXN) más IVA si requieres factura. Cambia o cancela tu plan
-          cuando quieras.
-        </p>
+        <!-- Quick 3-plan reference strip -->
+        <div class="tiers-mini-strip reveal">
+          <button type="button" class="tier-mini" data-cfg-plan="basico">
+            <div><strong>Básico</strong><span>1 sucursal · 5 usuarios · 500 clientes</span></div>
+            <span class="tier-mini__price" data-mini-price="basico">$499</span>
+          </button>
+          <button type="button" class="tier-mini is-selected" data-cfg-plan="pro">
+            <div><strong>Pro</strong><span>5 sucursales · 25 usuarios · 5,000 clientes</span></div>
+            <span class="tier-mini__price" data-mini-price="pro">$999</span>
+          </button>
+          <button type="button" class="tier-mini" data-cfg-plan="enterprise">
+            <div><strong>Enterprise</strong><span>20 sucursales · 100 usuarios · 50k clientes</span></div>
+            <span class="tier-mini__price" data-mini-price="enterprise">$2,499</span>
+          </button>
+        </div>
       </div>
     </section>
 
@@ -954,12 +740,9 @@
     <section id="faq" class="faq-section">
       <div class="container faq-grid">
         <div class="reveal">
-          <span class="eyebrow">Preguntas frecuentes</span>
-          <h2 class="section-heading">Resolvemos tus dudas antes de empezar.</h2>
-          <p class="section-lead">
-            ¿Tienes un caso particular o varias sucursales con reglas distintas? Escríbenos directo
-            por WhatsApp.
-          </p>
+          <span class="chapter-tag"><span class="chapter-tag__num">(06)</span> Preguntas</span>
+          <h2 class="section-heading">Dudas claras antes de empezar.</h2>
+          <p class="section-lead">¿Tu estética tiene un flujo especial? Escríbenos directo por WhatsApp.</p>
         </div>
 
         <div class="faq-list reveal">
@@ -968,63 +751,32 @@
               <span>¿Necesito instalar algún programa o comprar equipo especial?</span>
               <span class="faq-icon" aria-hidden="true">+</span>
             </button>
-            <div class="faq-answer-wrap">
-              <div class="faq-answer">
-                <p>
-                  No. PawFlow funciona al 100% en el navegador desde cualquier laptop, PC de
-                  recepción, tablet o celular. Si ya cuentas con lector de códigos de barras o QR
-                  USB, funciona automáticamente con el módulo de inventario y lealtad.
-                </p>
-              </div>
-            </div>
+            <div class="faq-answer-wrap"><div class="faq-answer"><p>
+              No. PawFlow corre al 100% en navegador desde PC, Mac, tablet o celular. Si ya tienes
+              lector USB de códigos de barras o QR, funciona automáticamente con inventario y lealtad.
+            </p></div></div>
           </div>
 
           <div class="faq-item">
             <button type="button" class="faq-trigger" aria-expanded="false">
-              <span>¿En cuánto tiempo puedo empezar a operar mi estética?</span>
+              <span>¿En cuánto tiempo queda lista mi estética para agendar?</span>
               <span class="faq-icon" aria-hidden="true">+</span>
             </button>
-            <div class="faq-answer-wrap">
-              <div class="faq-answer">
-                <p>
-                  El mismo día. Nuestro onboarding en 1 clic genera tu subdominio privado, tu
-                  sucursal matriz, horarios de la semana y un catálogo base de servicios para que
-                  solo ajustes precios y comiences a agendar en menos de 15 minutos.
-                </p>
-              </div>
-            </div>
+            <div class="faq-answer-wrap"><div class="faq-answer"><p>
+              En menos de 15 minutos. Nuestro onboarding en 1 clic genera tu subdominio, horarios de
+              los 7 días y catálogo base de servicios para que empieces hoy mismo.
+            </p></div></div>
           </div>
 
           <div class="faq-item">
             <button type="button" class="faq-trigger" aria-expanded="false">
-              <span>¿Cómo protege PawFlow mi lista de clientes si cambia mi personal?</span>
+              <span>¿Cómo protege PawFlow mi lista de clientes ante rotación?</span>
               <span class="faq-icon" aria-hidden="true">+</span>
             </button>
-            <div class="faq-answer-wrap">
-              <div class="faq-answer">
-                <p>
-                  Por defecto, los números telefónicos aparecen enmascarados a los últimos 4 dígitos
-                  para cajeros y estilistas. Además, la matriz de permisos bloquea exportaciones y
-                  vistas sensibles según el rol asignado.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div class="faq-item">
-            <button type="button" class="faq-trigger" aria-expanded="false">
-              <span>¿Puedo manejar horarios de comida y diferentes estilistas?</span>
-              <span class="faq-icon" aria-hidden="true">+</span>
-            </button>
-            <div class="faq-answer-wrap">
-              <div class="faq-answer">
-                <p>
-                  Sí. Puedes configurar la agenda por estilista o global, definir bloques de comida,
-                  días festivos o excepciones puntuales, y el motor calcula disponibilidad real sin
-                  empalmes.
-                </p>
-              </div>
-            </div>
+            <div class="faq-answer-wrap"><div class="faq-answer"><p>
+              Los teléfonos aparecen enmascarados a 4 dígitos para cajeros y estilistas, y la matriz
+              de permisos bloquea exportaciones o cortes de caja según el perfil.
+            </p></div></div>
           </div>
 
           <div class="faq-item">
@@ -1032,68 +784,48 @@
               <span>¿Hay contrato forzoso o penalización por cancelar?</span>
               <span class="faq-icon" aria-hidden="true">+</span>
             </button>
-            <div class="faq-answer-wrap">
-              <div class="faq-answer">
-                <p>
-                  Ninguno. Empiezas con 14 días de prueba gratis sin ingresar tarjeta. Después pagas
-                  mes a mes (o anual con 20% de descuento) y puedes cambiar de plan o cancelar en
-                  cualquier momento.
-                </p>
-              </div>
-            </div>
+            <div class="faq-answer-wrap"><div class="faq-answer"><p>
+              Ninguno. Pruebas 14 días sin tarjeta y después pagas mes a mes (o anual con 20% de
+              descuento) con libertad total para cambiar o cancelar.
+            </p></div></div>
           </div>
         </div>
       </div>
     </section>
 
     <!-- ===================================================================
-         CONVERSION SECTION: DEMO / TRIAL FORM + WHATSAPP
+         CONVERSION / DEMO FORM + WHATSAPP
     ==================================================================== -->
     <section id="demo" class="conversion-section">
       <div class="container conversion-grid">
         <div class="reveal">
-          <span class="eyebrow">Empieza hoy sin riesgo</span>
-          <h2 class="section-heading">Agenda tu demo en vivo y activa tus 14 días gratis.</h2>
+          <span class="chapter-tag"><span class="chapter-tag__num">(07)</span> Activa tu prueba</span>
+          <h2 class="section-heading" data-split>Agenda tu demo y prueba <em>14 días gratis</em>.</h2>
           <p class="section-lead">
-            En 15 minutos te mostramos cómo quedaría configurada tu estética en PawFlow y dejamos tu
-            cuenta lista para que tu equipo la pruebe hoy mismo.
+            En 15 minutos configuramos tu estética real y te entregamos el acceso para que tu equipo
+            lo pruebe sin compromiso.
           </p>
 
           <ol class="onboarding-steps">
             <li>
-              <span class="step-circle">1</span>
-              <div>
-                <strong>Demo personalizada de 15 minutos</strong>
-                <p>Revisamos tu flujo actual de citas, caja y número de estilistas.</p>
-              </div>
+              <span class="step-circle">01</span>
+              <div><strong>Demo personalizada de 15 min</strong><p>Revisamos tus citas, horarios de estilistas y caja.</p></div>
             </li>
             <li>
-              <span class="step-circle">2</span>
-              <div>
-                <strong>Activación de tu estética en 1 clic</strong>
-                <p>Creamos tu subdominio privado, horarios y catálogo base de servicios.</p>
-              </div>
+              <span class="step-circle">02</span>
+              <div><strong>Activación en 1 clic</strong><p>Creamos tu subdominio privado, horarios y servicios base.</p></div>
             </li>
             <li>
-              <span class="step-circle">3</span>
-              <div>
-                <strong>14 días de prueba real con tu equipo</strong>
-                <p>Opera sin tarjeta y decide al comprobar el orden en tu negocio.</p>
-              </div>
+              <span class="step-circle">03</span>
+              <div><strong>14 días reales sin tarjeta</strong><p>Decide al comprobar el orden en tu operación diaria.</p></div>
             </li>
           </ol>
 
           <div class="direct-wa-box">
-            <strong>¿Prefieres escribirnos directo ahora mismo?</strong>
-            <p>
-              Atendemos dudas de lunes a sábado de 9:00 a 19:00 hrs (CDMX). Respuesta promedio menor
-              a 10 minutos.
-            </p>
+            <strong>¿Prefieres escribirnos directo por WhatsApp?</strong>
+            <p>Lunes a sábado de 9:00 a 19:00 hrs (CDMX). Respuesta promedio menor a 10 minutos.</p>
             <div>
-              <a id="cta-form-whatsapp" href="#" class="btn btn--whatsapp" data-whatsapp-link data-wa-context="contact">
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                  <path d="M20.52 3.48A11.86 11.86 0 0 0 12.06 0C5.49 0 .14 5.34.14 11.91c0 2.1.55 4.15 1.59 5.95L0 24l6.3-1.65a11.87 11.87 0 0 0 5.75 1.47h.01c6.57 0 11.92-5.35 11.92-11.92 0-3.18-1.24-6.17-3.46-8.42ZM12.06 21.8h-.01a9.87 9.87 0 0 1-5.03-1.38l-.36-.21-3.74.98 1-3.65-.24-.37a9.86 9.86 0 0 1-1.52-5.26c0-5.45 4.44-9.89 9.9-9.89 2.64 0 5.13 1.03 6.99 2.9a9.83 9.83 0 0 1 2.9 7c0 5.45-4.44 9.88-9.89 9.88Z" />
-                </svg>
+              <a id="cta-form-whatsapp" href="#" class="btn btn--whatsapp" data-magnetic data-cursor="WHATSAPP" data-cursor-tone="wa" data-whatsapp-link data-wa-context="contact">
                 Enviar mensaje por WhatsApp
               </a>
             </div>
@@ -1111,7 +843,7 @@
 
               <div class="field">
                 <label for="input-estetica">Nombre de tu estética *</label>
-                <input id="input-estetica" name="estetica" type="text" required autocomplete="organization" placeholder="Ej. Patitas Boutique" />
+                <input id="input-estetica" name="estetica" type="text" required autocomplete="organization" placeholder="Ej. Blue Paws Roma" />
                 <span class="field-error" data-error-for="estetica"></span>
               </div>
 
@@ -1146,38 +878,25 @@
                 </select>
               </div>
 
-              <div class="field field--full" style="margin-top: 0.4rem;">
-                <button id="btn-submit-demo" type="submit" class="btn btn--primary btn--lg btn--full">
+              <div class="field field--full" style="margin-top:0.4rem;">
+                <button id="btn-submit-demo" type="submit" class="btn btn--primary btn--lg btn--full" data-magnetic>
                   Solicitar demo y prueba de 14 días
                 </button>
               </div>
             </div>
-
-            <p class="form-note">
-              Tus datos solo se usan para coordinar tu demostración y activar tu cuenta de prueba.
-            </p>
+            <p class="form-note">Tus datos solo se usan para coordinar tu demo y activar tu prueba.</p>
           </form>
 
-          <!-- Interactive Success State -->
           <div id="demo-success" class="form-success" aria-live="polite">
             <div class="success-badge" aria-hidden="true">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12" /></svg>
             </div>
             <h3>¡Solicitud recibida!</h3>
-            <p>
-              Registramos los datos de tu estética. Si deseas atención inmediata, puedes enviar tu
-              resumen directo a nuestro equipo de ventas por WhatsApp.
-            </p>
+            <p>Registramos los datos de tu estética. Puedes enviar tu resumen directo a ventas por WhatsApp para atención inmediata.</p>
             <div id="demo-success-summary" class="success-summary"></div>
             <div class="success-actions">
-              <a id="btn-confirm-wa" href="#" target="_blank" rel="noopener noreferrer" class="btn btn--whatsapp">
-                Confirmar ahora por WhatsApp
-              </a>
-              <button id="btn-reset-form" type="button" class="btn btn--secondary">
-                Editar datos
-              </button>
+              <a id="btn-confirm-wa" href="#" target="_blank" rel="noopener noreferrer" class="btn btn--whatsapp">Confirmar ahora por WhatsApp</a>
+              <button id="btn-reset-form" type="button" class="btn btn--secondary">Editar datos</button>
             </div>
           </div>
         </div>
@@ -1192,9 +911,9 @@
     <div class="container">
       <div class="footer-top">
         <div>
-          <a href="#inicio" class="brand" style="color: var(--ink-on-dark);">
-            <span class="brand-mark brand-mark--light" aria-hidden="true">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <a href="#inicio" class="brand" style="color:var(--ink-on-dark);">
+            <span class="brand-mark" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                 <circle cx="7" cy="9.5" r="2.2" fill="currentColor" />
                 <circle cx="12" cy="6.8" r="2.3" fill="currentColor" />
                 <circle cx="17" cy="9.5" r="2.2" fill="currentColor" />
@@ -1204,18 +923,17 @@
             <span>PawFlow</span>
           </a>
           <p class="footer-brand-desc">
-            Plataforma CRM multi-sucursal diseñada para profesionalizar estéticas caninas, spas de
-            mascotas y peluquerías veterinarias.
+            Plataforma CRM multi-sucursal diseñada para estéticas caninas modernas en México y Latinoamérica.
           </p>
         </div>
 
         <div class="footer-col">
-          <h4>Producto</h4>
+          <h4>Explorar</h4>
           <ul>
-            <li><a href="#producto">Agenda inteligente</a></li>
-            <li><a href="#producto">Expedientes y Lealtad QR</a></li>
-            <li><a href="#beneficios">Permisos y seguridad</a></li>
-            <li><a href="#planes">Planes y precios</a></li>
+            <li><a href="#manifiesto">(01) Manifiesto</a></li>
+            <li><a href="#testdrive">(02) Test drive</a></li>
+            <li><a href="#enuso">(03) En uso</a></li>
+            <li><a href="#planes">(05) Planes</a></li>
           </ul>
         </div>
 
@@ -1223,7 +941,7 @@
           <h4>Acceso clientes</h4>
           <ul>
             <li><a href="#" data-open-login>Iniciar sesión en CRM</a></li>
-            <li><a href="#demo">Activar prueba de 14 días</a></li>
+            <li><a href="#demo">Prueba gratis 14 días</a></li>
             <li><a href="#faq">Preguntas frecuentes</a></li>
           </ul>
         </div>
@@ -1240,42 +958,25 @@
 
       <div class="footer-bottom">
         <span>© <span id="footer-year">2026</span> PawFlow. Todos los derechos reservados.</span>
-        <span>Hecho para estéticas caninas en México y Latinoamérica.</span>
+        <span>Paleta inspirada en el Australian Cattle Dog (Blue Heeler).</span>
       </div>
     </div>
   </footer>
 
-  <!-- =====================================================================
-       MODAL: CLIENT PORTAL LOGIN (SUBDOMAIN ROUTING)
-  ====================================================================== -->
+  <!-- MODAL: CLIENT PORTAL LOGIN -->
   <div id="modal-login" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-login-title" hidden>
     <div class="modal-dialog">
-      <button id="btn-close-login" type="button" class="modal-close" aria-label="Cerrar ventana">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
-          <line x1="18" y1="6" x2="6" y2="18" />
-          <line x1="6" y1="6" x2="18" y2="18" />
-        </svg>
-      </button>
-
+      <button id="btn-close-login" type="button" class="modal-close" aria-label="Cerrar ventana">✕</button>
       <h3 id="modal-login-title">Entrar a tu estética</h3>
       <p>Escribe el identificador (subdominio) de tu negocio para abrir tu panel operativo.</p>
-
       <form id="form-portal-login">
-        <label for="input-subdomain" class="sr-only">Subdominio de tu estética</label>
+        <label for="input-subdomain" class="sr-only">Subdominio</label>
         <div class="subdomain-input-wrap">
-          <input
-            id="input-subdomain"
-            type="text"
-            placeholder="mi-estetica"
-            autocomplete="off"
-            spellcheck="false"
-            required
-          />
+          <input id="input-subdomain" type="text" placeholder="blue-paws-roma" autocomplete="off" spellcheck="false" required />
           <span id="portal-domain-suffix" class="subdomain-suffix">.pawflow.mx</span>
         </div>
         <button type="submit" class="btn btn--primary btn--full">Ir a mi panel</button>
       </form>
-
       <div class="modal-alt">
         <span>¿No recuerdas tu subdominio?</span>
         <a id="link-direct-crm" href="#" target="_blank" rel="noopener noreferrer">Acceso general →</a>
@@ -1283,18 +984,9 @@
     </div>
   </div>
 
-  <!-- =====================================================================
-       FLOATING WHATSAPP BUTTON
-  ====================================================================== -->
-  <a
-    id="wa-fab"
-    href="#"
-    class="wa-fab"
-    aria-label="Hablar por WhatsApp con PawFlow"
-    data-whatsapp-link
-    data-wa-context="floating"
-  >
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+  <!-- FLOATING WHATSAPP -->
+  <a id="wa-fab" href="#" class="wa-fab" aria-label="Hablar por WhatsApp" data-whatsapp-link data-wa-context="floating">
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
       <path d="M20.52 3.48A11.86 11.86 0 0 0 12.06 0C5.49 0 .14 5.34.14 11.91c0 2.1.55 4.15 1.59 5.95L0 24l6.3-1.65a11.87 11.87 0 0 0 5.75 1.47h.01c6.57 0 11.92-5.35 11.92-11.92 0-3.18-1.24-6.17-3.46-8.42ZM12.06 21.8h-.01a9.87 9.87 0 0 1-5.03-1.38l-.36-.21-3.74.98 1-3.65-.24-.37a9.86 9.86 0 0 1-1.52-5.26c0-5.45 4.44-9.89 9.9-9.89 2.64 0 5.13 1.03 6.99 2.9a9.83 9.83 0 0 1 2.9 7c0 5.45-4.44 9.88-9.89 9.88Z" />
     </svg>
     <span>WhatsApp</span>

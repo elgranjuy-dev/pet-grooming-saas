@@ -1,13 +1,13 @@
-# PawFlow — Landing Page Comercial
+# PawFlow — Landing Page Comercial (Blue Heeler × Editorial Edition)
 
-Landing page estática e independiente para promocionar y vender el CRM de estéticas caninas, lista para desplegar en tu dominio principal (`pawflow.mx`, `petgrooming.mx`, etc.).
+Landing page comercial estática e independiente para promocionar y vender el CRM de estéticas caninas, con paleta inspirada en el **Australian Cattle Dog (Blue Heeler)** (blanco escarcha, gris merle, azul acero/cobalto, negro máscara y acento cobrizo) e interacciones editoriales inspiradas en **Kern Society** y **Light & Shade**.
 
 ## Estructura
 
-- `index.html` — Estructura semántica HTML5, metadatos SEO/OpenGraph y JSON-LD.
-- `css/styles.css` — Sistema de diseño en Vanilla CSS (sin dependencias externas de estilos).
-- `js/main.js` — Configuración centralizada y módulos interactivos (recorrido del CRM, calculadora ROI, planes mensual/anual, FAQ, formulario de demo + WhatsApp y modal de acceso por subdominio).
-- `assets/` — Fotografías editoriales listas para producción.
+- `index.html` — Estructura semántica HTML5, fuentes variables (`Roboto Flex`, `Fraunces`, `Recursive`), metadatos SEO/OpenGraph y JSON-LD.
+- `css/styles.css` — Sistema de diseño en Vanilla CSS con paleta Blue Heeler.
+- `js/main.js` — Configuración centralizada (`SITE_CONFIG`) y módulos interactivos (wordmark variable reactivo al cursor, Test Drive en vivo con el nombre de tu estética, calculadora ROI, configurador interactivo de plan, FAQ, formulario de demo + WhatsApp y modal de acceso por subdominio).
+- `assets/` — Fotografías editoriales (`heeler-hero.jpg` y `heeler-banner.jpg`).
 
 ## Configuración rápida antes de publicar
 
@@ -23,9 +23,7 @@ const SITE_CONFIG = {
 };
 ```
 
-## Despliegue
+## Cómo verla en local y desplegarla
 
-Al ser HTML/CSS/JS puro, puedes publicar directamente la carpeta `landing/` en:
-
-- **Cloudflare Pages / Netlify / Vercel**: apunta el *Publish / Root directory* a `landing`.
-- **Nginx / Servidor propio**: sirve `landing/` en el dominio raíz mientras tus subdominios (`*.tudominio.mx`) apuntan a la aplicación CRM (`frontend/`).
+- **Junto con tu CRM (FastAPI)**: al correr `./iniciar_local.sh`, queda disponible en `/landing/` en el mismo puerto `8000` donde operas el CRM.
+- **Despliegue independiente**: publica directamente la carpeta `landing/` en Cloudflare Pages, Netlify, Vercel o Nginx apuntando a tu dominio raíz mientras `*.tudominio.mx` sirve el CRM (`frontend/`).
