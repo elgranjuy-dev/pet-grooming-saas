@@ -212,7 +212,7 @@ section[id] { scroll-margin-top: 80px; }
 .btn--full { width: 100%; }
 
 /* ==========================================================================
-   Scroll Progress Rail & Editorial Cursor Lens
+   Scroll Progress Rail
    ========================================================================== */
 .scroll-progress {
   position: fixed;
@@ -231,51 +231,6 @@ section[id] { scroll-margin-top: 80px; }
   transform-origin: left center;
   transform: scaleX(0);
   will-change: transform;
-}
-
-.cursor-lens {
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 120;
-  pointer-events: none;
-  width: 12px;
-  height: 12px;
-  border-radius: 999px;
-  background-color: var(--accent-blue);
-  color: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-mono);
-  font-size: 0.65rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  opacity: 0;
-  transform: translate3d(-100px, -100px, 0) translate(-50%, -50%);
-  transition: width 240ms var(--ease-out), height 240ms var(--ease-out), background-color 200ms, opacity 200ms;
-  will-change: transform, width, height;
-}
-
-.cursor-lens.is-visible { opacity: 0.92; }
-.cursor-lens.is-active {
-  width: auto;
-  min-width: 96px;
-  height: 34px;
-  padding-inline: 0.9rem;
-  background-color: var(--ink-primary);
-  color: var(--bg-frost);
-  border: 1px solid hsla(214, 38%, 97%, 0.25);
-  opacity: 0.98;
-}
-.cursor-lens.is-wa { background-color: var(--accent-wa); color: #ffffff; }
-.cursor-lens__label { opacity: 0; transition: opacity 160ms; }
-.cursor-lens.is-active .cursor-lens__label { opacity: 1; }
-
-@media (hover: none), (pointer: coarse) {
-  .cursor-lens { display: none !important; }
 }
 
 /* ==========================================================================
@@ -385,13 +340,33 @@ section[id] { scroll-margin-top: 80px; }
 .mobile-nav-list a { display: block; padding: 0.7rem 0; font-family: var(--font-mono); font-weight: 600; border-bottom: 1px solid var(--border-hairline); }
 .mobile-drawer-actions { display: grid; gap: 0.65rem; }
 
-/* Dual-Layer Roll-Up Links */
-.roll-link { position: relative; display: inline-flex; overflow: hidden; line-height: 1.25; }
-.roll-link__track { display: inline-flex; flex-direction: column; transition: transform 320ms var(--ease-out); }
-.roll-link__copy { display: inline-flex; align-items: center; gap: 0.4rem; }
-.roll-link__copy--clone { position: absolute; top: 100%; left: 0; width: 100%; }
+/* Dual-Layer Roll-Up Links (strict inner height mask — zero double text inside button padding) */
+.roll-mask {
+  display: inline-block;
+  overflow: hidden;
+  height: 1.25em;
+  line-height: 1.25em;
+  vertical-align: middle;
+}
+
+.roll-link__track {
+  display: flex;
+  flex-direction: column;
+  transition: transform 300ms var(--ease-out);
+  will-change: transform;
+}
+
+.roll-link__copy {
+  display: block;
+  height: 1.25em;
+  line-height: 1.25em;
+  white-space: nowrap;
+}
+
 .roll-link:hover .roll-link__track,
-.btn:hover .roll-link__track { transform: translateY(-100%); }
+.btn:hover .roll-link__track {
+  transform: translateY(-50%);
+}
 
 /* ==========================================================================
    HERO — KERN SOCIETY PROXIMITY VARIABLE WORDMARK + BLUE HEELER EDITORIAL
@@ -458,7 +433,7 @@ section[id] { scroll-margin-top: 80px; }
   100% { transform: translateX(100%); }
 }
 
-/* Kern Society Signature: Full-Width Proximity Variable Display */
+/* Kern Society Signature: Full-Width Proximity Variable Display (Bold & Wide at rest, thins under cursor) */
 .kinetic-stage {
   border-bottom: 1px solid var(--border-hairline);
   padding-bottom: clamp(1.2rem, 2.5vw, 2rem);
@@ -472,19 +447,18 @@ section[id] { scroll-margin-top: 80px; }
   width: 100%;
   margin: 0;
   font-family: var(--font-flex);
-  font-size: clamp(3.4rem, 11.4vw, 9.8rem);
+  font-size: clamp(2.8rem, 10.4vw, 9.4rem);
   line-height: 0.92;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.03em;
   color: var(--ink-primary);
   user-select: none;
-  cursor: crosshair;
 }
 
 .kw-char {
   display: inline-block;
-  font-variation-settings: 'wght' 640, 'wdth' 102, 'slnt' 0;
-  transition: color 220ms ease;
-  will-change: font-variation-settings, transform;
+  font-variation-settings: 'wght' 900, 'wdth' 145, 'slnt' 0;
+  transition: font-variation-settings 90ms ease-out, color 220ms ease;
+  will-change: font-variation-settings;
 }
 
 .kw-char.is-accent {
@@ -496,16 +470,11 @@ section[id] { scroll-margin-top: 80px; }
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  margin-top: 0.8rem;
+  margin-top: 0.85rem;
   font-family: var(--font-mono);
   font-size: 0.76rem;
   color: var(--ink-muted);
   flex-wrap: wrap;
-}
-
-.kinetic-caption__hint {
-  color: var(--accent-tan);
-  font-weight: 600;
 }
 
 /* Hero Lower 2-Column Split */

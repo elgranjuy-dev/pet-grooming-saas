@@ -104,9 +104,11 @@ function initKineticWordmark() {
 
   const rest = () => {
     chars.forEach((ch) => {
-      ch.style.fontVariationSettings = `'wght' 640, 'wdth' 102, 'slnt' 0`;
+      ch.style.fontVariationSettings = `'wght' 900, 'wdth' 145, 'slnt' 0`;
     });
   };
+
+  rest();
 
   const finePointer = window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
@@ -119,28 +121,29 @@ function initKineticWordmark() {
         const cx = rect.left + rect.width * 0.5;
         const cy = rect.top + rect.height * 0.5;
         const dist = Math.hypot(mx - cx, my - cy);
-        const radius = Math.max(240, rect.width * 2.8);
+        const radius = Math.max(260, rect.width * 2.6);
         const proximity = Math.max(0, 1 - dist / radius);
         const eased = proximity * proximity;
 
-        const wght = Math.round(420 + eased * 480);
-        const wdth = Math.round(92 + eased * 38);
-        const slnt = (-eased * 6).toFixed(1);
+        // Gruesas y anchas en reposo (900 / 145), adelgazan dramáticamente al acercar el cursor (150 / 75)
+        const wght = Math.round(900 - eased * 750);
+        const wdth = Math.round(145 - eased * 70);
+        const slnt = (-eased * 7).toFixed(1);
         ch.style.fontVariationSettings = `'wght' ${wght}, 'wdth' ${wdth}, 'slnt' ${slnt}`;
       });
     });
 
     wrap.addEventListener('pointerleave', rest);
   } else {
-    // On mobile/touch: subtle wave driven by scroll
+    // On mobile/touch: wave thinning driven by scroll
     window.addEventListener(
       'scroll',
       () => {
         const phase = window.scrollY * 0.025;
         chars.forEach((ch, idx) => {
           const wave = (Math.sin(phase + idx * 0.75) + 1) * 0.5;
-          const wght = Math.round(500 + wave * 360);
-          const wdth = Math.round(96 + wave * 24);
+          const wght = Math.round(900 - wave * 640);
+          const wdth = Math.round(145 - wave * 58);
           ch.style.fontVariationSettings = `'wght' ${wght}, 'wdth' ${wdth}, 'slnt' 0`;
         });
       },
@@ -720,7 +723,7 @@ function initRollLinks() {
     const text = el.textContent.trim();
     if (!text) return;
     el.classList.add('roll-link');
-    el.innerHTML = `<span class="roll-link__track" aria-hidden="true"><span class="roll-link__copy">${escapeHtml(text)}</span><span class="roll-link__copy roll-link__copy--clone">${escapeHtml(text)}</span></span><span class="sr-only">${escapeHtml(text)}</span>`;
+    el.innerHTML = `<span class="roll-mask" aria-hidden="true"><span class="roll-link__track"><span class="roll-link__copy">${escapeHtml(text)}</span><span class="roll-link__copy">${escapeHtml(text)}</span></span></span><span class="sr-only">${escapeHtml(text)}</span>`;
   });
 }
 
@@ -767,43 +770,11 @@ function initEditorialCursorAndMagnetics() {
   document.querySelectorAll('[data-magnetic]').forEach((btn) => {
     btn.addEventListener('pointermove', (e) => {
       const rect = btn.getBoundingClientRect();
-      const dx = ((e.clientX - rect.left) / rect.width - 0.5) * 10;
-      const dy = ((e.clientY - rect.top) / rect.height - 0.5) * 8;
+      const dx = ((e.clientX - rect.left) / rect.width - 0.5) * 8;
+      const dy = ((e.clientY - rect.top) / rect.height - 0.5) * 6;
       btn.style.transform = `translate3d(${dx.toFixed(1)}px, ${dy.toFixed(1)}px, 0)`;
     });
     btn.addEventListener('pointerleave', () => { btn.style.transform = ''; });
-  });
-
-  const lens = document.getElementById('cursor-lens');
-  const labelEl = document.getElementById('cursor-lens-label');
-  if (!lens || !labelEl) return;
-
-  let tx = -120, ty = -120, cx = -120, cy = -120, raf = 0;
-  const loop = () => {
-    cx += (tx - cx) * 0.18;
-    cy += (ty - cy) * 0.18;
-    lens.style.transform = `translate3d(${cx.toFixed(1)}px, ${cy.toFixed(1)}px, 0) translate(-50%, -50%)`;
-    if (Math.abs(tx - cx) > 0.2 || Math.abs(ty - cy) > 0.2) raf = window.requestAnimationFrame(loop);
-    else raf = 0;
-  };
-
-  window.addEventListener('pointermove', (e) => {
-    tx = e.clientX; ty = e.clientY;
-    lens.classList.add('is-visible');
-    if (!raf) raf = window.requestAnimationFrame(loop);
-  }, { passive: true });
-  document.addEventListener('pointerleave', () => lens.classList.remove('is-visible', 'is-active', 'is-wa'));
-
-  document.querySelectorAll('[data-cursor]').forEach((target) => {
-    target.addEventListener('pointerenter', () => {
-      labelEl.textContent = target.getAttribute('data-cursor') || '';
-      lens.classList.add('is-active');
-      lens.classList.toggle('is-wa', target.getAttribute('data-cursor-tone') === 'wa');
-    });
-    target.addEventListener('pointerleave', () => {
-      lens.classList.remove('is-active', 'is-wa');
-      labelEl.textContent = '';
-    });
   });
 }
 
