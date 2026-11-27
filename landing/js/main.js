@@ -664,13 +664,284 @@ function initPortalModal() {
 }
 
 /* =========================================================================
-   9. SCROLL REVEAL ANIMATIONS
+   9. LIGHT & SHADE–INSPIRED MOTION ENGINE
    ========================================================================= */
-function initReveal() {
-  const els = Array.from(document.querySelectorAll('.reveal'));
-  if (!els.length) return;
+function prefersReducedMotion() {
+  return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+function initStudioClock() {
+  const el = document.getElementById('studio-live-clock');
+  if (!el) return;
+
+  const updateClock = () => {
+    try {
+      const now = new Intl.DateTimeFormat('es-MX', {
+        timeZone: 'America/Mexico_City',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      }).format(new Date());
+      el.textContent = `${now} hrs`;
+    } catch {
+      const d = new Date();
+      const hh = String(d.getHours()).padStart(2, '0');
+      const mm = String(d.getMinutes()).padStart(2, '0');
+      el.textContent = `${hh}:${mm} hrs`;
+    }
+  };
+
+  updateClock();
+  window.setInterval(updateClock, 15000);
+}
+
+function initSplitText() {
+  if (prefersReducedMotion()) return;
+
+  document.querySelectorAll('[data-split]').forEach((heading) => {
+    const rawText = heading.textContent.replace(/\s+/g, ' ').trim();
+    heading.setAttribute('aria-label', rawText);
+
+    let charIndex = 0;
+
+    const splitNode = (node) => {
+      if (node.nodeType === Node.TEXT_NODE) {
+        const frag = document.createDocumentFragment();
+        const tokens = (node.textContent || '').split(/(\s+)/);
+
+        tokens.forEach((token) => {
+          if (!token) return;
+          if (/^\s+$/.test(token)) {
+            frag.appendChild(document.createTextNode(' '));
+            return;
+          }
+          const wordSpan = document.createElement('span');
+          wordSpan.className = 'split-word';
+          wordSpan.setAttribute('aria-hidden', 'true');
+
+          Array.from(token).forEach((ch) => {
+            const charSpan = document.createElement('span');
+            charSpan.className = 'split-char';
+            charSpan.style.setProperty('--char-i', String(Math.min(charIndex++, 36)));
+            charSpan.textContent = ch;
+            wordSpan.appendChild(charSpan);
+          });
+
+          frag.appendChild(wordSpan);
+        });
+
+        return frag;
+      }
+
+      if (node.nodeType === Node.ELEMENT_NODE) {
+        const clone = node.cloneNode(false);
+        Array.from(node.childNodes).forEach((child) => {
+          clone.appendChild(splitNode(child));
+        });
+        return clone;
+      }
+
+      return document.createDocumentFragment();
+    };
+
+    const nextFrag = document.createDocumentFragment();
+    Array.from(heading.childNodes).forEach((child) => {
+      nextFrag.appendChild(splitNode(child));
+    });
+
+    heading.textContent = '';
+    heading.appendChild(nextFrag);
+  });
+}
+
+function initRollLinks() {
+  if (prefersReducedMotion()) return;
+
+  document.querySelectorAll('[data-roll]').forEach((el) => {
+    const text = el.textContent.trim();
+    if (!text) return;
+    el.classList.add('roll-link');
+    el.innerHTML = `
+      <span class="roll-link__track" aria-hidden="true">
+        <span class="roll-link__copy">${escapeHtml(text)}</span>
+        <span class="roll-link__copy roll-link__copy--clone">${escapeHtml(text)}</span>
+      </span>
+      <span class="sr-only">${escapeHtml(text)}</span>
+    `;
+  });
+}
+
+function initScrollProgressAndParallax() {
+  const bar = document.getElementById('scroll-progress-bar');
+  const parallaxFrames = Array.from(document.querySelectorAll('[data-parallax]'));
+  const reduced = prefersReducedMotion();
+
+  let ticking = false;
+
+  const update = () => {
+    ticking = false;
+    const docH = document.documentElement.scrollHeight - window.innerHeight;
+    if (bar && docH > 0) {
+      const progress = Math.min(1, Math.max(0, window.scrollY / docH));
+      bar.style.transform = `scaleX(${progress})`;
+    }
+
+    if (reduced) return;
+
+    const vh = window.innerHeight;
+    parallaxFrames.forEach((frame) => {
+      const rect = frame.getBoundingClientRect();
+      if (rect.bottom < -60 || rect.top > vh + 60) return;
+      const strength = Number(frame.getAttribute('data-parallax')) || 20;
+      const ratio = (rect.top + rect.height * 0.5 - vh * 0.5) / (vh * 0.5);
+      const shift = Math.max(-strength, Math.min(strength, ratio * -strength));
+      frame.style.setProperty('--parallax-y', `${shift.toFixed(1)}px`);
+    });
+  };
+
+  const onScroll = () => {
+    if (!ticking) {
+      ticking = true;
+      window.requestAnimationFrame(update);
+    }
+  };
+
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', onScroll, { passive: true });
+  update();
+}
+
+function initEditorialCursorAndMagnetics() {
+  const finePointer = window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  if (!finePointer || prefersReducedMotion()) return;
+
+  // 1. Dark-surface Light & Shade cursor spotlight
+  document.querySelectorAll('[data-spotlight]').forEach((surface) => {
+    surface.addEventListener('pointermove', (e) => {
+      const rect = surface.getBoundingClientRect();
+      surface.style.setProperty('--mx', `${e.clientX - rect.left}px`);
+      surface.style.setProperty('--my', `${e.clientY - rect.top}px`);
+    });
+  });
+
+  // 2. Magnetic pull on key CTA pills
+  document.querySelectorAll('[data-magnetic]').forEach((btn) => {
+    btn.addEventListener('pointermove', (e) => {
+      const rect = btn.getBoundingClientRect();
+      const dx = ((e.clientX - rect.left) / rect.width - 0.5) * 10;
+      const dy = ((e.clientY - rect.top) / rect.height - 0.5) * 8;
+      btn.style.transform = `translate3d(${dx.toFixed(1)}px, ${dy.toFixed(1)}px, 0)`;
+    });
+    btn.addEventListener('pointerleave', () => {
+      btn.style.transform = '';
+    });
+  });
+
+  // 3. Lerp-smoothed Editorial Cursor Lens
+  const lens = document.getElementById('cursor-lens');
+  const labelEl = document.getElementById('cursor-lens-label');
+  if (!lens || !labelEl) return;
+
+  let tx = -120;
+  let ty = -120;
+  let cx = -120;
+  let cy = -120;
+  let rafId = 0;
+
+  const animate = () => {
+    cx += (tx - cx) * 0.18;
+    cy += (ty - cy) * 0.18;
+    lens.style.transform = `translate3d(${cx.toFixed(1)}px, ${cy.toFixed(1)}px, 0) translate(-50%, -50%)`;
+    if (Math.abs(tx - cx) > 0.2 || Math.abs(ty - cy) > 0.2) {
+      rafId = window.requestAnimationFrame(animate);
+    } else {
+      rafId = 0;
+    }
+  };
+
+  window.addEventListener(
+    'pointermove',
+    (e) => {
+      tx = e.clientX;
+      ty = e.clientY;
+      lens.classList.add('is-visible');
+      if (!rafId) rafId = window.requestAnimationFrame(animate);
+    },
+    { passive: true }
+  );
+
+  document.addEventListener('pointerleave', () => {
+    lens.classList.remove('is-visible', 'is-active', 'is-wa');
+  });
+
+  document.querySelectorAll('[data-cursor]').forEach((target) => {
+    target.addEventListener('pointerenter', () => {
+      const text = target.getAttribute('data-cursor') || '';
+      const tone = target.getAttribute('data-cursor-tone') || '';
+      labelEl.textContent = text;
+      lens.classList.add('is-active');
+      lens.classList.toggle('is-wa', tone === 'wa');
+    });
+    target.addEventListener('pointerleave', () => {
+      lens.classList.remove('is-active', 'is-wa');
+      labelEl.textContent = '';
+    });
+  });
+}
+
+function initCountUpStats() {
+  const nums = Array.from(document.querySelectorAll('[data-count-to]'));
+  if (!nums.length || prefersReducedMotion()) return;
+
+  const runCount = (el) => {
+    if (el.dataset.counted === '1') return;
+    el.dataset.counted = '1';
+    const target = Number(el.getAttribute('data-count-to')) || 0;
+    const suffix = el.getAttribute('data-count-suffix') || '';
+    if (target === 0) {
+      el.textContent = `0${suffix}`;
+      return;
+    }
+    const duration = 950;
+    const start = performance.now();
+    const tick = (now) => {
+      const t = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - t, 3);
+      const val = Math.round(eased * target);
+      el.textContent = `${val}${suffix}`;
+      if (t < 1) window.requestAnimationFrame(tick);
+    };
+    window.requestAnimationFrame(tick);
+  };
 
   if (!('IntersectionObserver' in window)) {
+    nums.forEach(runCount);
+    return;
+  }
+
+  const obs = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          runCount(entry.target);
+          obs.unobserve(entry.target);
+        }
+      });
+    },
+    { threshold: 0.2 }
+  );
+
+  nums.forEach((el) => obs.observe(el));
+}
+
+/* =========================================================================
+   10. SCROLL REVEAL ANIMATIONS (REVEAL + SPLIT HEADINGS + CURTAIN PHOTOS)
+   ========================================================================= */
+function initReveal() {
+  const els = Array.from(document.querySelectorAll('.reveal, [data-split], .curtain-frame'));
+  if (!els.length) return;
+
+  if (!('IntersectionObserver' in window) || prefersReducedMotion()) {
     els.forEach((el) => el.classList.add('is-in'));
     return;
   }
@@ -703,7 +974,7 @@ function initReveal() {
   els.forEach((el) => observer.observe(el));
   window.addEventListener('scroll', revealVisible, { passive: true });
   window.addEventListener('hashchange', revealVisible);
-  revealVisible();
+  window.requestAnimationFrame(revealVisible);
 }
 
 /* =========================================================================
@@ -711,11 +982,18 @@ function initReveal() {
    ========================================================================= */
 document.addEventListener('DOMContentLoaded', () => {
   initNavigation();
+  initStudioClock();
+  initSplitText();
+  initRollLinks();
   initProductTour();
   initRoiCalculator();
   initPricing();
   initFaq();
   initDemoForm();
   initPortalModal();
+  initScrollProgressAndParallax();
+  initEditorialCursorAndMagnetics();
+  initCountUpStats();
   initReveal();
 });
+
