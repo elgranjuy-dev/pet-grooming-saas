@@ -50,6 +50,11 @@ def healthcheck():
     }
 
 
+# Servir landing page comercial en /landing (manteniendo la carpeta landing/ independiente)
+_landing_dir = _root_dir / "landing"
+if _landing_dir.is_dir():
+    app.mount("/landing", StaticFiles(directory=str(_landing_dir), html=True), name="landing")
+
 # Servir carpeta frontend/ como archivos estáticos en la raíz / al final de las rutas /api/*
 _frontend_dir = _root_dir / "frontend"
 if _frontend_dir.is_dir():
