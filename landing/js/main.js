@@ -778,6 +778,82 @@ function initEditorialCursorAndMagnetics() {
   });
 }
 
+function initTestDriveBackdrop() {
+  const section = document.getElementById('testdrive');
+  const img = document.getElementById('testdrive-bg-img');
+  if (!section || !img || prefersReducedMotion()) return;
+
+  let active = false;
+  let rafId = 0;
+  let targetY = 0;
+  let targetX = 0;
+  let curY = 0;
+  let curX = 0;
+
+  const updateScrollTarget = () => {
+    const rect = section.getBoundingClientRect();
+    const vh = window.innerHeight;
+    // Progreso de -1 a 1 conforme cruzas la sección; rango generoso ±110px para sensación "a destiempo"
+    const progress = (rect.top + rect.height * 0.5 - vh * 0.5) / (vh * 0.85);
+    targetY = Math.max(-115, Math.min(115, progress * -110));
+  };
+
+  section.addEventListener(
+    'pointermove',
+    (e) => {
+      const rect = section.getBoundingClientRect();
+      const nx = (e.clientX - rect.left) / rect.width - 0.5;
+      targetX = nx * -34;
+    },
+    { passive: true }
+  );
+
+  section.addEventListener('pointerleave', () => {
+    targetX = 0;
+  });
+
+  window.addEventListener('scroll', updateScrollTarget, { passive: true });
+  window.addEventListener('resize', updateScrollTarget, { passive: true });
+
+  const tick = (now) => {
+    if (!active) {
+      rafId = 0;
+      return;
+    }
+
+    // Damping suave (0.048) para que el fondo siga al scroll y al puntero con retardo orgánico ("a destiempo")
+    curY += (targetY - curY) * 0.048;
+    curX += (targetX - curX) * 0.045;
+
+    // Respiración sutil continua aun cuando el usuario deja de hacer scroll
+    const driftY = Math.sin(now * 0.00055) * 14;
+    const driftX = Math.cos(now * 0.00042) * 12;
+    const scale = 1.07 + Math.sin(now * 0.00038) * 0.025;
+    const rot = Math.sin(now * 0.0003) * 1.1 + curX * 0.03;
+
+    img.style.transform = `translate3d(${(curX + driftX).toFixed(1)}px, ${(curY + driftY).toFixed(1)}px, 0) scale(${scale.toFixed(4)}) rotate(${rot.toFixed(2)}deg)`;
+    rafId = window.requestAnimationFrame(tick);
+  };
+
+  if ('IntersectionObserver' in window) {
+    const obs = new IntersectionObserver(
+      (entries) => {
+        active = entries[0]?.isIntersecting || false;
+        if (active) {
+          updateScrollTarget();
+          if (!rafId) rafId = window.requestAnimationFrame(tick);
+        }
+      },
+      { rootMargin: '160px 0px' }
+    );
+    obs.observe(section);
+  } else {
+    active = true;
+    updateScrollTarget();
+    rafId = window.requestAnimationFrame(tick);
+  }
+}
+
 function initReveal() {
   const els = Array.from(document.querySelectorAll('.reveal, [data-split], .curtain-frame'));
   if (!els.length) return;
@@ -825,6 +901,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initSplitText();
   initRollLinks();
   initTestDriveSandbox();
+  initTestDriveBackdrop();
   initRoiCalculator();
   initPricingConfigurator();
   initFaq();
@@ -834,3 +911,4 @@ document.addEventListener('DOMContentLoaded', () => {
   initEditorialCursorAndMagnetics();
   initReveal();
 });
+
