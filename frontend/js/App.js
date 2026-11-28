@@ -5,14 +5,14 @@
  * el flujo de login por subdominio (Usuario + Contraseña), vistas dinámicas por rol,
  * modo Impersonate para Administrador/Dueño, barra lateral colapsable y Check-Out.
  */
-import { ApiClient } from './core/ApiClient.js?v=0.9.4';
-import { SessionManager } from './core/SessionManager.js?v=0.9.4';
-import { WidgetManager } from './core/WidgetManager.js?v=0.9.4';
-import { DashboardView } from './views/DashboardView.js?v=0.9.4';
-import { AgendaView } from './views/AgendaView.js?v=0.9.4';
-import { ClientesView } from './views/ClientesView.js?v=0.9.4';
-import { InventarioCajaView } from './views/InventarioCajaView.js?v=0.9.4';
-import { ConfigPersonalView } from './views/ConfigPersonalView.js?v=0.9.4';
+import { ApiClient } from './core/ApiClient.js?v=0.9.5';
+import { SessionManager } from './core/SessionManager.js?v=0.9.5';
+import { WidgetManager } from './core/WidgetManager.js?v=0.9.5';
+import { DashboardView } from './views/DashboardView.js?v=0.9.5';
+import { AgendaView } from './views/AgendaView.js?v=0.9.5';
+import { ClientesView } from './views/ClientesView.js?v=0.9.5';
+import { InventarioCajaView } from './views/InventarioCajaView.js?v=0.9.5';
+import { ConfigPersonalView } from './views/ConfigPersonalView.js?v=0.9.5';
 
 export class App {
   constructor() {
@@ -101,7 +101,7 @@ export class App {
         const subEl = document.getElementById('login-tenant-subdominio');
         if (nombreEl) nombreEl.textContent = tenant.nombre;
         if (subEl) {
-          subEl.textContent = `Acceso al sistema · ${tenant.subdominio || 'portal'}.petgrooming.mx`;
+          subEl.textContent = `Acceso al sistema · ${tenant.subdominio || 'portal'}.furgo.mx`;
         }
       }
     } catch (_) {
@@ -493,7 +493,7 @@ export class App {
       labelEl.textContent = esTop ? 'Menú Izquierda' : 'Menú Arriba';
     }
     try {
-      localStorage.setItem('pet_grooming_menu_position', esTop ? 'top' : 'left');
+      localStorage.setItem('furgo_menu_position', esTop ? 'top' : 'left');
     } catch (_) {}
   }
 
@@ -505,7 +505,10 @@ export class App {
 
     // Restaurar preferencia guardada (izquierda por defecto)
     try {
-      const savedPos = localStorage.getItem('pet_grooming_menu_position') || 'left';
+      const savedPos =
+        localStorage.getItem('furgo_menu_position') ||
+        localStorage.getItem('pet_grooming_menu_position') ||
+        'left';
       this.aplicarPosicionMenu(savedPos);
     } catch (_) {}
 
@@ -635,5 +638,5 @@ export class App {
 document.addEventListener('DOMContentLoaded', () => {
   const app = new App();
   app.init();
-  window.petGroomingApp = app;
+  window.furgoApp = app;
 });

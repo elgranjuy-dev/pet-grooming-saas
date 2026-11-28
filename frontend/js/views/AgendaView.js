@@ -202,7 +202,7 @@ export class AgendaView {
       return;
     }
 
-    const clientesView = window.petGroomingApp?.views?.clientes;
+    const clientesView = window.furgoApp?.views?.clientes;
     if (clientesView && typeof clientesView.abrirModalAgendarCitaMascota === 'function') {
       clientesView.abrirModalAgendarCitaMascota(null, {
         fecha: fecha || hoy,
@@ -918,7 +918,7 @@ export class AgendaView {
 
   async _sincronizarVistasDependientes() {
     await this.cargarCitas();
-    const views = window.petGroomingApp?.views || {};
+    const views = window.furgoApp?.views || {};
     if (views.caja && typeof views.caja.load === 'function') {
       await views.caja.load();
     }

@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PawFlow — Blue Heeler × Kern Society Editorial Design System
+   furgo.mx — Blue Heeler × Kern Society Editorial Design System
    Palette extracted from Australian Cattle Dog (Blue Heeler):
      • Frost Merle Canvas (#F5F8FC) & Merle Mist (#E7EEF6)
      • Mask Black Ink (#111824) & Deep Heeler Slate (#131D2B)
@@ -447,7 +447,7 @@ section[id] { scroll-margin-top: 80px; }
   width: 100%;
   margin: 0;
   font-family: var(--font-flex);
-  font-size: clamp(2.8rem, 10.4vw, 9.4rem);
+  font-size: clamp(2.4rem, 9.8vw, 9.2rem);
   line-height: 0.92;
   letter-spacing: -0.03em;
   color: var(--ink-primary);

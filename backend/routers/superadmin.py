@@ -1,5 +1,6 @@
 import hashlib
 import os
+import re
 import secrets
 from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, Header, HTTPException
@@ -13,7 +14,7 @@ from backend.schemas.superadmin import (
     TenantUpdate,
 )
 
-router = APIRouter(prefix="/api/superadmin", tags=["Super Admin SaaS"])
+router = APIRouter(prefix="/api/superadmin", tags=["Super Admin furgo.mx"])
 
 # Tarifas mensuales de referencia por plan (MXN) y cuotas predeterminadas
 PLANES_CONFIG: Dict[str, Dict[str, int]] = {
@@ -155,12 +156,17 @@ def _aprovisionar_estructura_sucursal(
 
 @router.post("/login")
 def login_superadmin(payload: SuperAdminLoginRequest) -> Dict[str, Any]:
-    """Valida las credenciales maestras del dueño del SaaS (Super Admin)."""
+    """Valida las credenciales maestras del dueño de furgo.mx (Super Admin)."""
     creds = _get_superadmin_credentials()
     email_in = payload.email.strip().lower()
     pass_in = payload.password.strip()
 
-    valid_emails = {creds["email"].lower(), "admin@saas.com", "elgranjuy@gmail.com"}
+    valid_emails = {
+        creds["email"].lower(),
+        "admin@furgo.mx",
+        "admin@saas.com",
+        "elgranjuy@gmail.com",
+    }
     valid_passwords = {creds["password"], "superadmin1234", "admin1234"}
 
     if email_in not in valid_emails or pass_in not in valid_passwords:
@@ -175,10 +181,10 @@ def login_superadmin(payload: SuperAdminLoginRequest) -> Dict[str, Any]:
         "token": token,
         "superadmin": {
             "email": payload.email.strip(),
-            "nombre": "Dueño del SaaS (Super Admin)",
+            "nombre": "Dueño de furgo.mx (Super Admin)",
             "rol": "SuperAdmin",
         },
-        "mensaje": "Bienvenido a la Consola Maestra del SaaS.",
+        "mensaje": "Bienvenido a la Consola Maestra de furgo.mx.",
     }
 
 
@@ -432,12 +438,15 @@ def onboarding_nuevo_tenant(
     )
 
     org_clean = {k: v for k, v in nueva_org.items() if k != "password_hash"}
+    subdominio_slug = re.sub(r"[^a-z0-9]", "", (nueva_org.get("nombre") or "").lower()) or "portal"
     return {
         "organizacion": org_clean,
         "sucursal_inicial": nueva_sucursal,
         "usuario_inicial": usuario_dueno,
         "credenciales_entrega": {
             "organizacion_nombre": nueva_org["nombre"],
+            "subdominio": subdominio_slug,
+            "portal_url": f"https://{subdominio_slug}.furgo.mx",
             "plan": payload.plan,
             "email_propietario": email_prop,
             "password_propietario": pwd_plain,
@@ -445,7 +454,7 @@ def onboarding_nuevo_tenant(
             "usuario_dueno": usuario_dueno.get("nombre", payload.nombre_dueno_inicial),
             "pin_dueno": payload.pin_dueno_inicial or "1234",
         },
-        "mensaje": f"Cliente SaaS '{nueva_org['nombre']}' aprovisionado exitosamente con sucursal, agenda y PIN.",
+        "mensaje": f"Cliente '{nueva_org['nombre']}' aprovisionado exitosamente en furgo.mx con sucursal, agenda y PIN.",
     }
 
 

@@ -600,7 +600,7 @@ export class ConfigPersonalView {
   }
 
   sincronizarPerfilesConApp() {
-    const app = window.petGroomingApp;
+    const app = window.furgoApp;
     if (app && app.session && Array.isArray(this.perfiles) && this.perfiles.length) {
       app.session.setPerfiles(this.perfiles);
       app.session.aplicarPermisosVisuales();

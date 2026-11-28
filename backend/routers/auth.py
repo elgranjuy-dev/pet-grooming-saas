@@ -30,14 +30,18 @@ def _resolver_org_por_subdominio(
 ) -> Optional[Dict[str, Any]]:
     """
     Identifica el tenant (organización) a partir del subdominio o parámetro tenant.
-    Ej. 'thebluedog.tudominio.com' -> 'thebluedog' -> 'The Blue Dog'
+    Ej. 'thebluedog.furgo.mx' -> 'thebluedog' -> 'The Blue Dog'
     """
     candidato = (subdominio or "").strip().lower()
     if not candidato and host:
         host_clean = host.split(":")[0].strip().lower()
-        partes = host_clean.split(".")
-        if len(partes) >= 2 and partes[0] not in ("www", "localhost", "127", "app", "api"):
-            candidato = partes[0]
+        if not re.match(r"^\d+(\.\d+){3}$", host_clean):
+            partes = host_clean.split(".")
+            reservados = ("www", "localhost", "127", "app", "api", "admin")
+            if host_clean.endswith(".localhost") and len(partes) >= 2 and partes[0] not in reservados:
+                candidato = partes[0]
+            elif len(partes) >= 3 and partes[0] not in reservados:
+                candidato = partes[0]
 
     slug_buscado = _slugify(candidato)
     if slug_buscado:
@@ -150,7 +154,7 @@ def _construir_sesion_completa(
     if str(org.get("estado", "Activa")).lower() != "activa":
         raise HTTPException(
             status_code=403,
-            detail=f"La cuenta de '{org.get('nombre')}' se encuentra suspendida. Contacta al soporte del SaaS.",
+            detail=f"La cuenta de '{org.get('nombre')}' se encuentra suspendida. Contacta al soporte de furgo.mx.",
         )
 
     sucs = (

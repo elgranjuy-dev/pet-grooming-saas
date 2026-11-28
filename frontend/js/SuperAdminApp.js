@@ -1,16 +1,16 @@
 /**
  * SuperAdminApp.js
- * Controlador POO para la Consola Maestra del Dueño del SaaS (/superadmin.html).
+ * Controlador POO para la Consola Maestra de furgo.mx (/superadmin.html).
  * Permite:
  * - Login Maestro Super Admin
  * - Visualización de MRR/ARR y métricas globales
- * - Onboarding 1-Click de nuevos clientes SaaS (Organización + Sucursal + Usuario PIN + Agenda)
+ * - Onboarding 1-Click de nuevos clientes furgo.mx (Organización + Sucursal + Usuario PIN + Agenda)
  * - Gestión de planes, cuotas, expansión de sucursales y Kill-Switch (Activa/Suspendida)
  */
 import { ApiClient } from './core/ApiClient.js';
 
 export class SuperAdminApp {
-  static STORAGE_KEY = 'pet_grooming_superadmin_session_v1';
+  static STORAGE_KEY = 'furgo_superadmin_session_v1';
 
   static PLAN_LIMITS = {
     'Básico': { max_sucursales: 1, max_usuarios: 5, max_clientes: 500 },
@@ -356,7 +356,8 @@ export class SuperAdminApp {
         box.innerHTML = `
           <div class="text-emerald-400 font-bold mb-1">✓ CLIENTE APROVISIONADO</div>
           <div><span class="text-slate-400">Empresa:</span> ${cred.organizacion_nombre} (${cred.plan})</div>
-          <div><span class="text-slate-400">Correo SaaS:</span> ${cred.email_propietario}</div>
+          ${cred.portal_url ? `<div><span class="text-slate-400">Portal:</span> <span class="text-indigo-300">${cred.portal_url}</span></div>` : ''}
+          <div><span class="text-slate-400">Correo furgo.mx:</span> ${cred.email_propietario}</div>
           <div><span class="text-slate-400">Contraseña:</span> ${cred.password_propietario}</div>
           <div><span class="text-slate-400">Sucursal:</span> ${cred.sucursal_inicial}</div>
           <div><span class="text-slate-400">Usuario Dueño:</span> ${cred.usuario_dueno}</div>

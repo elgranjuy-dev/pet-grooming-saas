@@ -1833,8 +1833,8 @@ export class ClientesView {
         );
       }
 
-      if (window.petGroomingApp?.views?.agenda) {
-        await window.petGroomingApp.views.agenda.cargarCitas();
+      if (window.furgoApp?.views?.agenda) {
+        await window.furgoApp.views.agenda.cargarCitas();
       }
     } catch (err) {
       this.notify(`No se pudo agendar la cita: ${err.message}`, 'error');

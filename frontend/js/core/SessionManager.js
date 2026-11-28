@@ -6,8 +6,8 @@
  * y soporta modo "Impersonate".
  */
 export class SessionManager {
-  static STORAGE_KEY = 'pet_grooming_saas_session_v1';
-  static PERFILES_STORAGE_KEY = 'pet_grooming_perfiles_permisos_v2';
+  static STORAGE_KEY = 'furgo_session_v1';
+  static PERFILES_STORAGE_KEY = 'furgo_perfiles_permisos_v2';
 
   static DEFAULT_PERFILES = [
     {
@@ -487,8 +487,14 @@ export class SessionManager {
     if (paramTenant) return paramTenant.trim().toLowerCase();
 
     const host = (window.location.hostname || '').toLowerCase();
+    if (!host || /^\d+(\.\d+){3}$/.test(host)) return '';
+
     const parts = host.split('.');
-    if (parts.length >= 2 && !['www', 'localhost', '127', 'app', 'api'].includes(parts[0])) {
+    const reserved = ['www', 'localhost', '127', 'app', 'api', 'admin'];
+    if (host.endsWith('.localhost') && parts.length >= 2 && !reserved.includes(parts[0])) {
+      return parts[0];
+    }
+    if (parts.length >= 3 && !reserved.includes(parts[0])) {
       return parts[0];
     }
     return '';

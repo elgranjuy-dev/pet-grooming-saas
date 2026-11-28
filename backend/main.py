@@ -12,8 +12,8 @@ from fastapi.staticfiles import StaticFiles
 from backend.routers import auth, operativo, superadmin
 
 app = FastAPI(
-    title="Pet Grooming SaaS API",
-    description="Backend POO Multi-Tenant, Multi-Sucursal y Consola Super Admin para gestión de estéticas caninas",
+    title="furgo.mx API",
+    description="Backend POO Multi-Tenant, Multi-Sucursal y Consola Super Admin de furgo.mx para gestión de estéticas caninas",
     version="0.5.0",
 )
 
@@ -46,7 +46,7 @@ def healthcheck():
     return {
         "status": "ok",
         "version": "0.5.0",
-        "service": "pet-grooming-saas-backend",
+        "service": "furgo-mx-backend",
     }
 
 

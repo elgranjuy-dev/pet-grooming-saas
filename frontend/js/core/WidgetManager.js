@@ -8,7 +8,8 @@
  * 4. Persistencia automática en localStorage (orden de cajas y estado minimizado).
  */
 export class WidgetManager {
-  static STORAGE_KEY = 'pet_grooming_widgets_layout_v1';
+  static STORAGE_KEY = 'furgo_widgets_layout_v1';
+  static LEGACY_STORAGE_KEY = 'pet_grooming_widgets_layout_v1';
 
   constructor(notify = null) {
     this.notify = notify;
@@ -20,7 +21,9 @@ export class WidgetManager {
 
   loadState() {
     try {
-      const raw = localStorage.getItem(WidgetManager.STORAGE_KEY);
+      const raw =
+        localStorage.getItem(WidgetManager.STORAGE_KEY) ||
+        localStorage.getItem(WidgetManager.LEGACY_STORAGE_KEY);
       const parsed = raw ? JSON.parse(raw) : {};
       return {
         minimized: parsed.minimized || {},

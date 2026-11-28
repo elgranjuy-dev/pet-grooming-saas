@@ -1,5 +1,5 @@
 /**
- * PawFlow Landing Page — Blue Heeler × Kern Society Interactive Engine
+ * furgo.mx Landing Page — Blue Heeler × Kern Society Interactive Engine
  * Pure Vanilla JavaScript (zero runtime dependencies).
  */
 
@@ -7,10 +7,10 @@
    1. CONFIGURACIÓN PRINCIPAL (edita estos datos antes de publicar)
    ========================================================================= */
 const SITE_CONFIG = {
-  brandName: 'PawFlow',
+  brandName: 'furgo.mx',
   whatsappNumber: '5215512345678',
-  portalDomain: 'pawflow.mx',
-  crmGeneralUrl: 'https://app.pawflow.mx',
+  portalDomain: 'furgo.mx',
+  crmGeneralUrl: 'https://app.furgo.mx',
   demoWebhookUrl: '',
 };
 
@@ -422,7 +422,7 @@ function initPricingConfigurator() {
 
   const PLANS = {
     basico: {
-      title: 'PawFlow Básico',
+      title: 'furgo.mx Básico',
       badge: 'ESTÉTICA INDEPENDIENTE',
       desc: 'Ideal para dejar la libreta y ordenar agenda, expedientes y caja en 1 sucursal.',
       monthly: 499,
@@ -437,7 +437,7 @@ function initPricingConfigurator() {
       ],
     },
     pro: {
-      title: 'PawFlow Pro',
+      title: 'furgo.mx Pro',
       badge: 'MÁS ELEGIDO',
       desc: 'Para estéticas con equipo completo o en expansión multi-sucursal.',
       monthly: 999,
@@ -452,7 +452,7 @@ function initPricingConfigurator() {
       ],
     },
     enterprise: {
-      title: 'PawFlow Enterprise',
+      title: 'furgo.mx Enterprise',
       badge: 'CADENAS Y FRANQUICIAS',
       desc: 'Control global, auditoría completa y soporte prioritario para redes de estéticas.',
       monthly: 2499,
@@ -578,7 +578,7 @@ function initDemoForm() {
     if (!valid) return;
 
     try {
-      localStorage.setItem('pawflow_last_demo_request', JSON.stringify(data));
+      localStorage.setItem('furgo_last_demo_request', JSON.stringify(data));
       if (SITE_CONFIG.demoWebhookUrl) {
         await fetch(SITE_CONFIG.demoWebhookUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
       }

@@ -1,4 +1,4 @@
-# PawFlow — Landing Page Comercial (Blue Heeler × Editorial Edition)
+# furgo.mx — Landing Page Comercial (Blue Heeler × Editorial Edition)
 
 Landing page comercial estática e independiente para promocionar y vender el CRM de estéticas caninas, con paleta inspirada en el **Australian Cattle Dog (Blue Heeler)** (blanco escarcha, gris merle, azul acero/cobalto, negro máscara y acento cobrizo) e interacciones editoriales inspiradas en **Kern Society** y **Light & Shade**.
 
@@ -15,10 +15,10 @@ Edita el bloque `SITE_CONFIG` al inicio de `js/main.js`:
 
 ```js
 const SITE_CONFIG = {
-  brandName: 'PawFlow',
+  brandName: 'furgo.mx',
   whatsappNumber: '5215512345678',      // Tu WhatsApp real (código país + número sin "+")
-  portalDomain: 'pawflow.mx',           // Dominio base para subdominios de clientes
-  crmGeneralUrl: 'https://app.pawflow.mx',
+  portalDomain: 'furgo.mx',             // Dominio base para subdominios de clientes
+  crmGeneralUrl: 'https://app.furgo.mx',
   demoWebhookUrl: '',                   // Opcional: webhook (Make, n8n, Formspree o tu API)
 };
 ```
@@ -26,4 +26,4 @@ const SITE_CONFIG = {
 ## Cómo verla en local y desplegarla
 
 - **Junto con tu CRM (FastAPI)**: al correr `./iniciar_local.sh`, queda disponible en `/landing/` en el mismo puerto `8000` donde operas el CRM.
-- **Despliegue independiente**: publica directamente la carpeta `landing/` en Cloudflare Pages, Netlify, Vercel o Nginx apuntando a tu dominio raíz mientras `*.tudominio.mx` sirve el CRM (`frontend/`).
+- **Despliegue independiente**: publica directamente la carpeta `landing/` en Cloudflare Pages, Netlify, Vercel o Nginx apuntando a `furgo.mx` mientras `*.furgo.mx` sirve el CRM (`frontend/`).
